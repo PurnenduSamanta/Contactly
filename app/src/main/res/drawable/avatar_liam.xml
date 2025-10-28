@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background -->
+    <path
+        android:fillColor="#2C3E50"
+        android:pathData="M0,0h200v200h-200z" />
+    
+    <!-- Face -->
+    <path
+        android:fillColor="#F5D0A9"
+        android:pathData="M100,140c-22.1,0 -40,-17.9 -40,-40v-30c0,-22.1 17.9,-40 40,-40s40,17.9 40,40v30c0,22.1 -17.9,40 -40,40z" />
+    
+    <!-- Hair -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M60,70c0,-22.1 17.9,-40 40,-40s40,17.9 40,40v5c0,0 -10,-15 -40,-15s-40,15 -40,15v-5z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M60,65v-10c0,0 10,10 40,10s40,-10 40,-10v10c0,0 -10,15 -40,15s-40,-15 -40,-15z" />
+    
+    <!-- Eyes -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M85,90c4.4,0 8,3.6 8,8s-3.6,8 -8,8s-8,-3.6 -8,-8s3.6,-8 8,-8z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M115,90c4.4,0 8,3.6 8,8s-3.6,8 -8,8s-8,-3.6 -8,-8s3.6,-8 8,-8z" />
+    
+    <!-- Pupils -->
+    <path
+        android:fillColor="#4B2F2F"
+        android:pathData="M85,98m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+    <path
+        android:fillColor="#4B2F2F"
+        android:pathData="M115,98m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+    
+    <!-- Nose -->
+    <path
+        android:fillColor="#E5C19E"
+        android:pathData="M100,110l-5,10h10z" />
+    
+    <!-- Mouth -->
+    <path
+        android:fillColor="#A52A2A"
+        android:pathData="M85,125c0,0 15,5 30,0c-5,5 -25,5 -30,0z" />
+</vector>
