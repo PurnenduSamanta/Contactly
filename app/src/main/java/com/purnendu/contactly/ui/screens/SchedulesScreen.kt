@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.components.ScheduleItem
+import com.purnendu.contactly.ui.theme.ChineseBlack
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,8 +31,8 @@ fun SchedulesScreen(
     onHomeClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
-) {
-    Scaffold(
+) { 
+    Scaffold( 
         topBar = {
             TopAppBar(
                 title = {
@@ -43,28 +44,11 @@ fun SchedulesScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    titleContentColor = ChineseBlack
                 )
             )
         },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White
-            ) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = true,
-                    onClick = onHomeClick
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") },
-                    selected = false,
-                    onClick = onSettingsClick
-                )
-            }
-        },
+        containerColor = Color.White,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddClick,
