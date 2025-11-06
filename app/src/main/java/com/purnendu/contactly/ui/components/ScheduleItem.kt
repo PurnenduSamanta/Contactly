@@ -51,7 +51,6 @@ fun ScheduleItem(
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 2.dp
             ),
-            border = BorderStroke(0.5.dp, AuroMetalSaurus)
         ) {
             Column(
                 modifier = Modifier
@@ -97,7 +96,7 @@ fun ScheduleItem(
                             )
                         } ?: Image(
                             modifier = Modifier.size(width = 119.dp,height = 58.dp),
-                            painter = painterResource(id = R.drawable.avatar_placeholder),
+                            painter = painterResource(id =  R.drawable.avatar_placeholder),
                             contentDescription = "Avatar placeholder",
                             contentScale = ContentScale.Crop
                         )
@@ -120,7 +119,7 @@ fun ScheduleItem(
             Button(
                 onClick = onDeleteClick,
                 modifier = Modifier
-                    .height(48.dp),
+                    .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AntiFlashWhite,
                     contentColor = ChineseBlack
@@ -133,7 +132,7 @@ fun ScheduleItem(
             Button(
                 onClick = onEditClick,
                 modifier = Modifier
-                    .height(48.dp),
+                    .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AntiFlashWhite,
                     contentColor = ChineseBlack

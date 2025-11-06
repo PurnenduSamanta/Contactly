@@ -5,8 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,10 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.components.ScheduleItem
 import com.purnendu.contactly.ui.theme.ChineseBlack
 import com.purnendu.contactly.ui.theme.ContactlyTheme
+import com.purnendu.contactly.ui.theme.Crayola
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +34,7 @@ fun SchedulesScreen(
 ) { 
     Scaffold( 
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text = "Schedules",
@@ -50,13 +50,22 @@ fun SchedulesScreen(
         },
         containerColor = Color.White,
         floatingActionButton = {
-            FloatingActionButton(
+
+            ExtendedFloatingActionButton(
                 onClick = onAddClick,
-                containerColor = Color(0xFF2196F3),
+                containerColor = Crayola,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Schedule")
-            }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Schedule")
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text("Add Schedule", color = Color.White, fontWeight = FontWeight.Bold)
+
+                }
+                }
+
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
@@ -100,17 +109,20 @@ fun SchedulesScreenPreview() {
                 Schedule(
                     id = "1",
                     name = "Ethan Carter",
-                    originalName = "Ethan"
+                    originalName = "Ethan",
+                    avatarResId = R.drawable.avatar_ethan
                 ),
                 Schedule(
                     id = "2",
                     name = "Sophia Clark",
-                    originalName = "Sophia"
+                    originalName = "Sophia",
+                    avatarResId = R.drawable.avatar_sophia
                 ),
                 Schedule(
                     id = "3",
                     name = "Liam Walker",
-                    originalName = "Liam"
+                    originalName = "Liam",
+                    avatarResId = R.drawable.avatar_liam
                 )
             ),
             onEditClick = {},
