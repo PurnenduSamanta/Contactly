@@ -10,7 +10,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.ui.screens.SchedulesScreen
+import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 
 class MainActivity : ComponentActivity() {

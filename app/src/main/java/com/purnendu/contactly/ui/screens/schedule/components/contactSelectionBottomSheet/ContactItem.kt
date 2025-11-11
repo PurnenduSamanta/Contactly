@@ -1,4 +1,4 @@
-package com.purnendu.contactly.ui.components.contactSelectionBottomSheet
+package com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

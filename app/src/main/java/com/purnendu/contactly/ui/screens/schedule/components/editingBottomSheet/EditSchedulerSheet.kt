@@ -1,4 +1,4 @@
-package com.purnendu.contactly.ui.components.editingBottomSheet
+package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

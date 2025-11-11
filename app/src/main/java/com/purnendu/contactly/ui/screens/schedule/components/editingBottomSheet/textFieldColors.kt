@@ -1,4 +1,4 @@
-package com.purnendu.contactly.ui.components.editingBottomSheet
+package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable

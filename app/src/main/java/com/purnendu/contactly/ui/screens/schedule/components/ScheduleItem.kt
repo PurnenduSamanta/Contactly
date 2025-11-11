@@ -1,6 +1,5 @@
-package com.purnendu.contactly.ui.components
+package com.purnendu.contactly.ui.screens.schedule.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.AntiFlashWhite
-import com.purnendu.contactly.ui.theme.AuroMetalSaurus
 import com.purnendu.contactly.ui.theme.ChineseBlack
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 

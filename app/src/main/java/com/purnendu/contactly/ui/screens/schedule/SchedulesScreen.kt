@@ -1,16 +1,31 @@
-package com.purnendu.contactly.ui.screens
+package com.purnendu.contactly.ui.screens.schedule
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.ui.components.ScheduleItem
+import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.theme.AuroMetalSaurus
 import com.purnendu.contactly.ui.theme.ChineseBlack
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -37,40 +52,43 @@ fun SchedulesScreen(
     onAddClick: () -> Unit,
     onHomeClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
-) { 
-    Scaffold( 
+    modifier: Modifier = Modifier.Companion
+) {
+    Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text = "Schedules",
                         fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Companion.Bold
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
+                    containerColor = Color.Companion.White,
                     titleContentColor = ChineseBlack
                 )
             )
         },
-        containerColor = Color.White,
+        containerColor = Color.Companion.White,
         floatingActionButton = {
-            if (schedules.isNotEmpty())
-            {
+            if (schedules.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = onAddClick,
                     containerColor = Crayola,
-                    contentColor = Color.White
+                    contentColor = Color.Companion.White
                 )
                 {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.Companion.CenterVertically) {
                         Icon(Icons.Default.Add, contentDescription = "Add Schedule")
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.Companion.width(10.dp))
 
-                        Text("Add Schedule", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Add Schedule",
+                            color = Color.Companion.White,
+                            fontWeight = FontWeight.Companion.Bold
+                        )
 
                     }
                 }
@@ -82,55 +100,83 @@ fun SchedulesScreen(
     ) { innerPadding ->
         if (schedules.isEmpty()) {
             Box(
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(8.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Companion.Center
             ) {
 
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally)
+                Column(
+                    modifier = Modifier.Companion.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Companion.CenterHorizontally
+                )
                 {
 
-                    Box(modifier = Modifier.background(color = Color.Gray.copy(alpha = 0.1f), shape = CircleShape).padding(30.dp), contentAlignment = Alignment.Center)
+                    Box(
+                        modifier = Modifier.Companion.background(
+                            color = Color.Companion.Gray.copy(
+                                alpha = 0.1f
+                            ), shape = CircleShape
+                        ).padding(30.dp), contentAlignment = Alignment.Companion.Center
+                    )
                     {
 
-                        Icon(modifier = Modifier.size(40.dp), painter = painterResource(R.drawable.calendar_month), contentDescription = "calender",)
+                        Icon(
+                            modifier = Modifier.Companion.size(40.dp),
+                            painter = painterResource(R.drawable.calendar_month),
+                            contentDescription = "calender",
+                        )
 
 
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.Companion.height(10.dp))
 
-                    Text("No Schedules yet!", fontWeight = FontWeight.Bold, color = ChineseBlack)
+                    Text(
+                        "No Schedules yet!",
+                        fontWeight = FontWeight.Companion.Bold,
+                        color = ChineseBlack
+                    )
 
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.Companion.height(5.dp))
 
                     Text("Get started by creating your first schedule", color = AuroMetalSaurus)
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.Companion.height(10.dp))
 
-                    Row(modifier = Modifier.background(color = Crayola, shape = RoundedCornerShape(10.dp)).fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Schedule", tint = Color.White)
+                    Row(
+                        modifier = Modifier.Companion.background(
+                            color = Crayola,
+                            shape = RoundedCornerShape(10.dp)
+                        ).fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.Companion.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add Schedule",
+                            tint = Color.Companion.White
+                        )
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.Companion.width(10.dp))
 
-                        Text("Add Schedule", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Add Schedule",
+                            color = Color.Companion.White,
+                            fontWeight = FontWeight.Companion.Bold
+                        )
 
                     }
-
 
 
                 }
 
 
-
-
-
             }
         } else {
             LazyColumn(
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxSize()
                     .padding(innerPadding),
                 contentPadding = PaddingValues(vertical = 8.dp)
