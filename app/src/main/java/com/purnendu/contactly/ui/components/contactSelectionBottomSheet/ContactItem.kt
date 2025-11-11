@@ -28,12 +28,12 @@ import com.purnendu.contactly.ui.theme.ContactNumberColor
 @Composable
 fun ContactItem(
     contact: Contact,
-    onClick: (Contact) -> Unit
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick(contact) }
+            .clickable {  }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
