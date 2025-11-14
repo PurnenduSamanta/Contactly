@@ -6,5 +6,6 @@ data class Schedule(
     val id: String,
     val name: String,
     val originalName: String,
-    @DrawableRes val avatarResId: Int? = null
+    @DrawableRes val avatarResId: Int? = null,
+    val contactId: Long? = null
 )

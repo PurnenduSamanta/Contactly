@@ -25,7 +25,9 @@ import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.AntiFlashWhite
 import com.purnendu.contactly.ui.theme.ChineseBlack
+import com.purnendu.contactly.ui.theme.AppColors
 import com.purnendu.contactly.ui.theme.ContactlyTheme
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun ScheduleItem(
@@ -73,7 +75,7 @@ fun ScheduleItem(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Original name: ${schedule.originalName}",
+                            text = stringResource(id = R.string.original_name, schedule.originalName),
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -119,12 +121,12 @@ fun ScheduleItem(
                 modifier = Modifier
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AntiFlashWhite,
-                    contentColor = ChineseBlack
+                    containerColor = AppColors.ButtonSurface,
+                    contentColor = AppColors.TextPrimary
                 ),
                 shape = RoundedCornerShape(8.dp),
             ) {
-                Text("Delete", color = ChineseBlack, fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.action_delete), color = AppColors.TextPrimary, fontWeight = FontWeight.Bold)
             }
 
             Button(
@@ -132,12 +134,12 @@ fun ScheduleItem(
                 modifier = Modifier
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = AntiFlashWhite,
-                    contentColor = ChineseBlack
+                    containerColor = AppColors.ButtonSurface,
+                    contentColor = AppColors.TextPrimary
                 ),
                 shape = RoundedCornerShape(8.dp),
             ) {
-                Text("Edit",color = ChineseBlack, fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.action_edit),color = AppColors.TextPrimary, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -151,7 +153,7 @@ fun ScheduleItem(
 @Preview(showBackground = true)
 @Composable
 fun ScheduleItemPreview() {
-    ContactlyTheme {
+    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
         ScheduleItem(
             schedule = Schedule(
                 id = "1",

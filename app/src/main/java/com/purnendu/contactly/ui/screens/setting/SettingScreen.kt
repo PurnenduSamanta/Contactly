@@ -28,6 +28,8 @@ import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.theme.SettingSectionTitle
 import com.purnendu.contactly.utils.AppThemeMode
+import androidx.compose.ui.res.stringResource
+import com.purnendu.contactly.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +45,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Settings",
+                        stringResource(id = R.string.title_settings),
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Bold
@@ -53,7 +55,7 @@ fun SettingsScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(id = R.string.cd_back),
                             tint = SettingSectionTitle
                         )
                     }
@@ -73,7 +75,7 @@ fun SettingsScreen(
             item {
                 // Appearance Section Label
                 Text(
-                    "Appearance",
+                    stringResource(id = R.string.section_appearance),
                     color = SettingSectionTitle,
                     fontWeight = FontWeight.Companion.Bold,
                     fontSize = 18.sp,
@@ -90,13 +92,13 @@ fun SettingsScreen(
                     modifier = Modifier.Companion.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    ThemeChip("Light", currentTheme == AppThemeMode.LIGHT) {
+                    ThemeChip(stringResource(id = R.string.theme_light), currentTheme == AppThemeMode.LIGHT) {
                         onThemeChange(AppThemeMode.LIGHT)
                     }
-                    ThemeChip("Dark", currentTheme == AppThemeMode.DARK) {
+                    ThemeChip(stringResource(id = R.string.theme_dark), currentTheme == AppThemeMode.DARK) {
                         onThemeChange(AppThemeMode.DARK)
                     }
-                    ThemeChip("System default", currentTheme == AppThemeMode.SYSTEM) {
+                    ThemeChip(stringResource(id = R.string.theme_system), currentTheme == AppThemeMode.SYSTEM) {
                         onThemeChange(AppThemeMode.SYSTEM)
                     }
                 }
@@ -104,7 +106,7 @@ fun SettingsScreen(
 
             item {
                 Text(
-                    "About",
+                    stringResource(id = R.string.section_about),
                     color = SettingSectionTitle,
                     fontWeight = FontWeight.Companion.Bold,
                     fontSize = 18.sp,
@@ -114,17 +116,17 @@ fun SettingsScreen(
 
             // Version Row
             item {
-                SettingsRow(name = "Version", value = "1.0.0", onClick = null)
+                SettingsRow(name = stringResource(id = R.string.row_version), value = "1.0.0", onClick = null)
             }
 
             // Privacy Policy Row
             item {
-                SettingsRow(name = "Privacy Policy", value = null) { onPrivacyPolicyClick() }
+                SettingsRow(name = stringResource(id = R.string.row_privacy_policy), value = null) { onPrivacyPolicyClick() }
             }
 
             // Terms Row
             item {
-                SettingsRow(name = "Terms of Service", value = null) { onTermsClick() }
+                SettingsRow(name = stringResource(id = R.string.row_terms), value = null) { onTermsClick() }
             }
         }
     }

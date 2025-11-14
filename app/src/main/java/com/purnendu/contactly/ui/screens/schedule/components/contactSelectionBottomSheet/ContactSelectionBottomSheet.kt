@@ -26,7 +26,7 @@ import com.purnendu.contactly.ui.theme.SheetBackground
 fun ContactSelectionBottomSheet(
     modifier: Modifier = Modifier,
     contacts: List<Contact>,
-    onContactClick: () -> Unit
+    onContactClick: (Contact) -> Unit
 ) {
 
     var searchQuery by remember { mutableStateOf("") }
@@ -53,7 +53,7 @@ fun ContactSelectionBottomSheet(
 
                 LazyColumn {
                     items(filteredContacts) { contact ->
-                        ContactItem(contact = contact, onClick = {  })
+                        ContactItem(contact = contact, onClick = { onContactClick(contact) })
                     }
                 }
             }

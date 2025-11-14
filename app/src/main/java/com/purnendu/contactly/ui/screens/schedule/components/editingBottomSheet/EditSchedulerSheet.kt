@@ -32,6 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,7 +80,7 @@ fun EditScheduleSheet(
                 IconButton(onClick = onCancel) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(id = R.string.cd_back),
                         tint = SheetTitleColor
                     )
                 }
@@ -113,7 +114,7 @@ fun EditScheduleSheet(
                 item {
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Quick Edit Schedule", color = SheetTitleColor,
+                        stringResource(id = R.string.label_quick_edit), color = SheetTitleColor,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
@@ -124,7 +125,7 @@ fun EditScheduleSheet(
 
                 // Temporary Name Input
                 item {
-                    Text("Temporary Name", color = SheetTitleColor)
+                    Text(stringResource(id = R.string.label_temp_name), color = SheetTitleColor)
                     Spacer(Modifier.height(6.dp))
                     OutlinedTextField(
                         value = temporaryName,
@@ -143,7 +144,7 @@ fun EditScheduleSheet(
                 // Start Time
                 item {
                     LabeledTimeInput(
-                        label = "Start Time",
+                        label = stringResource(id = R.string.label_start_time),
                         value = startTime,
                         onClick = onStartTimeClick
                     )
@@ -153,7 +154,7 @@ fun EditScheduleSheet(
                 // End Time
                 item {
                     LabeledTimeInput(
-                        label = "End Time",
+                        label = stringResource(id = R.string.label_end_time),
                         value = endTime,
                         onClick = onEndTimeClick
                     )
@@ -173,14 +174,14 @@ fun EditScheduleSheet(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = CancelButtonColor),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("Cancel", color = SheetTitleColor) }
+                ) { Text(stringResource(id = R.string.action_cancel), color = SheetTitleColor) }
 
                 Button(
                     onClick = onSave,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = SaveButtonColor),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("Save") }
+                ) { Text(stringResource(id = R.string.action_save)) }
             }
 
             Spacer(Modifier.height(10.dp))

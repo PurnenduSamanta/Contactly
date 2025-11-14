@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.purnendu.contactly.R
 import com.purnendu.contactly.ui.theme.InputBorder
 import com.purnendu.contactly.ui.theme.SheetBackground
@@ -41,7 +42,7 @@ fun LabeledTimeInput(label: String, value: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = value.ifBlank { "Select $label" },
+            text = value.ifBlank { stringResource(id = R.string.label_select, label) },
             modifier = Modifier.weight(1f).padding(start = 14.dp),
             color = if (value.isBlank()) SubtitleTextColor else SheetTitleColor
         )

@@ -1,6 +1,7 @@
 package com.purnendu.contactly.ui.screens.schedule
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,6 +42,7 @@ import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.theme.AuroMetalSaurus
 import com.purnendu.contactly.ui.theme.ChineseBlack
+import com.purnendu.contactly.ui.theme.AppColors
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.theme.Crayola
 
@@ -59,14 +62,14 @@ fun SchedulesScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Schedules",
+                        text = stringResource(id = R.string.title_schedules),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Companion.Bold
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Companion.White,
-                    titleContentColor = ChineseBlack
+                    titleContentColor = AppColors.TextPrimary
                 )
             )
         },
@@ -80,7 +83,7 @@ fun SchedulesScreen(
                 )
                 {
                     Row(verticalAlignment = Alignment.Companion.CenterVertically) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Schedule")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.action_add_schedule))
 
                         Spacer(modifier = Modifier.Companion.width(10.dp))
 
@@ -134,22 +137,22 @@ fun SchedulesScreen(
                     Spacer(modifier = Modifier.Companion.height(10.dp))
 
                     Text(
-                        "No Schedules yet!",
+                        stringResource(id = R.string.empty_no_schedules),
                         fontWeight = FontWeight.Companion.Bold,
                         color = ChineseBlack
                     )
 
                     Spacer(modifier = Modifier.Companion.height(5.dp))
 
-                    Text("Get started by creating your first schedule", color = AuroMetalSaurus)
+                    Text(stringResource(id = R.string.empty_get_started), color = AppColors.TextSecondary)
 
                     Spacer(modifier = Modifier.Companion.height(10.dp))
 
                     Row(
                         modifier = Modifier.Companion.background(
-                            color = Crayola,
+                            color = AppColors.PrimaryAccent,
                             shape = RoundedCornerShape(10.dp)
-                        ).fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp),
+                        ).fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp).clickable { onAddClick() },
                         verticalAlignment = Alignment.Companion.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -162,7 +165,7 @@ fun SchedulesScreen(
                         Spacer(modifier = Modifier.Companion.width(10.dp))
 
                         Text(
-                            "Add Schedule",
+                            stringResource(id = R.string.action_add_schedule),
                             color = Color.Companion.White,
                             fontWeight = FontWeight.Companion.Bold
                         )
@@ -196,7 +199,7 @@ fun SchedulesScreen(
 @Preview(showBackground = true, heightDp = 800)
 @Composable
 fun SchedulesScreenPreview() {
-    ContactlyTheme {
+    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
         SchedulesScreen(
             schedules = listOf(
                 Schedule(
