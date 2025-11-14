@@ -14,10 +14,7 @@ val ChineseBlack = Color(0xFF121417)
 val AuroMetalSaurus = Color(0xFF61758A)
 val AntiFlashWhite = Color(0xFFF0F2F5)
 val Crayola = Color(0xFF1280ED)
-
-
-
-val AppBackground = Color(0xFFF8FBFC)   // Very light slate
+ 
 val SearchBarBackground = Color(0xFFE7EDF3)
 val SearchHintColor = Color(0xFF4C739A)
 val ContactNameColor = Color(0xFF0D141B)

@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -61,7 +62,7 @@ fun EditScheduleSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = { onCancel() },
-        containerColor = SheetBackground,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(
@@ -81,7 +82,7 @@ fun EditScheduleSheet(
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(id = R.string.cd_back),
-                        tint = SheetTitleColor
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -98,12 +99,12 @@ fun EditScheduleSheet(
                 Spacer(Modifier.width(10.dp))
 
                 Column {
-                    Text(contact.name, color = SheetTitleColor, fontWeight = FontWeight.SemiBold)
-                    Text(contact.phone, color = SubtitleTextColor, fontSize = 14.sp)
+                    Text(contact.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    Text(contact.phone, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 }
             }
 
-            HorizontalDivider(color = InputBorder)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
             LazyColumn(
                 modifier = Modifier
@@ -114,7 +115,7 @@ fun EditScheduleSheet(
                 item {
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        stringResource(id = R.string.label_quick_edit), color = SheetTitleColor,
+                        stringResource(id = R.string.label_quick_edit), color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
@@ -125,7 +126,7 @@ fun EditScheduleSheet(
 
                 // Temporary Name Input
                 item {
-                    Text(stringResource(id = R.string.label_temp_name), color = SheetTitleColor)
+                    Text(stringResource(id = R.string.label_temp_name), color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(6.dp))
                     OutlinedTextField(
                         value = temporaryName,
@@ -172,16 +173,16 @@ fun EditScheduleSheet(
                 OutlinedButton(
                     onClick = onCancel,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = CancelButtonColor),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text(stringResource(id = R.string.action_cancel), color = SheetTitleColor) }
+                ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onSurface) }
 
                 Button(
                     onClick = onSave,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = SaveButtonColor),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text(stringResource(id = R.string.action_save)) }
+                ) { Text(stringResource(id = R.string.action_save), color = MaterialTheme.colorScheme.onPrimary) }
             }
 
             Spacer(Modifier.height(10.dp))

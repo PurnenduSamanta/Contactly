@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.ui.theme.SheetBackground
+ 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +40,7 @@ fun ContactSelectionBottomSheet(
     ModalBottomSheet(
         onDismissRequest = { },
         shape = RoundedCornerShape(15.dp),
-        containerColor = SheetBackground,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = modifier
     )
     {

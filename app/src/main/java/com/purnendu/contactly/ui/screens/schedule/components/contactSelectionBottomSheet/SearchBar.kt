@@ -9,13 +9,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.purnendu.contactly.ui.theme.ContactNameColor
-import com.purnendu.contactly.ui.theme.SearchBarBackground
-import com.purnendu.contactly.ui.theme.SearchHintColor
+ 
 
 @Composable
 fun SearchBar(
@@ -25,18 +24,18 @@ fun SearchBar(
     TextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text("Search contacts", color = SearchHintColor) },
+        placeholder = { Text("Search contacts", color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
-                tint = SearchHintColor
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = SearchBarBackground,
-            unfocusedContainerColor = SearchBarBackground,
-            cursorColor = ContactNameColor,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            cursorColor = MaterialTheme.colorScheme.onSurface,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent
         ),

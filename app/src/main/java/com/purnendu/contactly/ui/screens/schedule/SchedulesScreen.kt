@@ -31,7 +31,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,9 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
-import com.purnendu.contactly.ui.theme.AuroMetalSaurus
-import com.purnendu.contactly.ui.theme.ChineseBlack
-import com.purnendu.contactly.ui.theme.AppColors
+import com.purnendu.contactly.ui.theme.Crayola
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.theme.Crayola
 
@@ -68,18 +66,18 @@ fun SchedulesScreen(
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Companion.White,
-                    titleContentColor = AppColors.TextPrimary
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
-        containerColor = Color.Companion.White,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             if (schedules.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = onAddClick,
-                    containerColor = Crayola,
-                    contentColor = Color.Companion.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
                 {
                     Row(verticalAlignment = Alignment.Companion.CenterVertically) {
@@ -89,7 +87,7 @@ fun SchedulesScreen(
 
                         Text(
                             "Add Schedule",
-                            color = Color.Companion.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Companion.Bold
                         )
 
@@ -118,9 +116,8 @@ fun SchedulesScreen(
 
                     Box(
                         modifier = Modifier.Companion.background(
-                            color = Color.Companion.Gray.copy(
-                                alpha = 0.1f
-                            ), shape = CircleShape
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = CircleShape
                         ).padding(30.dp), contentAlignment = Alignment.Companion.Center
                     )
                     {
@@ -139,18 +136,18 @@ fun SchedulesScreen(
                     Text(
                         stringResource(id = R.string.empty_no_schedules),
                         fontWeight = FontWeight.Companion.Bold,
-                        color = ChineseBlack
+                        color = MaterialTheme.colorScheme.onBackground
                     )
 
                     Spacer(modifier = Modifier.Companion.height(5.dp))
 
-                    Text(stringResource(id = R.string.empty_get_started), color = AppColors.TextSecondary)
+                    Text(stringResource(id = R.string.empty_get_started), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     Spacer(modifier = Modifier.Companion.height(10.dp))
 
                     Row(
                         modifier = Modifier.Companion.background(
-                            color = AppColors.PrimaryAccent,
+                            color = MaterialTheme.colorScheme.primary,
                             shape = RoundedCornerShape(10.dp)
                         ).fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp).clickable { onAddClick() },
                         verticalAlignment = Alignment.Companion.CenterVertically,
@@ -159,14 +156,14 @@ fun SchedulesScreen(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Add Schedule",
-                            tint = Color.Companion.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
 
                         Spacer(modifier = Modifier.Companion.width(10.dp))
 
                         Text(
                             stringResource(id = R.string.action_add_schedule),
-                            color = Color.Companion.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Companion.Bold
                         )
 

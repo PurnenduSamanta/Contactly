@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.google.ksp)
 }
 
+buildDir = file("build_app5")
+
 android {
     namespace = "com.purnendu.contactly"
     compileSdk {

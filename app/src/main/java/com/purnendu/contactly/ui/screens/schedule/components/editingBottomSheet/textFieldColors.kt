@@ -2,21 +2,18 @@ package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
-import com.purnendu.contactly.ui.theme.InputBorder
-import com.purnendu.contactly.ui.theme.SheetBackground
-import com.purnendu.contactly.ui.theme.SheetTitleColor
-import com.purnendu.contactly.ui.theme.SubtitleTextColor
+import androidx.compose.material3.MaterialTheme
 
 @Composable
  fun customTextFieldColors() = OutlinedTextFieldDefaults.colors(
 
-    focusedContainerColor = SheetBackground,
-    unfocusedContainerColor = SheetBackground,
-    focusedTextColor = SheetTitleColor,
-    unfocusedTextColor = SheetTitleColor,
-    disabledTextColor = SheetTitleColor,
-    focusedPlaceholderColor = SubtitleTextColor,
-    unfocusedPlaceholderColor = SubtitleTextColor,
-    focusedBorderColor = InputBorder,
-    unfocusedBorderColor = InputBorder
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedBorderColor = MaterialTheme.colorScheme.outline,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline
 )

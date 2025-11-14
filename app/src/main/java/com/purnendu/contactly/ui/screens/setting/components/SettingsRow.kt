@@ -7,17 +7,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.purnendu.contactly.ui.theme.RowArrowColor
-import com.purnendu.contactly.ui.theme.SettingSectionTitle
+ 
 
 @Composable
 fun SettingsRow(
@@ -33,12 +31,12 @@ fun SettingsRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(name, fontSize = 16.sp, color = SettingSectionTitle)
+        Text(name, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
 
         if (value != null) {
-            Text(value, fontSize = 16.sp, color = SettingSectionTitle)
+            Text(value, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         } else {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = RowArrowColor)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

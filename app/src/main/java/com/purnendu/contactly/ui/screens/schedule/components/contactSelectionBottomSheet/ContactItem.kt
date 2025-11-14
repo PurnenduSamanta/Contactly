@@ -22,8 +22,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
-import com.purnendu.contactly.ui.theme.ContactNameColor
-import com.purnendu.contactly.ui.theme.ContactNumberColor
+ 
 
 @Composable
 fun ContactItem(
@@ -52,12 +51,12 @@ fun ContactItem(
         Column {
             Text(
                 text = contact.name,
-                color = ContactNameColor,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
             )
             Text(
                 text = contact.phone,
-                color = ContactNumberColor,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }

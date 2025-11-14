@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,11 +57,11 @@ fun SettingsScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cd_back),
-                            tint = SettingSectionTitle
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Companion.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -69,14 +70,14 @@ fun SettingsScreen(
             modifier = Modifier.Companion
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color.Companion.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
 
             item {
                 // Appearance Section Label
                 Text(
                     stringResource(id = R.string.section_appearance),
-                    color = SettingSectionTitle,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Companion.Bold,
                     fontSize = 18.sp,
                     modifier = Modifier.Companion.padding(
@@ -107,7 +108,7 @@ fun SettingsScreen(
             item {
                 Text(
                     stringResource(id = R.string.section_about),
-                    color = SettingSectionTitle,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Companion.Bold,
                     fontSize = 18.sp,
                     modifier = Modifier.Companion.padding(start = 16.dp, top = 28.dp, bottom = 6.dp)
