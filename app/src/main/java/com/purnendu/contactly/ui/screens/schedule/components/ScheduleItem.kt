@@ -29,10 +29,12 @@ import com.purnendu.contactly.ui.theme.ChineseBlack
  
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import androidx.compose.ui.res.stringResource
+import coil.compose.AsyncImage
 
 @Composable
 fun ScheduleItem(
     schedule: Schedule,
+    avatarUri: String? = null,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -88,19 +90,32 @@ fun ScheduleItem(
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        schedule.avatarResId?.let {
-                            Image(
-                                painter = painterResource(id = it),
-                                contentDescription = "Avatar for ${schedule.name}",
-                                modifier = Modifier.size(width = 119.dp,height = 58.dp),
-                                contentScale = ContentScale.Crop
-                            )
-                        } ?: Image(
-                            modifier = Modifier.size(width = 119.dp,height = 58.dp),
-                            painter = painterResource(id =  R.drawable.avatar_placeholder),
-                            contentDescription = "Avatar placeholder",
-                            contentScale = ContentScale.Crop
-                        )
+                        when {
+                            schedule.avatarResId != null -> {
+                                Image(
+                                    painter = painterResource(id = schedule.avatarResId!!),
+                                    contentDescription = "Avatar for ${schedule.name}",
+                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            avatarUri != null && avatarUri.isNotBlank() -> {
+                                AsyncImage(
+                                    model = avatarUri,
+                                    contentDescription = "Avatar for ${schedule.name}",
+                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            else -> {
+                                Image(
+                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
+                                    painter = painterResource(id =  R.drawable.avatar_placeholder),
+                                    contentDescription = "Avatar placeholder",
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
                     }
                 }
 

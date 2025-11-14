@@ -48,6 +48,7 @@ import com.purnendu.contactly.ui.theme.Crayola
 @Composable
 fun SchedulesScreen(
     schedules: List<Schedule>,
+    resolveAvatar: (Long) -> String? = { _ -> null },
     onEditClick: (Schedule) -> Unit,
     onDeleteClick: (Schedule) -> Unit,
     onAddClick: () -> Unit,
@@ -184,6 +185,7 @@ fun SchedulesScreen(
                 items(schedules) { schedule ->
                     ScheduleItem(
                         schedule = schedule,
+                        avatarUri = schedule.contactId?.let { resolveAvatar(it) },
                         onEditClick = { onEditClick(schedule) },
                         onDeleteClick = { onDeleteClick(schedule) }
                     )

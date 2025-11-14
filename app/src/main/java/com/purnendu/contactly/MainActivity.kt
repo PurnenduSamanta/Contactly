@@ -89,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     if (selectedTab == 0) {
                         SchedulesScreen(
                             schedules = schedules,
+                            resolveAvatar = { id -> schedulesViewModel.contactForId(id)?.image as String? },
                             onEditClick = { sched ->
                                 val cid = sched.contactId
                                 if (cid != null) {
@@ -178,7 +179,7 @@ class MainActivity : ComponentActivity() {
                         onCancel = { showEditSheet = false },
                         onSave = {
                             val c = selectedContact
-                            if (c != null && temporaryName.isNotBlank() && startMillis > System.currentTimeMillis() && endMillis > startMillis) {
+                            if (c != null && temporaryName.isNotBlank() && startMillis > 0L && endMillis > startMillis) {
                                 val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == c.id }?.id?.toLongOrNull()
                                 if (editingId != null) {
                                     schedulesViewModel.updateSchedule(editingId, c, temporaryName, startMillis, endMillis)
