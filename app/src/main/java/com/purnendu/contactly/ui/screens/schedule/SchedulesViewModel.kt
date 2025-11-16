@@ -1,6 +1,9 @@
 package com.purnendu.contactly.ui.screens.schedule
 
 import android.app.Application
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.data.ContactsRepository
@@ -8,15 +11,11 @@ import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.work.AliasWorker
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
+import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -53,7 +52,13 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis
             )
-            scheduleWorkers(contactId = id, originalName = contact.name, temporaryName = temporaryName, startAtMillis = startAtMillis, endAtMillis = endAtMillis)
+            scheduleAlarms(
+                contactId = id,
+                originalName = contact.name,
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis
+            )
         }
     }
 
@@ -81,44 +86,76 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
                 endAtMillis = endAtMillis
             )
             schedulesRepo.update(updated)
-            scheduleWorkers(contactId = contact.id ?: return@launch, originalName = contact.name, temporaryName = temporaryName, startAtMillis = startAtMillis, endAtMillis = endAtMillis)
+            scheduleAlarms(
+                contactId = contact.id ?: return@launch,
+                originalName = contact.name,
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis
+            )
         }
     }
 }
 
-private fun SchedulesViewModel.scheduleWorkers(
+private fun SchedulesViewModel.scheduleAlarms(
     contactId: Long,
     originalName: String,
     temporaryName: String,
     startAtMillis: Long,
     endAtMillis: Long
 ) {
+    val context = getApplication<Application>()
+    val alarmManager = context.getSystemService(AlarmManager::class.java)
+
     val now = System.currentTimeMillis()
-    val applyDelay = (startAtMillis - now).coerceAtLeast(0L)
-    val revertDelay = (endAtMillis - now).coerceAtLeast(0L)
+    val applyAt = startAtMillis.coerceAtLeast(now)
+    val revertAt = endAtMillis.coerceAtLeast(now)
 
-    val applyData = Data.Builder()
-        .putString(AliasWorker.KEY_OPERATION, AliasWorker.OP_APPLY)
-        .putLong(AliasWorker.KEY_CONTACT_ID, contactId)
-        .putString(AliasWorker.KEY_NAME, temporaryName)
-        .build()
+    val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
+        action = AliasAlarmReceiver.ACTION_ALIAS
+        putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
+        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
+        putExtra(AliasAlarmReceiver.EXTRA_NAME, temporaryName)
+    }
+    val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
+        action = AliasAlarmReceiver.ACTION_ALIAS
+        putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
+        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
+        putExtra(AliasAlarmReceiver.EXTRA_NAME, originalName)
+    }
 
-    val revertData = Data.Builder()
-        .putString(AliasWorker.KEY_OPERATION, AliasWorker.OP_REVERT)
-        .putLong(AliasWorker.KEY_CONTACT_ID, contactId)
-        .putString(AliasWorker.KEY_NAME, originalName)
-        .build()
+    val applyReqCode = (contactId % Int.MAX_VALUE).toInt()
+    val revertReqCode = ((contactId % Int.MAX_VALUE).toInt() + 1)
 
-    val applyReq = OneTimeWorkRequestBuilder<AliasWorker>()
-        .setInitialDelay(applyDelay, TimeUnit.MILLISECONDS)
-        .setInputData(applyData)
-        .build()
+    val applyPending = PendingIntent.getBroadcast(
+        context,
+        applyReqCode,
+        applyIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val revertPending = PendingIntent.getBroadcast(
+        context,
+        revertReqCode,
+        revertIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
-    val revertReq = OneTimeWorkRequestBuilder<AliasWorker>()
-        .setInitialDelay(revertDelay, TimeUnit.MILLISECONDS)
-        .setInputData(revertData)
-        .build()
-
-    WorkManager.getInstance(getApplication()).enqueue(applyReq)
-    WorkManager.getInstance(getApplication()).enqueue(revertReq)
+    try {
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            applyAt,
+            applyPending
+        )
+    } catch (_: SecurityException) {
+        alarmManager.set(AlarmManager.RTC_WAKEUP, applyAt, applyPending)
+    }
+    try {
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            revertAt,
+            revertPending
+        )
+    } catch (_: SecurityException) {
+        alarmManager.set(AlarmManager.RTC_WAKEUP, revertAt, revertPending)
+    }
 }

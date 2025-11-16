@@ -8,6 +8,7 @@ import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Schedule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
 class SchedulesRepository private constructor(
     private val dao: ScheduleDao
@@ -49,6 +50,8 @@ class SchedulesRepository private constructor(
     suspend fun deleteById(id: Long) = dao.deleteById(id)
 
     suspend fun getById(id: Long): ScheduleEntity? = dao.getById(id)
+
+    suspend fun getAllEntities(): List<ScheduleEntity> = dao.getAll().first()
 
     companion object {
         @Volatile private var INSTANCE: SchedulesRepository? = null

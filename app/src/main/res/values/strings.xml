@@ -32,4 +32,5 @@
     <string name="toast_schedule_saved">Schedule saved</string>
     <string name="toast_grant_write">Saved. Grant Write Contacts to apply alias at time.</string>
     <string name="toast_complete_fields">Please complete all fields</string>
+    <string name="toast_enable_exact_alarm">Enable exact alarms for precise scheduling</string>
 </resources>

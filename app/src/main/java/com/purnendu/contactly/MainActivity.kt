@@ -1,6 +1,8 @@
 package com.purnendu.contactly
 
 import android.os.Bundle
+import android.provider.Settings
+import android.app.AlarmManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -180,6 +182,13 @@ class MainActivity : ComponentActivity() {
                         onSave = {
                             val c = selectedContact
                             if (c != null && temporaryName.isNotBlank() && startMillis > 0L && endMillis > startMillis) {
+                                val am = getSystemService(AlarmManager::class.java)
+                                val exactOk = if (android.os.Build.VERSION.SDK_INT >= 31) am.canScheduleExactAlarms() else true
+                                if (!exactOk) {
+                                    Toast.makeText(this, getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
+                                    val i = android.content.Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                    startActivity(i)
+                                }
                                 val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == c.id }?.id?.toLongOrNull()
                                 if (editingId != null) {
                                     schedulesViewModel.updateSchedule(editingId, c, temporaryName, startMillis, endMillis)
