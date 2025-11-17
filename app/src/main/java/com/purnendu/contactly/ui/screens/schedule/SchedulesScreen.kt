@@ -47,6 +47,7 @@ import com.purnendu.contactly.ui.theme.Crayola
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchedulesScreen(
+    modifier: Modifier = Modifier,
     schedules: List<Schedule>,
     resolveAvatar: (Long) -> String? = { _ -> null },
     onEditClick: (Schedule) -> Unit,
@@ -54,7 +55,6 @@ fun SchedulesScreen(
     onAddClick: () -> Unit,
     onHomeClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier.Companion
 ) {
     Scaffold(
         topBar = {
