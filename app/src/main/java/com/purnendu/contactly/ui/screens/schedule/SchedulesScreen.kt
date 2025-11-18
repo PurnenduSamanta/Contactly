@@ -62,13 +62,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun SchedulesScreen(
     modifier: Modifier = Modifier,
-    schedulesViewModel: SchedulesViewModel,
-    onSettingClick: () -> Unit,
+    schedulesViewModel: SchedulesViewModel = viewModel(),
     onShowToast: (String) -> Unit,
     onScheduleExactAlarm: () -> Unit,
     onTimePick: (((Long, String) -> Unit) -> Unit)
 ) {
-
     val context = LocalContext.current
     val schedules by schedulesViewModel.schedules.collectAsState()
     val contacts by schedulesViewModel.contacts.collectAsState()
@@ -363,7 +361,6 @@ fun SchedulesScreenPreview() {
     ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
         SchedulesScreen(
             schedulesViewModel = viewModel(),
-            onSettingClick = {},
             onShowToast = {},
             onScheduleExactAlarm = {},
             onTimePick = {}

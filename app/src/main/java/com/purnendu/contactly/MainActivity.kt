@@ -27,13 +27,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
-import com.purnendu.contactly.ui.screens.schedule.SchedulesViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 
 
 class MainActivity : ComponentActivity() {
-    private val schedulesViewModel: SchedulesViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,8 +94,6 @@ class MainActivity : ComponentActivity() {
             ) {
                 composable<Screen.Schedules> {
                     SchedulesScreen(
-                        schedulesViewModel = schedulesViewModel,
-                        onSettingClick = { navController.navigate(Screen.Settings) },
                         onShowToast = {message->
                             Toast.makeText(this@MainActivity,message,Toast.LENGTH_SHORT).show()
                         },
@@ -110,7 +107,7 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         onTimePick = { onPicked->
-                            pickTime(onPicked)
+                            pickTime(this@MainActivity,onPicked)
                         }
                     )
                 }
@@ -135,29 +132,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-
-    private fun pickTime(onPicked: (Long, String) -> Unit) {
-        val now = java.util.Calendar.getInstance()
-        val dlg = android.app.TimePickerDialog(
-            this,
-            { _, hourOfDay, minute ->
-                val cal = java.util.Calendar.getInstance().apply {
-                    set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
-                    set(java.util.Calendar.MINUTE, minute)
-                    set(java.util.Calendar.SECOND, 0)
-                    set(java.util.Calendar.MILLISECOND, 0)
-                }
-                val millis = cal.timeInMillis
-                val label = String.format("%02d:%02d", hourOfDay, minute)
-                onPicked(millis, label)
-            },
-            now.get(java.util.Calendar.HOUR_OF_DAY),
-            now.get(java.util.Calendar.MINUTE),
-            true
-        )
-        dlg.show()
     }
 }
                 
