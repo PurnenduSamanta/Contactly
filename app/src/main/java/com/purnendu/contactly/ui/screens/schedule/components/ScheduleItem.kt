@@ -33,11 +33,11 @@ import coil.compose.AsyncImage
 
 @Composable
 fun ScheduleItem(
+    modifier: Modifier = Modifier,
     schedule: Schedule,
     avatarUri: String? = null,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onEditClick: (schedule: Schedule) -> Unit,
+    onDeleteClick: (schedule: Schedule) -> Unit,
 ) {
 
     Column(
@@ -133,7 +133,7 @@ fun ScheduleItem(
             horizontalArrangement = Arrangement.SpaceBetween)
         {
             Button(
-                onClick = onDeleteClick,
+                onClick = {onDeleteClick(schedule)},
                 modifier = Modifier
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -146,7 +146,7 @@ fun ScheduleItem(
             }
 
             Button(
-                onClick = onEditClick,
+                onClick = {onEditClick(schedule)},
                 modifier = Modifier
                     .height(40.dp),
                 colors = ButtonDefaults.buttonColors(
