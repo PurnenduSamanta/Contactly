@@ -15,7 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
- 
+import com.purnendu.contactly.utils.expressiveScale
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+
 
 @Composable
 fun SettingsRow(
@@ -23,20 +28,44 @@ fun SettingsRow(
     value: String? = null,
     onClick: (() -> Unit)?
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isClickable = onClick != null
+    val scale by animateFloatAsState(
+        targetValue = if (isClickable) 0.98f else 1f,
+        label = "row-scale"
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .expressiveScale(if (isClickable) scale else 1f) // Add expressive press animation
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = isClickable
+            ) { onClick?.invoke() }
+            .padding(horizontal = 16.dp, vertical = 16.dp), // Slightly increased padding for better touch area
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(name, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            name,
+            style = MaterialTheme.typography.bodyLarge, // Using expressive typography
+            color = MaterialTheme.colorScheme.onSurface
+        )
 
         if (value != null) {
-            Text(value, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium, // Using expressive typography
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

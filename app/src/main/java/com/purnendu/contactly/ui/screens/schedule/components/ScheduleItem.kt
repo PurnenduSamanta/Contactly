@@ -26,10 +26,18 @@ import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.AntiFlashWhite
 import com.purnendu.contactly.ui.theme.ChineseBlack
- 
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
+import com.purnendu.contactly.utils.expressiveScale
+import com.purnendu.contactly.utils.expressiveElevation
+import com.purnendu.contactly.utils.rememberExpressiveAnimation
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 
 @Composable
 fun ScheduleItem(
@@ -39,55 +47,59 @@ fun ScheduleItem(
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val expressiveScale = rememberExpressiveAnimation(
+        targetValue = if (isPressed) 0.97f else 1f
+    )
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ){
-
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .expressiveScale(expressiveScale.value)
+    ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp), // Enhanced rounded corners for Material 3 Expressive
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 2.dp
+                defaultElevation = 4.dp // Slightly increased elevation for depth
             ),
+            modifier = Modifier.expressiveElevation(8.dp) // Expressive elevation animation
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-            )
-            {
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
-                )
-                {
+                ) {
                     // Contact info
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = schedule.name,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.titleLarge, // Using expressive typography
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(id = R.string.original_name, schedule.originalName),
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.bodyMedium, // Using expressive typography
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    // Avatar
+                    // Avatar with expressive rounded corners
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp)) // Enhanced rounded corners
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         when {
@@ -95,7 +107,7 @@ fun ScheduleItem(
                                 Image(
                                     painter = painterResource(id = schedule.avatarResId!!),
                                     contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
+                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -103,14 +115,14 @@ fun ScheduleItem(
                                 AsyncImage(
                                     model = avatarUri,
                                     contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
+                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
                                     contentScale = ContentScale.Crop
                                 )
                             }
                             else -> {
                                 Image(
-                                    modifier = Modifier.size(width = 119.dp,height = 58.dp),
-                                    painter = painterResource(id =  R.drawable.avatar_placeholder),
+                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
+                                    painter = painterResource(id = R.drawable.avatar_placeholder),
                                     contentDescription = "Avatar placeholder",
                                     contentScale = ContentScale.Crop
                                 )
@@ -118,52 +130,57 @@ fun ScheduleItem(
                         }
                     }
                 }
-
-
-
-
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Action buttons
+        // Action buttons with expressive styling
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween)
-        {
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Button(
-                onClick = {onDeleteClick(schedule)},
+                onClick = { onDeleteClick(schedule) },
                 modifier = Modifier
-                    .height(40.dp),
+                    .height(40.dp)
+                    .expressiveScale(if (isPressed) 0.95f else 1f), // Expressive press animation
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
+                interactionSource = interactionSource
             ) {
-                Text(stringResource(id = R.string.action_delete), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(id = R.string.action_delete),
+                    style = MaterialTheme.typography.labelLarge, // Using expressive typography
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
             }
 
             Button(
-                onClick = {onEditClick(schedule)},
+                onClick = { onEditClick(schedule) },
                 modifier = Modifier
-                    .height(40.dp),
+                    .height(40.dp)
+                    .expressiveScale(if (isPressed) 0.95f else 1f), // Expressive press animation
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
+                interactionSource = interactionSource
             ) {
-                Text(stringResource(id = R.string.action_edit),color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(id = R.string.action_edit),
+                    style = MaterialTheme.typography.labelLarge, // Using expressive typography
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
-
-
-
     }
-
-
 }
 
 @Preview(showBackground = true)

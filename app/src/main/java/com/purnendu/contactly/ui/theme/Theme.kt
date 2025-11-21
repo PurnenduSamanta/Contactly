@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.purnendu.contactly.utils.AppThemeMode
 
 private val DarkColorScheme = darkColorScheme(
@@ -36,6 +37,15 @@ private val LightColorScheme = lightColorScheme(
     outline = InputBorder
 )
 
+// Define Material 3 Expressive shapes
+val ContactlyShapes = androidx.compose.material3.Shapes(
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+)
+
 @Composable
 fun ContactlyTheme(
     appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
@@ -57,5 +67,10 @@ fun ContactlyTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        shapes = ContactlyShapes,
+        content = content
+    )
 }
