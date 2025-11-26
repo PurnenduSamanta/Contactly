@@ -1,0 +1,68 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Circular background for icon to stand out on light backgrounds -->
+    <path
+        android:pathData="M54,54 m-25,0 a25,25 0 1,1 50,0 a25,25 0 1,1 -50,0"
+        android:fillColor="#CCFFFFFF">
+    </path>
+    
+    <!-- Circular time indicator (clock) -->
+    <path
+        android:pathData="M54,54 m-20,0 a20,20 0 1,1 40,0 a20,20 0 1,1 -40,0"
+        android:fillColor="#00000000"
+        android:strokeWidth="2"
+        android:strokeColor="#2196F3">
+    </path>
+    
+    <!-- Clock hands -->
+    <path
+        android:pathData="M54,54 L54,38"
+        android:strokeWidth="2"
+        android:strokeColor="#2196F3">
+    </path>
+    
+    <path
+        android:pathData="M54,54 L64,50"
+        android:strokeWidth="2"
+        android:strokeColor="#2196F3">
+    </path>
+    
+    <!-- Contact silhouette -->
+    <path
+        android:pathData="M54,48 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
+        android:fillColor="#2196F3">
+    </path>
+    
+    <path
+        android:pathData="M48,60 L48,72 C48,75 50,78 54,78 C58,78 60,75 60,72 L60,60 Z"
+        android:fillColor="#2196F3">
+    </path>
+    
+    <!-- Connection indicator dots -->
+    <path
+        android:pathData="M74,48 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+        android:fillColor="#FF9800">
+    </path>
+    
+    <path
+        android:pathData="M74,60 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+        android:fillColor="#FF9800">
+    </path>
+    
+    <path
+        android:pathData="M74,72 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+        android:fillColor="#FF9800">
+    </path>
+    
+    <!-- Highlight for material effect -->
+    <path
+        android:pathData="M50,46 L58,46 L58,48 L50,48 Z"
+        android:fillColor="#44FFFFFF">
+    </path>
+    
+</vector>
