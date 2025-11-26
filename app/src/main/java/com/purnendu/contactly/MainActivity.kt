@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import androidx.compose.material3.NavigationBar
@@ -30,13 +31,25 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
+import com.purnendu.contactly.ui.main.MainActivityViewModel
 
 
 class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val mainActivityViewModel: MainActivityViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install the splash screen
+        val splashScreen = installSplashScreen()
+
+        // Keep the splash screen visible until the app is ready
+        splashScreen.setKeepOnScreenCondition {
+            !mainActivityViewModel.isAppReady.value
+        }
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             val themeMode by settingsViewModel.theme.collectAsState()
             ContactlyTheme(appThemeMode = themeMode) {
