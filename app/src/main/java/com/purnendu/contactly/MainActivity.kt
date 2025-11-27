@@ -31,7 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
-import com.purnendu.contactly.ui.main.MainActivityViewModel
+import com.purnendu.contactly.MainActivityViewModel
 
 
 class MainActivity : ComponentActivity() {

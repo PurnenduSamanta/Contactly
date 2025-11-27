@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.local.room.AppDatabase
 import kotlinx.coroutines.runBlocking
 
 class RescheduleAlarmsReceiver : BroadcastReceiver() {
@@ -16,7 +17,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
         val now = System.currentTimeMillis()
 
         runBlocking {
-            val repo = SchedulesRepository.get(context)
+            val repo = SchedulesRepository(AppDatabase.getDataBase(context))
             val entities = repo.getAllEntities()
             entities.forEach { e ->
                 if (e.startAtMillis > now) {

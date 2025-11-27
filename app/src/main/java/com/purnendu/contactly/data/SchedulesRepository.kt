@@ -1,19 +1,14 @@
 package com.purnendu.contactly.data
 
-import android.content.Context
-import androidx.room.Room
 import com.purnendu.contactly.data.local.room.AppDatabase
-import com.purnendu.contactly.data.local.room.ScheduleDao
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Schedule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 
-class SchedulesRepository private constructor(
-    private val dao: ScheduleDao
-) {
-    fun getSchedules(): Flow<List<Schedule>> = dao.getAll().map { list ->
+class SchedulesRepository(private val database: AppDatabase) {
+    fun getSchedules(): Flow<List<Schedule>> = database.scheduleDao().getAll().map { list ->
         list.map { e ->
             Schedule(
                 id = e.scheduleId.toString(),
@@ -33,7 +28,7 @@ class SchedulesRepository private constructor(
         startAtMillis: Long,
         endAtMillis: Long
     ): Long {
-        return dao.insert(
+        return database.scheduleDao().insert(
             ScheduleEntity(
                 contactId = contactId,
                 contactLookupKey = contactLookupKey,
@@ -45,27 +40,13 @@ class SchedulesRepository private constructor(
         )
     }
 
-    suspend fun update(entity: ScheduleEntity) = dao.update(entity)
+    suspend fun update(entity: ScheduleEntity) = database.scheduleDao().update(entity)
 
-    suspend fun deleteById(id: Long) = dao.deleteById(id)
+    suspend fun deleteById(id: Long) = database.scheduleDao().deleteById(id)
 
-    suspend fun getById(id: Long): ScheduleEntity? = dao.getById(id)
+    suspend fun getById(id: Long): ScheduleEntity? = database.scheduleDao().getById(id)
 
-    suspend fun getAllEntities(): List<ScheduleEntity> = dao.getAll().first()
+    suspend fun getAllEntities(): List<ScheduleEntity> = database.scheduleDao().getAll().first()
 
-    companion object {
-        @Volatile private var INSTANCE: SchedulesRepository? = null
 
-        fun get(context: Context): SchedulesRepository =
-            INSTANCE ?: synchronized(this) {
-                val db = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "contactly.db"
-                ).build()
-                val repo = SchedulesRepository(db.scheduleDao())
-                INSTANCE = repo
-                repo
-            }
-    }
 }

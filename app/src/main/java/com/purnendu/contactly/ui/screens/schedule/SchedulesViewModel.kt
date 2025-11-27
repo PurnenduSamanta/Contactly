@@ -12,7 +12,7 @@ import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import java.util.concurrent.TimeUnit
+import com.purnendu.contactly.data.local.room.AppDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
-    private val schedulesRepo = SchedulesRepository.get(app)
+    private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(app))
     private val contactsRepo = ContactsRepository.get(app)
 
     val schedules: StateFlow<List<Schedule>> = schedulesRepo
