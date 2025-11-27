@@ -1,9 +1,12 @@
 package com.purnendu.contactly
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.data.SchedulesRepository
@@ -15,9 +18,17 @@ import kotlinx.coroutines.launch
 
 class MainActivityViewModel(private val context: Application) : AndroidViewModel(context) {
 
-
     private val _isAppReady = MutableStateFlow(false)
     val isAppReady: StateFlow<Boolean> = _isAppReady
+
+    private val _showExactAlarmPermissionDialog = MutableStateFlow(false)
+    val showExactAlarmPermissionDialog: StateFlow<Boolean> = _showExactAlarmPermissionDialog
+
+    private val _showContactPermissionDialog = MutableStateFlow(false)
+    val showContactPermissionDialog: StateFlow<Boolean> = _showContactPermissionDialog
+
+    private val _shouldCloseApp = MutableStateFlow(false)
+    val shouldCloseApp: StateFlow<Boolean> = _shouldCloseApp
 
     init {
         viewModelScope.launch {
@@ -25,15 +36,38 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
                 checkCriticalPermissions()
                 initializeDatabase()
                 _isAppReady.value = true
+
+                // Check if both permissions are denied and mark to close app
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val canScheduleExactAlarms = if (Build.VERSION.SDK_INT >= 31) {
+                    alarmManager.canScheduleExactAlarms()
+                } else {
+                    true // Exact alarms permission not required on older Android versions
+                }
+
+                val hasContactPermissions = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_CONTACTS
+                ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.WRITE_CONTACTS
+                ) == PackageManager.PERMISSION_GRANTED
+
+                if (!canScheduleExactAlarms || !hasContactPermissions) {
+                    // Show dialogs first, then if denied, close app
+                }
             } catch (e: Exception) {
                 _isAppReady.value = true
             }
         }
+    }
 
+    fun onPermissionDialogDismissed() {
+        // When user dismisses the permission dialog, close the app
+        _shouldCloseApp.value = true
     }
 
     private suspend fun initializeDatabase() {
-
         val database = AppDatabase.getDataBase(context)
         val repo = SchedulesRepository(database)
         repo.getAllEntities()
@@ -48,9 +82,24 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
             true // Exact alarms permission not required on older Android versions
         }
 
-        if (!canScheduleExactAlarms) {
-            // In a real app, you might want to direct users to enable exact alarms in settings
-        }
+        val hasContactPermissions = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        // Update dialog states
+        _showExactAlarmPermissionDialog.value = !canScheduleExactAlarms
+        _showContactPermissionDialog.value = !hasContactPermissions
     }
 
+    fun dismissExactAlarmPermissionDialog() {
+        _showExactAlarmPermissionDialog.value = false
+    }
+
+    fun dismissContactPermissionDialog() {
+        _showContactPermissionDialog.value = false
+    }
 }

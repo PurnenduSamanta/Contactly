@@ -1,5 +1,6 @@
 package com.purnendu.contactly
 
+import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.app.AlarmManager
@@ -31,7 +32,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
-import com.purnendu.contactly.MainActivityViewModel
+import com.purnendu.contactly.ui.theme.ThemedPermissionDialog
 
 
 class MainActivity : ComponentActivity() {
@@ -65,6 +66,60 @@ class MainActivity : ComponentActivity() {
             Screen.Schedules,
             Screen.Settings,
         )
+
+        // Show permission dialogs if needed
+        val showExactAlarmDialog by mainActivityViewModel.showExactAlarmPermissionDialog.collectAsState()
+        val showContactDialog by mainActivityViewModel.showContactPermissionDialog.collectAsState()
+
+        if (showExactAlarmDialog || showContactDialog) {
+            val title = if (showExactAlarmDialog && showContactDialog) {
+                "Permissions Required"
+            } else if (showExactAlarmDialog) {
+                getString(R.string.dialog_exact_alarm_title)
+            } else {
+                getString(R.string.dialog_contacts_title)
+            }
+
+            val message = if (showExactAlarmDialog && showContactDialog) {
+                "This app requires both exact alarm and contacts permissions to function properly. Please enable these permissions in settings."
+            } else if (showExactAlarmDialog) {
+                getString(R.string.dialog_exact_alarm_message)
+            } else {
+                getString(R.string.dialog_contacts_message)
+            }
+
+            ThemedPermissionDialog(
+                title = title,
+                message = message,
+                onConfirm = {
+                    if (showExactAlarmDialog) {
+                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        startActivity(intent)
+                        mainActivityViewModel.dismissExactAlarmPermissionDialog()
+                    }
+                    if (showContactDialog) {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = android.net.Uri.parse("package:$packageName")
+                        }
+                        startActivity(intent)
+                        mainActivityViewModel.dismissContactPermissionDialog()
+                    }
+                },
+                onDismiss = {
+                    // Notify ViewModel that permission dialog was dismissed
+                    mainActivityViewModel.onPermissionDialogDismissed()
+                },
+                confirmText = getString(R.string.action_settings),
+                dismissText = getString(R.string.action_exit)
+            )
+        }
+
+        // Observe shouldCloseApp flow and close the app when needed
+        val shouldClose by mainActivityViewModel.shouldCloseApp.collectAsState()
+        if (shouldClose) {
+            finish()
+        }
+
         Scaffold(
             bottomBar = {
                 NavigationBar {
@@ -128,15 +183,15 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(
                         settingsViewModel = settingsViewModel,
                         onPrivacyPolicyClick = {
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
                                 android.net.Uri.parse("https://example.com/privacy")
                             )
                             startActivity(intent)
                         },
                         onTermsClick = {
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
                                 android.net.Uri.parse("https://example.com/terms")
                             )
                             startActivity(intent)

@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 
 class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
     private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(app))
-    private val contactsRepo = ContactsRepository.get(app)
+    private val contactsRepo by lazy { ContactsRepository.get(app) }
 
     val schedules: StateFlow<List<Schedule>> = schedulesRepo
         .getSchedules()
@@ -32,7 +32,12 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
 
     fun loadContacts() {
         viewModelScope.launch {
-            _contacts.value = contactsRepo.fetchContacts()
+            try {
+                _contacts.value = contactsRepo.fetchContacts()
+            } catch (e: SecurityException) {
+                // Handle the case where contacts permissions are not granted
+                _contacts.value = emptyList()
+            }
         }
     }
 
@@ -69,7 +74,11 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
 
     suspend fun loadScheduleEntity(id: Long): ScheduleEntity? = schedulesRepo.getById(id)
 
-    fun contactForId(id: Long): Contact? = contactsRepo.fetchContactById(id)
+    fun contactForId(id: Long): Contact? = try {
+        contactsRepo.fetchContactById(id)
+    } catch (e: SecurityException) {
+        null // Return null if contacts permission is not granted
+    }
 
     fun updateSchedule(
         scheduleId: Long,
