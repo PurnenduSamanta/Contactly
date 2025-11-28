@@ -105,19 +105,10 @@ class MainActivity : ComponentActivity() {
                         mainActivityViewModel.dismissContactPermissionDialog()
                     }
                 },
-                onDismiss = {
-                    // Notify ViewModel that permission dialog was dismissed
-                    mainActivityViewModel.onPermissionDialogDismissed()
-                },
+                onDismiss = { finish() },
                 confirmText = getString(R.string.action_settings),
                 dismissText = getString(R.string.action_exit)
             )
-        }
-
-        // Observe shouldCloseApp flow and close the app when needed
-        val shouldClose by mainActivityViewModel.shouldCloseApp.collectAsState()
-        if (shouldClose) {
-            finish()
         }
 
         Scaffold(

@@ -27,46 +27,17 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
     private val _showContactPermissionDialog = MutableStateFlow(false)
     val showContactPermissionDialog: StateFlow<Boolean> = _showContactPermissionDialog
 
-    private val _shouldCloseApp = MutableStateFlow(false)
-    val shouldCloseApp: StateFlow<Boolean> = _shouldCloseApp
-
     init {
         viewModelScope.launch {
             try {
                 checkCriticalPermissions()
                 initializeDatabase()
                 _isAppReady.value = true
-
-                // Check if both permissions are denied and mark to close app
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                val canScheduleExactAlarms = if (Build.VERSION.SDK_INT >= 31) {
-                    alarmManager.canScheduleExactAlarms()
-                } else {
-                    true // Exact alarms permission not required on older Android versions
-                }
-
-                val hasContactPermissions = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_CONTACTS
-                ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.WRITE_CONTACTS
-                ) == PackageManager.PERMISSION_GRANTED
-
-                if (!canScheduleExactAlarms || !hasContactPermissions) {
-                    // Show dialogs first, then if denied, close app
-                }
             } catch (e: Exception) {
                 _isAppReady.value = true
             }
         }
     }
-
-    fun onPermissionDialogDismissed() {
-        // When user dismisses the permission dialog, close the app
-        _shouldCloseApp.value = true
-    }
-
     private suspend fun initializeDatabase() {
         val database = AppDatabase.getDataBase(context)
         val repo = SchedulesRepository(database)

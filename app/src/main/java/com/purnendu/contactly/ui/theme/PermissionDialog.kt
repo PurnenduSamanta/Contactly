@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.purnendu.contactly.R
 
 @Composable
@@ -26,7 +27,11 @@ fun ThemedPermissionDialog(
     dismissText: String = stringResource(id = R.string.action_cancel)
 ) {
     AlertDialog(
-        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        onDismissRequest = {},
         title = {
             Text(
                 text = title,
@@ -47,7 +52,7 @@ fun ThemedPermissionDialog(
                 horizontalArrangement = Arrangement.End
             ) {
                 Button(
-                    onClick = onDismiss,
+                    onClick = {onDismiss()},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
