@@ -15,25 +15,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.ui.theme.AntiFlashWhite
-import com.purnendu.contactly.ui.theme.ChineseBlack
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.expressiveElevation
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
@@ -67,7 +61,6 @@ fun ScheduleItem(
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 4.dp // Slightly increased elevation for depth
             ),
-            modifier = Modifier.expressiveElevation(8.dp) // Expressive elevation animation
         ) {
             Column(
                 modifier = Modifier

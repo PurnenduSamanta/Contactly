@@ -64,6 +64,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
@@ -358,6 +359,13 @@ fun SchedulesScreen(
             contacts = contacts,
             onDismissContactSelection = {showContactSheet = false},
             onContactClick = { contact ->
+
+                /*if(schedulesViewModel.schedules.value.co)
+                {
+                    showContactSheet = false
+                    return@ContactSelectionBottomSheet
+                }*/
+
                 selectedContact = contact
                 showContactSheet = false
                 temporaryName = ""
@@ -390,7 +398,11 @@ fun SchedulesScreen(
                     endTimeText = label
                 }
             },
-            onCancel = { showEditSheet = false },
+            onCancel = {
+                showEditSheet = false
+                showContactSheet = false
+                selectedContact=null
+                       },
             onSave = {
                 val c = selectedContact
                 if (c != null && temporaryName.isNotBlank() && startMillis > 0L && endMillis > startMillis) {
