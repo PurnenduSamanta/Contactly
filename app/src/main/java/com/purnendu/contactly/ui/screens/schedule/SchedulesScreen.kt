@@ -1,9 +1,10 @@
 package com.purnendu.contactly.ui.screens.schedule
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,18 +54,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
+import com.purnendu.contactly.ui.theme.ThemedPermissionDialog
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun SchedulesScreen(
+    navController: NavController?=null,
     modifier: Modifier = Modifier,
     schedulesViewModel: SchedulesViewModel = viewModel(),
     onShowToast: (String) -> Unit,
@@ -81,16 +95,80 @@ fun SchedulesScreen(
     var startMillis by remember { mutableStateOf(0L) }
     var endMillis by remember { mutableStateOf(0L) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
+    val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
+
+    val permissionState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.WRITE_CONTACTS
+        )
     )
-    { result ->
-        val readGranted = result[Manifest.permission.READ_CONTACTS] == true
-        if (readGranted) {
-            schedulesViewModel.loadContacts()
-            showContactSheet = true
-        } else {
-            onShowToast("Contacts permission denied")
+    val lifeCycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(key1 = lifeCycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                permissionState.launchMultiplePermissionRequest()
+            }
+            if (event == Lifecycle.Event.ON_RESUME) {
+               schedulesViewModel.checkCriticalPermissions()
+            }
+        }
+        lifeCycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifeCycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val combinedPermissionKey = remember { derivedStateOf { buildString {
+        append(permissionState.permissions[0].status.toString())
+        append(permissionState.permissions[1].status.toString())
+    } } }
+
+    val showPermissionDialog = rememberSaveable { mutableStateOf(false) }
+
+
+    if(showPermissionDialog.value || showContactDialog.value)
+    {
+        context.apply {
+            ThemedPermissionDialog(
+                title =   getString(R.string.dialog_contacts_title),
+                message = getString(R.string.dialog_contacts_message),
+                onConfirm = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.parse("package:${context.packageName}")
+                    }
+                    startActivity(intent)
+                    showPermissionDialog.value =false
+                    schedulesViewModel.dismissContactPermissionDialog()
+                },
+                onDismiss = {
+                    showPermissionDialog.value =false
+                    schedulesViewModel.dismissContactPermissionDialog()
+                    val activity = context as? Activity
+                    activity?.finish()
+                },
+                confirmText = getString(R.string.action_settings),
+                dismissText = getString(R.string.action_exit)
+            )
+        }
+    }
+
+    LaunchedEffect(key1 = combinedPermissionKey)
+    {
+        //Checking permission status
+        when {
+            permissionState.allPermissionsGranted -> {
+                showPermissionDialog.value = false
+                schedulesViewModel.loadContacts()
+            }
+
+            permissionState.shouldShowRationale -> {
+                showPermissionDialog.value = true
+            }
+
+            !permissionState.allPermissionsGranted && !permissionState.shouldShowRationale -> {
+                showPermissionDialog.value = true
+            }
         }
     }
 
@@ -116,12 +194,8 @@ fun SchedulesScreen(
             if (schedules.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.READ_CONTACTS,
-                                Manifest.permission.WRITE_CONTACTS
-                            )
-                        )
+                        schedulesViewModel.loadContacts()
+                        showContactSheet = true
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -207,13 +281,9 @@ fun SchedulesScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 15.dp, vertical = 10.dp)
                             .clickable {
-                                permissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.READ_CONTACTS,
-                                        Manifest.permission.WRITE_CONTACTS
-                                    )
-                                )
-                            },
+                                schedulesViewModel.loadContacts()
+                                showContactSheet = true
+                                       },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -286,6 +356,7 @@ fun SchedulesScreen(
     if (showContactSheet) {
         ContactSelectionBottomSheet(
             contacts = contacts,
+            onDismissContactSelection = {showContactSheet = false},
             onContactClick = { contact ->
                 selectedContact = contact
                 showContactSheet = false

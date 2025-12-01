@@ -27,6 +27,7 @@ import com.purnendu.contactly.ui.theme.ContactlyTheme
 fun ContactSelectionBottomSheet(
     modifier: Modifier = Modifier,
     contacts: List<Contact>,
+    onDismissContactSelection: () -> Unit,
     onContactClick: (Contact) -> Unit
 ) {
 
@@ -38,7 +39,7 @@ fun ContactSelectionBottomSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = { },
+        onDismissRequest = {onDismissContactSelection() },
         shape = RoundedCornerShape(15.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         modifier = modifier
@@ -68,6 +69,7 @@ fun ContactSelectionBottomSheetPreview()
 {
     ContactlyTheme {
         ContactSelectionBottomSheet(
+            onDismissContactSelection = {},
             contacts = List(20) { index ->
                 Contact(
                     name = "Contact $index",

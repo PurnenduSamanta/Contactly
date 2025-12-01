@@ -32,7 +32,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
-import com.purnendu.contactly.ui.theme.ThemedPermissionDialog
 
 
 class MainActivity : ComponentActivity() {
@@ -66,50 +65,6 @@ class MainActivity : ComponentActivity() {
             Screen.Schedules,
             Screen.Settings,
         )
-
-        // Show permission dialogs if needed
-        val showExactAlarmDialog by mainActivityViewModel.showExactAlarmPermissionDialog.collectAsState()
-        val showContactDialog by mainActivityViewModel.showContactPermissionDialog.collectAsState()
-
-        if (showExactAlarmDialog || showContactDialog) {
-            val title = if (showExactAlarmDialog && showContactDialog) {
-                "Permissions Required"
-            } else if (showExactAlarmDialog) {
-                getString(R.string.dialog_exact_alarm_title)
-            } else {
-                getString(R.string.dialog_contacts_title)
-            }
-
-            val message = if (showExactAlarmDialog && showContactDialog) {
-                "This app requires both exact alarm and contacts permissions to function properly. Please enable these permissions in settings."
-            } else if (showExactAlarmDialog) {
-                getString(R.string.dialog_exact_alarm_message)
-            } else {
-                getString(R.string.dialog_contacts_message)
-            }
-
-            ThemedPermissionDialog(
-                title = title,
-                message = message,
-                onConfirm = {
-                    if (showExactAlarmDialog) {
-                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        startActivity(intent)
-                        mainActivityViewModel.dismissExactAlarmPermissionDialog()
-                    }
-                    if (showContactDialog) {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = android.net.Uri.parse("package:$packageName")
-                        }
-                        startActivity(intent)
-                        mainActivityViewModel.dismissContactPermissionDialog()
-                    }
-                },
-                onDismiss = { finish() },
-                confirmText = getString(R.string.action_settings),
-                dismissText = getString(R.string.action_exit)
-            )
-        }
 
         Scaffold(
             bottomBar = {
@@ -153,6 +108,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 composable<Screen.Schedules> {
                     SchedulesScreen(
+                        navController=navController,
                         onShowToast = {message->
                             Toast.makeText(this@MainActivity,message,Toast.LENGTH_SHORT).show()
                         },

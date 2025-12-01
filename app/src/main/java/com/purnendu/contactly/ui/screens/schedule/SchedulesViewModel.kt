@@ -1,9 +1,12 @@
 package com.purnendu.contactly.ui.screens.schedule
 
+import android.Manifest
 import android.app.Application
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.data.ContactsRepository
@@ -19,9 +22,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
-    private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(app))
-    private val contactsRepo by lazy { ContactsRepository.get(app) }
+class SchedulesViewModel(private val application: Application) : AndroidViewModel(application) {
+    private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(application))
+    private val contactsRepo by lazy { ContactsRepository.get(application) }
+
+    private val _showContactPermissionDialog = MutableStateFlow(false)
+    val showContactPermissionDialog: StateFlow<Boolean> = _showContactPermissionDialog
 
     val schedules: StateFlow<List<Schedule>> = schedulesRepo
         .getSchedules()
@@ -29,6 +35,11 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
+
+
+    init {
+        checkCriticalPermissions()
+    }
 
     fun loadContacts() {
         viewModelScope.launch {
@@ -103,6 +114,24 @@ class SchedulesViewModel(app: Application) : AndroidViewModel(app) {
                 endAtMillis = endAtMillis
             )
         }
+    }
+
+    fun checkCriticalPermissions() {
+
+        val hasContactPermissions = ContextCompat.checkSelfPermission(
+            application,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+            application,
+            Manifest.permission.WRITE_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        // Update dialog states
+        _showContactPermissionDialog.value = !hasContactPermissions
+    }
+
+    fun dismissContactPermissionDialog() {
+        _showContactPermissionDialog.value = false
     }
 }
 
