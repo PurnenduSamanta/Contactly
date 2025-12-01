@@ -444,21 +444,58 @@ fun SchedulesScreen(
                 selectedContact=null
                        },
             onSave = {
-                val c = selectedContact
-                if (c != null && temporaryName.isNotBlank() && startMillis > 0L && endMillis > startMillis) {
+                val contact = selectedContact ?: return@EditScheduleSheet
+
+                if(temporaryName.isEmpty() || temporaryName.isBlank())
+                {
+                    if(snackBarHostState.currentSnackbarData==null)
+                    {
+                        coroutineScope.launch {
+                            val result = snackBarHostState.showSnackbar(
+                                message = "Temporary name can not be empty",
+                                actionLabel = "Dismiss",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                snackBarHostState.currentSnackbarData?.dismiss()
+                            }
+                        }
+                    }
+
+                    return@EditScheduleSheet
+                }
+
+                if(endMillis <= startMillis)
+                {
+                    if(snackBarHostState.currentSnackbarData==null)
+                    {
+                        coroutineScope.launch {
+                            val result = snackBarHostState.showSnackbar(
+                                message = "End time can not be before start time",
+                                actionLabel = "Dismiss",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                snackBarHostState.currentSnackbarData?.dismiss()
+                            }
+                        }
+                    }
+
+                    return@EditScheduleSheet
+                }
                     onScheduleExactAlarm()
                     val editingId =
-                        schedules.firstOrNull { it.name == temporaryName && it.contactId == c.id }?.id?.toLongOrNull()
+                        schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
                     if (editingId != null) {
                         schedulesViewModel.updateSchedule(
                             editingId,
-                            c,
+                            contact,
                             temporaryName,
                             startMillis,
                             endMillis
                         )
                     } else {
-                        schedulesViewModel.addSchedule(c, temporaryName, startMillis, endMillis)
+                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis)
                     }
                     showEditSheet = false
                     val writeGranted = ContextCompat.checkSelfPermission(
@@ -470,9 +507,7 @@ fun SchedulesScreen(
                     } else {
                         onShowToast(context.getString(R.string.toast_schedule_saved))
                     }
-                } else {
-                    onShowToast(context.getString(R.string.toast_complete_fields))
-                }
+
             }
         )
     }
