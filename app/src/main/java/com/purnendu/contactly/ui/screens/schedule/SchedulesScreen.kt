@@ -44,6 +44,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -191,8 +195,11 @@ fun SchedulesScreen(
         }
     }
 
+    val snackBarHostState = remember { SnackbarHostState() }
+
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -365,7 +372,21 @@ fun SchedulesScreen(
                                 }
                             }
                         },
-                        onDeleteClick = { schedulesViewModel.deleteSchedule(it) }
+                        onDeleteClick = {
+                            if(snackBarHostState.currentSnackbarData==null)
+                            {
+                                coroutineScope.launch {
+                                    val result = snackBarHostState.showSnackbar(
+                                        message = "Do you want to delete this schedule?",
+                                        actionLabel = "Delete",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        schedulesViewModel.deleteSchedule(it)
+                                    }
+                                }
+                            }
+                        }
                     )
                 }
             }
