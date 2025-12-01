@@ -2,6 +2,7 @@ package com.purnendu.contactly.ui.screens.schedule.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +27,6 @@ import com.purnendu.contactly.ui.theme.ContactlyTheme
 import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import com.purnendu.contactly.utils.expressiveScale
-import com.purnendu.contactly.utils.expressiveElevation
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -54,14 +54,13 @@ fun ScheduleItem(
             .expressiveScale(expressiveScale.value)
     ) {
         Card(
-            shape = RoundedCornerShape(20.dp), // Enhanced rounded corners for Material 3 Expressive
+            modifier = Modifier.border(width = 1.dp, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(15.dp), // Enhanced rounded corners for Material 3 Expressive
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = 4.dp // Slightly increased elevation for depth
-            ),
-        ) {
+        )
+        {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -85,14 +84,15 @@ fun ScheduleItem(
                         Text(
                             text = stringResource(id = R.string.original_name, schedule.originalName),
                             style = MaterialTheme.typography.bodyMedium, // Using expressive typography
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
                     // Avatar with expressive rounded corners
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp)) // Enhanced rounded corners
+                            .clip(RoundedCornerShape(15.dp)) // Enhanced rounded corners
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         when {
@@ -100,7 +100,7 @@ fun ScheduleItem(
                                 Image(
                                     painter = painterResource(id = schedule.avatarResId!!),
                                     contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
+                                    modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f,true),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -108,7 +108,7 @@ fun ScheduleItem(
                                 AsyncImage(
                                     model = avatarUri,
                                     contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
+                                    modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f,true),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -132,7 +132,8 @@ fun ScheduleItem(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        )
+        {
             Button(
                 onClick = { onDeleteClick(schedule) },
                 modifier = Modifier
@@ -159,8 +160,8 @@ fun ScheduleItem(
                     .height(40.dp)
                     .expressiveScale(if (isPressed) 0.95f else 1f), // Expressive press animation
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
                 interactionSource = interactionSource
@@ -168,7 +169,7 @@ fun ScheduleItem(
                 Text(
                     stringResource(id = R.string.action_edit),
                     style = MaterialTheme.typography.labelLarge, // Using expressive typography
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
             }

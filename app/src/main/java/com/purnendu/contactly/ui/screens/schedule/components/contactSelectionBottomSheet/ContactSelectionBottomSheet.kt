@@ -2,6 +2,7 @@ package com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBo
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -46,7 +47,7 @@ fun ContactSelectionBottomSheet(
         modifier = modifier
     )
     {
-            Column(modifier = Modifier) {
+            Column(modifier = Modifier.fillMaxHeight(0.9f)) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 

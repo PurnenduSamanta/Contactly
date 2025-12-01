@@ -1,30 +1,24 @@
-package com.purnendu.contactly.ui.theme
+package com.purnendu.contactly.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.purnendu.contactly.R
 
 @Composable
-fun ThemedPermissionDialog(
+fun ContactlyDialog(
     title: String,
     message: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    confirmText: String = stringResource(id = R.string.action_settings),
-    dismissText: String = stringResource(id = R.string.action_cancel)
+    isConfirmButtonAvailable: Boolean,
+    isDismissButtonAvailable: Boolean,
+    confirmButtonText: String,
+    dismissButtonText: String
 ) {
     AlertDialog(
         properties = DialogProperties(
@@ -47,28 +41,30 @@ fun ThemedPermissionDialog(
             )
         },
         confirmButton = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
+            if(isConfirmButtonAvailable)
+            {
                 Button(
-                    onClick = {onDismiss()},
+                    onClick = { onConfirm() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
-                    Text(text = dismissText)
+                    Text(text = confirmButtonText)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+            }
+        },
+        dismissButton = {
+            if(isDismissButtonAvailable)
+            {
                 Button(
-                    onClick = onConfirm,
+                    onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(text = confirmText)
+                    Text(text = dismissButtonText)
                 }
             }
         },

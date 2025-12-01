@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,12 +65,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
-import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.ui.theme.ThemedPermissionDialog
+import com.purnendu.contactly.components.ContactlyDialog
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -126,17 +126,35 @@ fun SchedulesScreen(
     } } }
 
     val showPermissionDialog = rememberSaveable { mutableStateOf(false) }
+    val showAlertDialog = rememberSaveable { mutableStateOf(false) }
+
+
+    if(showAlertDialog.value)
+    {
+        ContactlyDialog(
+            isConfirmButtonAvailable = true,
+            isDismissButtonAvailable = false,
+            title =   stringResource(R.string.app_name),
+            message = stringResource(R.string.duplicate_contact_alert),
+            onConfirm = { showAlertDialog.value = false},
+            onDismiss = {},
+            confirmButtonText = stringResource(R.string.ok),
+            dismissButtonText = ""
+        )
+    }
 
 
     if(showPermissionDialog.value || showContactDialog.value)
     {
         context.apply {
-            ThemedPermissionDialog(
+            ContactlyDialog(
+                isConfirmButtonAvailable = true,
+                isDismissButtonAvailable = true,
                 title =   getString(R.string.dialog_contacts_title),
                 message = getString(R.string.dialog_contacts_message),
                 onConfirm = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = android.net.Uri.parse("package:${context.packageName}")
+                        data = Uri.parse("package:${context.packageName}")
                     }
                     startActivity(intent)
                     showPermissionDialog.value =false
@@ -148,8 +166,8 @@ fun SchedulesScreen(
                     val activity = context as? Activity
                     activity?.finish()
                 },
-                confirmText = getString(R.string.action_settings),
-                dismissText = getString(R.string.action_exit)
+                confirmButtonText = getString(R.string.action_settings),
+                dismissButtonText = getString(R.string.action_exit)
             )
         }
     }
@@ -284,7 +302,7 @@ fun SchedulesScreen(
                             .clickable {
                                 schedulesViewModel.loadContacts()
                                 showContactSheet = true
-                                       },
+                            },
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -359,12 +377,13 @@ fun SchedulesScreen(
             contacts = contacts,
             onDismissContactSelection = {showContactSheet = false},
             onContactClick = { contact ->
-
-                /*if(schedulesViewModel.schedules.value.co)
+                val duplicateScheduledContactList = schedules.filter { it.contactId == contact.id }
+                if(duplicateScheduledContactList.isNotEmpty())
                 {
                     showContactSheet = false
+                    showAlertDialog.value = true
                     return@ContactSelectionBottomSheet
-                }*/
+                }
 
                 selectedContact = contact
                 showContactSheet = false

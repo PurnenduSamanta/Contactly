@@ -9,7 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,8 +23,12 @@ import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.compose.rememberNavController
 import com.purnendu.contactly.ui.Screen
 import androidx.navigation.compose.NavHost
@@ -68,35 +75,42 @@ class MainActivity : ComponentActivity() {
 
         Scaffold(
             bottomBar = {
-                NavigationBar {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-                    items.forEach { screen ->
-                        NavigationBarItem(
-                            icon = {
-                                Icon(
-                                    screen.icon!!,
-                                    contentDescription = screen.title
-                                )
-                            },
-                            label = { Text(screen.title!!) },
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen) {
-                                    // Pop up to the start destination of the graph to
-                                    // avoid building up a large stack of destinations
-                                    // on the back stack as users select items
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant)
+
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface)
+                    {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        items.forEach { screen ->
+                            val isSelected =  currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName  } == true
+                            NavigationBarItem(
+                                colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
+                                icon = {
+                                    Icon(
+                                        if(isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
+                                        contentDescription = screen.title
+                                    )
+                                },
+                                label = { Text(screen.title!!, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal) },
+                                selected = isSelected,
+                                onClick = {
+                                    navController.navigate(screen) {
+                                        // Pop up to the start destination of the graph to
+                                        // avoid building up a large stack of destinations
+                                        // on the back stack as users select items
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        // Avoid multiple copies of the same destination when
+                                        // reselecting the same item
+                                        launchSingleTop = true
+                                        // Restore state when reselecting a previously selected item
+                                        restoreState = true
                                     }
-                                    // Avoid multiple copies of the same destination when
-                                    // reselecting the same item
-                                    launchSingleTop = true
-                                    // Restore state when reselecting a previously selected item
-                                    restoreState = true
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
