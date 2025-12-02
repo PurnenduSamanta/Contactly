@@ -79,8 +79,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun SchedulesScreen(
-    navController: NavController?=null,
     modifier: Modifier = Modifier,
+    navController: NavController?=null,
     schedulesViewModel: SchedulesViewModel = viewModel(),
     onShowToast: (String) -> Unit,
     onScheduleExactAlarm: () -> Unit,
@@ -124,10 +124,10 @@ fun SchedulesScreen(
         }
     }
 
-    val combinedPermissionKey = remember { derivedStateOf { buildString {
+    val combinedPermissionKey =  buildString {
         append(permissionState.permissions[0].status.toString())
         append(permissionState.permissions[1].status.toString())
-    } } }
+    }
 
     val showPermissionDialog = rememberSaveable { mutableStateOf(false) }
     val showAlertDialog = rememberSaveable { mutableStateOf(false) }
@@ -147,6 +147,8 @@ fun SchedulesScreen(
         )
     }
 
+    println("from UI ${showPermissionDialog.value}")
+    println(showContactDialog.value)
 
     if(showPermissionDialog.value || showContactDialog.value)
     {
