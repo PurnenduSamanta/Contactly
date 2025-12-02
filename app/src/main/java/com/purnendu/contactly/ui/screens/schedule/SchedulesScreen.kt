@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +51,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -83,7 +83,6 @@ fun SchedulesScreen(
     navController: NavController?=null,
     schedulesViewModel: SchedulesViewModel = viewModel(),
     onShowToast: (String) -> Unit,
-    onScheduleExactAlarm: () -> Unit,
     onTimePick: (((Long, String) -> Unit) -> Unit)
 ) {
     val context = LocalContext.current
@@ -101,6 +100,7 @@ fun SchedulesScreen(
     var endMillis by remember { mutableStateOf(0L) }
 
     val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
+    val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
 
     val permissionState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -130,25 +130,6 @@ fun SchedulesScreen(
     }
 
     val showPermissionDialog = rememberSaveable { mutableStateOf(false) }
-    val showAlertDialog = rememberSaveable { mutableStateOf(false) }
-
-
-    if(showAlertDialog.value)
-    {
-        ContactlyDialog(
-            isConfirmButtonAvailable = true,
-            isDismissButtonAvailable = false,
-            title =   stringResource(R.string.app_name),
-            message = stringResource(R.string.duplicate_contact_alert),
-            onConfirm = { showAlertDialog.value = false},
-            onDismiss = {},
-            confirmButtonText = stringResource(R.string.ok),
-            dismissButtonText = ""
-        )
-    }
-
-    println("from UI ${showPermissionDialog.value}")
-    println(showContactDialog.value)
 
     if(showPermissionDialog.value || showContactDialog.value)
     {
@@ -397,17 +378,19 @@ fun SchedulesScreen(
 
     if (showContactSheet) {
         ContactSelectionBottomSheet(
+            error = errorMessage.value,
+            onErrorCardDismiss = {schedulesViewModel.clearError()},
             contacts = contacts,
-            onDismissContactSelection = {showContactSheet = false},
+            onDismissContactSelection = {
+                schedulesViewModel.clearError()
+                showContactSheet = false},
             onContactClick = { contact ->
                 val duplicateScheduledContactList = schedules.filter { it.contactId == contact.id }
                 if(duplicateScheduledContactList.isNotEmpty())
                 {
-                    showContactSheet = false
-                    showAlertDialog.value = true
+                    schedulesViewModel.showError(context.getString(R.string.duplicate_contact_alert))
                     return@ContactSelectionBottomSheet
                 }
-
                 selectedContact = contact
                 showContactSheet = false
                 temporaryName = ""
@@ -416,13 +399,17 @@ fun SchedulesScreen(
                 startMillis = 0L
                 endMillis = 0L
                 showEditSheet = true
+                schedulesViewModel.clearError()
             }
         )
     }
 
     if (showEditSheet) {
+
         val contact = selectedContact ?: Contact("", "", null)
         EditScheduleSheet(
+            error = errorMessage.value,
+            onErrorCardDismiss = { schedulesViewModel.clearError() },
             contact = contact,
             temporaryName = temporaryName,
             startTime = startTimeText,
@@ -444,50 +431,47 @@ fun SchedulesScreen(
                 showEditSheet = false
                 showContactSheet = false
                 selectedContact=null
+                schedulesViewModel.clearError()
                        },
             onSave = {
                 val contact = selectedContact ?: return@EditScheduleSheet
 
                 if(temporaryName.isEmpty() || temporaryName.isBlank())
                 {
-                    if(snackBarHostState.currentSnackbarData==null)
-                    {
-                        coroutineScope.launch {
-                            val result = snackBarHostState.showSnackbar(
-                                message = "Temporary name can not be empty",
-                                actionLabel = "Dismiss",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                snackBarHostState.currentSnackbarData?.dismiss()
-                            }
-                        }
-                    }
+                    schedulesViewModel.showError("Temporary name can not be empty")
+
+                    return@EditScheduleSheet
+                }
+
+                if(startTimeText.isEmpty())
+                {
+                    schedulesViewModel.showError("Start time can not be empty")
+
+                    return@EditScheduleSheet
+                }
+
+                if(endTimeText.isEmpty())
+                {
+                    schedulesViewModel.showError("End time can not be empty")
 
                     return@EditScheduleSheet
                 }
 
                 if(endMillis <= startMillis)
                 {
-                    if(snackBarHostState.currentSnackbarData==null)
-                    {
-                        coroutineScope.launch {
-                            val result = snackBarHostState.showSnackbar(
-                                message = "End time can not be before start time",
-                                actionLabel = "Dismiss",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                snackBarHostState.currentSnackbarData?.dismiss()
-                            }
-                        }
-                    }
+                    schedulesViewModel.showError("End time can not be before start time")
 
                     return@EditScheduleSheet
                 }
-                    onScheduleExactAlarm()
-                    val editingId =
-                        schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
+                val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
+                if (!exactOk) {
+                    Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
+                    val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    context.startActivity(i)
+
+                    return@EditScheduleSheet
+                }
+                    val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
                     if (editingId != null) {
                         schedulesViewModel.updateSchedule(
                             editingId,
@@ -509,7 +493,7 @@ fun SchedulesScreen(
                     } else {
                         onShowToast(context.getString(R.string.toast_schedule_saved))
                     }
-
+                schedulesViewModel.clearError()
             }
         )
     }
@@ -522,7 +506,6 @@ fun SchedulesScreenPreview() {
         SchedulesScreen(
             schedulesViewModel = viewModel(),
             onShowToast = {},
-            onScheduleExactAlarm = {},
             onTimePick = {}
         )
     }

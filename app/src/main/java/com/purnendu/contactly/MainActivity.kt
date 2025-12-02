@@ -126,15 +126,6 @@ class MainActivity : ComponentActivity() {
                         onShowToast = {message->
                             Toast.makeText(this@MainActivity,message,Toast.LENGTH_SHORT).show()
                         },
-                        onScheduleExactAlarm = {
-                            val am = getSystemService(AlarmManager::class.java)
-                            val exactOk = if (android.os.Build.VERSION.SDK_INT >= 31) am.canScheduleExactAlarms() else true
-                            if (!exactOk) {
-                                Toast.makeText(this@MainActivity, getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
-                                val i = android.content.Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                                startActivity(i)
-                            }
-                        },
                         onTimePick = { onPicked->
                             pickTime(this@MainActivity,onPicked)
                         }

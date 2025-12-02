@@ -1,9 +1,6 @@
 package com.purnendu.contactly
 
-import android.app.AlarmManager
 import android.app.Application
-import android.content.Context
-import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.data.SchedulesRepository
@@ -36,17 +33,6 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
         val repo = SchedulesRepository(database)
         repo.getAllEntities()
         repo.getSchedules().first()
-    }
-
-    private fun checkCriticalPermissions() {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val canScheduleExactAlarms = if (Build.VERSION.SDK_INT >= 31) {
-            alarmManager.canScheduleExactAlarms()
-        } else {
-            true // Exact alarms permission not required on older Android versions
-        }
-        // Update dialog states
-        _showExactAlarmPermissionDialog.value = !canScheduleExactAlarms
     }
 
     fun dismissExactAlarmPermissionDialog() {

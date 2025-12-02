@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.ui.screens.schedule.components.ErrorMessageCard
 import com.purnendu.contactly.ui.theme.CancelButtonColor
 import com.purnendu.contactly.ui.theme.InputBorder
 import com.purnendu.contactly.ui.theme.SaveButtonColor
@@ -55,6 +56,8 @@ fun EditScheduleSheet(
     temporaryName: String,
     startTime: String,
     endTime: String,
+    error:String?,
+    onErrorCardDismiss: () -> Unit,
     onTemporaryNameChange: (String) -> Unit,
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
@@ -72,6 +75,14 @@ fun EditScheduleSheet(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
+
+            if(error!=null)
+            {
+                ErrorMessageCard(
+                    message = error,
+                    onDismiss = { onErrorCardDismiss() }
+                )
+            }
 
             // Header Section
             Row(
@@ -198,6 +209,8 @@ fun EditScheduleSheet(
 fun EditScheduleSheetPreview() {
     EditScheduleSheet(
         contact = Contact("Purnendu","9614472290",null),
+        error = null,
+        onErrorCardDismiss = {},
         temporaryName = "Joy",
         startTime = "",
         endTime ="",

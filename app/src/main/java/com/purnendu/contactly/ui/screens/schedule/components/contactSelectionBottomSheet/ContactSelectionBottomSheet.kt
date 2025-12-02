@@ -21,12 +21,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.ui.screens.schedule.components.ErrorMessageCard
 import com.purnendu.contactly.ui.theme.ContactlyTheme
  
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactSelectionBottomSheet(
+    error:String?,
+    onErrorCardDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     contacts: List<Contact>,
     onDismissContactSelection: () -> Unit,
@@ -48,6 +51,14 @@ fun ContactSelectionBottomSheet(
     )
     {
             Column(modifier = Modifier.fillMaxHeight(0.9f)) {
+
+                if(error!=null)
+                {
+                    ErrorMessageCard(
+                        message = error,
+                        onDismiss = { onErrorCardDismiss() }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -71,6 +82,8 @@ fun ContactSelectionBottomSheetPreview()
 {
     ContactlyTheme {
         ContactSelectionBottomSheet(
+            error = null,
+            onErrorCardDismiss = {},
             onDismissContactSelection = {},
             contacts = List(20) { index ->
                 Contact(

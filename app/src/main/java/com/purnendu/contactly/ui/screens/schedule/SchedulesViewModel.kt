@@ -4,8 +4,10 @@ import android.Manifest
 import android.app.Application
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +21,7 @@ import com.purnendu.contactly.data.local.room.AppDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -28,6 +31,9 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     private val _showContactPermissionDialog = MutableStateFlow(false)
     val showContactPermissionDialog: StateFlow<Boolean> = _showContactPermissionDialog
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
 
     val schedules: StateFlow<List<Schedule>> = schedulesRepo
         .getSchedules()
@@ -132,6 +138,23 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     fun dismissContactPermissionDialog() {
         _showContactPermissionDialog.value = false
+    }
+
+    fun showError(message: String) {
+        _errorMessage.value = message
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    fun canScheduleExactAlarmPermissions(): Boolean {
+        val alarmManager = application.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        return  if (Build.VERSION.SDK_INT >= 31) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true // Exact alarms permission not required on older Android versions
+        }
     }
 }
 
