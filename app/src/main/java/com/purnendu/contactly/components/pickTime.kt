@@ -14,7 +14,12 @@ fun pickTime(context: Context, onPicked: (Long, String) -> Unit) {
                 set(java.util.Calendar.MILLISECOND, 0)
             }
             val millis = cal.timeInMillis
-            val label = String.format("%02d:%02d", hourOfDay, minute)
+            //val label = String.format("%02d:%02d", hourOfDay, minute)
+
+            val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+            val label = formatter.format(cal.time)
+
+
             onPicked(millis, label)
         },
         now.get(java.util.Calendar.HOUR_OF_DAY),

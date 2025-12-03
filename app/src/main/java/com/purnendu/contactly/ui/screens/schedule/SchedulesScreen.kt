@@ -418,8 +418,8 @@ fun SchedulesScreen(
             onEndTimeClick = {
                 pickTime(context,{
                         millis, label ->
-                    startMillis = millis
-                    startTimeText = label
+                    endMillis = millis
+                    endTimeText = label
                 })
             },
             onCancel = {
