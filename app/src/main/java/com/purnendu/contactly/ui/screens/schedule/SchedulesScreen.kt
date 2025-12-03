@@ -3,7 +3,6 @@ package com.purnendu.contactly.ui.screens.schedule
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -51,6 +50,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -58,7 +58,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -95,8 +94,8 @@ fun SchedulesScreen(
     var temporaryName by remember { mutableStateOf("") }
     var startTimeText by remember { mutableStateOf("") }
     var endTimeText by remember { mutableStateOf("") }
-    var startMillis by remember { mutableStateOf(0L) }
-    var endMillis by remember { mutableStateOf(0L) }
+    var startMillis by remember { mutableLongStateOf(0L) }
+    var endMillis by remember { mutableLongStateOf(0L) }
 
     val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
     val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
@@ -407,8 +406,8 @@ fun SchedulesScreen(
             onErrorCardDismiss = { schedulesViewModel.clearError() },
             contact = contact,
             temporaryName = temporaryName,
-            startTime = formatter.format(startMillis),
-            endTime = formatter.format(endMillis),
+            startTime = if(startMillis==0L) "" else formatter.format(startMillis),
+            endTime =  if(endMillis==0L) "" else formatter.format(endMillis),
             onTemporaryNameChange = { temporaryName = it },
             onStartTimeClick = {
                 pickTime(context,{
