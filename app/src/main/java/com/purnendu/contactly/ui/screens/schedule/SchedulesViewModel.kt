@@ -174,6 +174,26 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         }
     }
 
+    fun cleanupOrphanedSchedules() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val allSchedules = schedulesRepo.getAllEntities()
+                allSchedules.forEach { schedule ->
+                    // Check if the contact still exists
+                    val contact = contactsRepo.fetchContactById(schedule.contactId)
+                    if (contact == null) {
+                        // Contact was deleted, remove the schedule
+                        schedulesRepo.deleteByContactId(schedule.contactId)
+                        Log.d("SchedulesViewModel", "Removed orphaned schedule for deleted contact ID: ${schedule.contactId}")
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle any errors gracefully
+                Log.e("SchedulesViewModel", "Error cleaning up orphaned schedules", e)
+            }
+        }
+    }
+
 }
 
 private fun SchedulesViewModel.scheduleAlarms(

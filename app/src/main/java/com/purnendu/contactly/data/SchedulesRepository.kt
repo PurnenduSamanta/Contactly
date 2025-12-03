@@ -48,5 +48,7 @@ class SchedulesRepository(private val database: AppDatabase) {
 
     suspend fun getAllEntities(): List<ScheduleEntity> = database.scheduleDao().getAll().first()
 
+    suspend fun deleteByContactId(contactId: Long) = database.scheduleDao().deleteByContactId(contactId)
+
 
 }

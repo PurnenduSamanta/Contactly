@@ -115,6 +115,7 @@ fun SchedulesScreen(
             }
             if (event == Lifecycle.Event.ON_RESUME) {
                schedulesViewModel.checkCriticalPermissions()
+               schedulesViewModel.cleanupOrphanedSchedules()
             }
         }
         lifeCycleOwner.lifecycle.addObserver(observer)
