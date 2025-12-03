@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.data.local.room.AppDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,17 +37,12 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    val schedules: StateFlow<List<Schedule>> = schedulesRepo
-        .getSchedules()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val schedules: StateFlow<List<Schedule>> = schedulesRepo.getSchedules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
 
-
-    init {
-        checkCriticalPermissions()
-    }
+    init {checkCriticalPermissions()}
 
     fun loadContacts() {
         viewModelScope.launch {
@@ -63,25 +60,14 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long
-    ) {
-        val id = contact.id ?: return
-        viewModelScope.launch {
-            schedulesRepo.create(
-                contactId = id,
-                contactLookupKey = contact.lookupKey,
+    )
+    {
+        scheduleAlarms(
+                contact = contact,
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
-            )
-            scheduleAlarms(
-                contactId = id,
-                originalName = contact.name,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
-            )
-        }
+                endAtMillis = endAtMillis)
     }
 
     fun deleteSchedule(schedule: Schedule) {
@@ -104,22 +90,14 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         startAtMillis: Long,
         endAtMillis: Long
     ) {
-        viewModelScope.launch {
-            val current = schedulesRepo.getById(scheduleId) ?: return@launch
-            val updated = current.copy(
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
-            )
-            schedulesRepo.update(updated)
             scheduleAlarms(
-                contactId = contact.id ?: return@launch,
+                isUpdatingAlarm = true,
+                contact = contact,
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis
             )
-        }
     }
 
     fun checkCriticalPermissions() {
@@ -156,15 +134,61 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             true // Exact alarms permission not required on older Android versions
         }
     }
+
+    fun addAlarmToDatabase(
+        contact: Contact,
+        temporaryName: String,
+        startAtMillis: Long,
+        endAtMillis: Long
+    )
+    {
+        val id = contact.id ?: return
+        viewModelScope.launch(Dispatchers.IO)
+        {
+            schedulesRepo.create(
+                contactId = id,
+                contactLookupKey = contact.lookupKey,
+                originalName = contact.name,
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis
+            )
+        }
+    }
+
+    fun updateAlarmToDatabase(
+        scheduleId: Long,
+        temporaryName: String,
+        startAtMillis: Long,
+        endAtMillis: Long
+    )
+    {
+        viewModelScope.launch(Dispatchers.IO) {
+            val current = schedulesRepo.getById(scheduleId) ?: return@launch
+            val updated = current.copy(
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis
+            )
+            schedulesRepo.update(updated)
+        }
+    }
+
 }
 
 private fun SchedulesViewModel.scheduleAlarms(
-    contactId: Long,
+    contact: Contact,
     originalName: String,
     temporaryName: String,
     startAtMillis: Long,
-    endAtMillis: Long
-) {
+    endAtMillis: Long,
+    scheduleId: Long?=null,
+    isUpdatingAlarm: Boolean = false
+)
+{
+    var isAlarmSuccessfullyScheduled: Boolean
+    val contactId = contact.id.toString().toLongOrNull() ?: return
+
     val context = getApplication<Application>()
     val alarmManager = context.getSystemService(AlarmManager::class.java)
 
@@ -175,13 +199,13 @@ private fun SchedulesViewModel.scheduleAlarms(
     val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
         action = AliasAlarmReceiver.ACTION_ALIAS
         putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
-        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
+        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
         putExtra(AliasAlarmReceiver.EXTRA_NAME, temporaryName)
     }
     val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
         action = AliasAlarmReceiver.ACTION_ALIAS
         putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
-        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
+        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
         putExtra(AliasAlarmReceiver.EXTRA_NAME, originalName)
     }
 
@@ -203,20 +227,51 @@ private fun SchedulesViewModel.scheduleAlarms(
 
     try {
         alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
+            AlarmManager.RTC,
             applyAt,
             applyPending
         )
-    } catch (_: SecurityException) {
-        alarmManager.set(AlarmManager.RTC_WAKEUP, applyAt, applyPending)
+        isAlarmSuccessfullyScheduled = true
+    }
+    catch (e: SecurityException) {
+        Log.d("alarm_error", e.localizedMessage.toString())
+        isAlarmSuccessfullyScheduled = false
     }
     try {
         alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
+            AlarmManager.RTC,
             revertAt,
             revertPending
         )
-    } catch (_: SecurityException) {
-        alarmManager.set(AlarmManager.RTC_WAKEUP, revertAt, revertPending)
+        isAlarmSuccessfullyScheduled = true
+    }
+    catch (e: SecurityException) {
+        Log.d("alarm_error", e.localizedMessage.toString())
+        isAlarmSuccessfullyScheduled = false
+    }
+
+    if(isAlarmSuccessfullyScheduled)
+    {
+        if(isUpdatingAlarm)
+        {
+            if(scheduleId==null)
+                return
+
+            updateAlarmToDatabase(
+                scheduleId = scheduleId,
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis
+            )
+        }
+        else
+        {
+            addAlarmToDatabase(
+                contact = contact,
+                temporaryName = temporaryName,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis
+            )
+        }
     }
 }

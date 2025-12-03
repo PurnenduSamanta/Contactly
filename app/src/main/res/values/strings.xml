@@ -41,4 +41,5 @@
     <string name="dialog_contacts_message">This app needs permission to read and write contacts to rename them as scheduled. Please enable these permissions in settings.</string>
     <string name="duplicate_contact_alert">You can not schedule duplicate contact</string>
     <string name="ok">Ok</string>
+    <string name="ScheduleUpdated">Schedule updated</string>
 </resources>

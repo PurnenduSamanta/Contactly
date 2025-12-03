@@ -19,7 +19,7 @@ fun pickTime(context: Context, onPicked: (Long, String) -> Unit) {
         },
         now.get(java.util.Calendar.HOUR_OF_DAY),
         now.get(java.util.Calendar.MINUTE),
-        true
+        false
     )
     dlg.show()
 }

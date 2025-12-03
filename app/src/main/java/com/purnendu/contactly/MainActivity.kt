@@ -121,15 +121,7 @@ class MainActivity : ComponentActivity() {
                 Modifier.padding(innerPadding)
             ) {
                 composable<Screen.Schedules> {
-                    SchedulesScreen(
-                        navController=navController,
-                        onShowToast = {message->
-                            Toast.makeText(this@MainActivity,message,Toast.LENGTH_SHORT).show()
-                        },
-                        onTimePick = { onPicked->
-                            pickTime(this@MainActivity,onPicked)
-                        }
-                    )
+                    SchedulesScreen(navController=navController)
                 }
                 composable<Screen.Settings> {
                     SettingsScreen(

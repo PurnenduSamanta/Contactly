@@ -74,6 +74,7 @@ import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBot
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.components.ContactlyDialog
+import com.purnendu.contactly.components.pickTime
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -81,9 +82,7 @@ import kotlinx.coroutines.launch
 fun SchedulesScreen(
     modifier: Modifier = Modifier,
     navController: NavController?=null,
-    schedulesViewModel: SchedulesViewModel = viewModel(),
-    onShowToast: (String) -> Unit,
-    onTimePick: (((Long, String) -> Unit) -> Unit)
+    schedulesViewModel: SchedulesViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val schedules by schedulesViewModel.schedules.collectAsState()
@@ -244,7 +243,6 @@ fun SchedulesScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 )
                 {
-
                     Box(
                         modifier = Modifier
                             .background(
@@ -309,13 +307,8 @@ fun SchedulesScreen(
                             color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold
                         )
-
                     }
-
-
                 }
-
-
             }
         } else {
             LazyColumn(
@@ -416,16 +409,18 @@ fun SchedulesScreen(
             endTime = endTimeText,
             onTemporaryNameChange = { temporaryName = it },
             onStartTimeClick = {
-                onTimePick { millis, label ->
-                    startMillis = millis
-                    startTimeText = label
-                }
+                pickTime(context,{
+                       millis, label ->
+                   startMillis = millis
+                   startTimeText = label
+               })
             },
             onEndTimeClick = {
-                onTimePick { millis, label ->
-                    endMillis = millis
-                    endTimeText = label
-                }
+                pickTime(context,{
+                        millis, label ->
+                    startMillis = millis
+                    startTimeText = label
+                })
             },
             onCancel = {
                 showEditSheet = false
@@ -457,18 +452,26 @@ fun SchedulesScreen(
                     return@EditScheduleSheet
                 }
 
-                if(endMillis <= startMillis)
+                if(endMillis < startMillis)
                 {
                     schedulesViewModel.showError("End time can not be before start time")
 
                     return@EditScheduleSheet
                 }
+
+                if(endMillis == startMillis)
+                {
+                    schedulesViewModel.showError("End time and start time can not be same")
+
+                    return@EditScheduleSheet
+                }
+
                 val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
-                if (!exactOk) {
+                if (!exactOk)
+                {
                     Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
                     val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                     context.startActivity(i)
-
                     return@EditScheduleSheet
                 }
                     val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
@@ -480,20 +483,13 @@ fun SchedulesScreen(
                             startMillis,
                             endMillis
                         )
+                        Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
                     } else {
                         schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis)
+                        Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false
-                    val writeGranted = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.WRITE_CONTACTS
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (!writeGranted) {
-                        onShowToast(context.getString(R.string.toast_grant_write))
-                    } else {
-                        onShowToast(context.getString(R.string.toast_schedule_saved))
-                    }
-                schedulesViewModel.clearError()
+                    showContactSheet=false
             }
         )
     }
@@ -504,9 +500,7 @@ fun SchedulesScreen(
 fun SchedulesScreenPreview() {
     ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
         SchedulesScreen(
-            schedulesViewModel = viewModel(),
-            onShowToast = {},
-            onTimePick = {}
+            schedulesViewModel = viewModel()
         )
     }
 }
