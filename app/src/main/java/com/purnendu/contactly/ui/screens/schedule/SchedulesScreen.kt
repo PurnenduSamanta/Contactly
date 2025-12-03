@@ -401,13 +401,14 @@ fun SchedulesScreen(
     if (showEditSheet) {
 
         val contact = selectedContact ?: Contact("", "", null)
+        val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
         EditScheduleSheet(
             error = errorMessage.value,
             onErrorCardDismiss = { schedulesViewModel.clearError() },
             contact = contact,
             temporaryName = temporaryName,
-            startTime = startTimeText,
-            endTime = endTimeText,
+            startTime = formatter.format(startMillis),
+            endTime = formatter.format(endMillis),
             onTemporaryNameChange = { temporaryName = it },
             onStartTimeClick = {
                 pickTime(context,{
