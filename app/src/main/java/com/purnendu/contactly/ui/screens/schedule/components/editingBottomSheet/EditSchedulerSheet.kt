@@ -56,11 +56,13 @@ fun EditScheduleSheet(
     temporaryName: String,
     startTime: String,
     endTime: String,
+    selectedDays: Set<Int> = setOf(0, 1, 2, 3, 4, 5, 6),  // Default: all days
     error:String?,
     onErrorCardDismiss: () -> Unit,
     onTemporaryNameChange: (String) -> Unit,
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
+    onDaysChanged: (Set<Int>) -> Unit,
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -172,6 +174,21 @@ fun EditScheduleSheet(
                         value = endTime,
                         onClick = onEndTimeClick
                     )
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                // Day Picker
+                item {
+                    Text(
+                        text = "Repeat On",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    DayPickerWheel(
+                        selectedDays = selectedDays,
+                        onDaysChanged = onDaysChanged
+                    )
                     Spacer(Modifier.height(24.dp))
                 }
             }
@@ -214,9 +231,11 @@ fun EditScheduleSheetPreview() {
         temporaryName = "Joy",
         startTime = "",
         endTime ="",
+        selectedDays = setOf(1, 3, 5),  // Mon, Wed, Fri
         onTemporaryNameChange = {},
         onStartTimeClick = {},
         onEndTimeClick = {},
+        onDaysChanged = {},
         onCancel = {},
         onSave = {}
     )

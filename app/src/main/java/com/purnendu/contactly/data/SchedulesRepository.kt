@@ -26,7 +26,8 @@ class SchedulesRepository(private val database: AppDatabase) {
         originalName: String,
         temporaryName: String,
         startAtMillis: Long,
-        endAtMillis: Long
+        endAtMillis: Long,
+        selectedDays: Int = 127  // Default to all days
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
@@ -35,7 +36,8 @@ class SchedulesRepository(private val database: AppDatabase) {
                 originalName = originalName,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
             )
         )
     }

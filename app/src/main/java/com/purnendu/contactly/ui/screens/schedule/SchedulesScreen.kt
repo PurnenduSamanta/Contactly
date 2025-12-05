@@ -97,6 +97,7 @@ fun SchedulesScreen(
     var endTimeText by remember { mutableStateOf("") }
     var startMillis by remember { mutableStateOf(0L) }
     var endMillis by remember { mutableStateOf(0L) }
+    var selectedDays by remember { mutableStateOf(setOf(0, 1, 2, 3, 4, 5, 6)) }
 
     val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
     val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
@@ -335,6 +336,7 @@ fun SchedulesScreen(
                                             val entity = schedulesViewModel.loadScheduleEntity(sid)
                                             startMillis = entity?.startAtMillis ?: 0L
                                             endMillis = entity?.endAtMillis ?: 0L
+                                            selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
                                             startTimeText =
                                                 if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
                                                     java.util.Date(startMillis)
@@ -409,7 +411,9 @@ fun SchedulesScreen(
             temporaryName = temporaryName,
             startTime = formatter.format(startMillis),
             endTime = formatter.format(endMillis),
+            selectedDays = selectedDays,
             onTemporaryNameChange = { temporaryName = it },
+            onDaysChanged = { selectedDays = it },
             onStartTimeClick = {
                 pickTime(context,{
                        millis, label ->
@@ -476,6 +480,7 @@ fun SchedulesScreen(
                     context.startActivity(i)
                     return@EditScheduleSheet
                 }
+                val selectedDaysBitmask = com.purnendu.contactly.utils.DayUtils.daysToBitmask(selectedDays)
                     val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
                     if (editingId != null) {
                         schedulesViewModel.updateSchedule(
@@ -483,11 +488,12 @@ fun SchedulesScreen(
                             contact,
                             temporaryName,
                             startMillis,
-                            endMillis
+                            endMillis,
+                            selectedDaysBitmask
                         )
                         Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
                     } else {
-                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis)
+                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis, selectedDaysBitmask)
                         Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false

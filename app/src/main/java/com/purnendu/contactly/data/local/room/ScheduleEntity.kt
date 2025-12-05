@@ -12,6 +12,7 @@ data class ScheduleEntity(
     val temporaryName: String,
     val startAtMillis: Long,
     val endAtMillis: Long,
-    val applied: Boolean = false
+    val applied: Boolean = false,
+    val selectedDays: Int = 127  // Bitmask: 127 = all days (Sun-Sat)
 )
 

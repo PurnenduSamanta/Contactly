@@ -59,7 +59,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         contact: Contact,
         temporaryName: String,
         startAtMillis: Long,
-        endAtMillis: Long
+        endAtMillis: Long,
+        selectedDays: Int = 127
     )
     {
         scheduleAlarms(
@@ -67,7 +68,9 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis)
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
+        )
     }
 
     fun deleteSchedule(schedule: Schedule) {
@@ -88,7 +91,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         contact: Contact,
         temporaryName: String,
         startAtMillis: Long,
-        endAtMillis: Long
+        endAtMillis: Long,
+        selectedDays: Int = 127
     ) {
             scheduleAlarms(
                 isUpdatingAlarm = true,
@@ -96,7 +100,9 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
+                endAtMillis = endAtMillis,
+                scheduleId = scheduleId,
+                selectedDays = selectedDays
             )
     }
 
@@ -139,7 +145,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         contact: Contact,
         temporaryName: String,
         startAtMillis: Long,
-        endAtMillis: Long
+        endAtMillis: Long,
+        selectedDays: Int
     )
     {
         val id = contact.id ?: return
@@ -151,7 +158,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
             )
         }
     }
@@ -160,7 +168,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         scheduleId: Long,
         temporaryName: String,
         startAtMillis: Long,
-        endAtMillis: Long
+        endAtMillis: Long,
+        selectedDays: Int
     )
     {
         viewModelScope.launch(Dispatchers.IO) {
@@ -168,7 +177,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             val updated = current.copy(
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
             )
             schedulesRepo.update(updated)
         }
@@ -203,71 +213,92 @@ private fun SchedulesViewModel.scheduleAlarms(
     startAtMillis: Long,
     endAtMillis: Long,
     scheduleId: Long?=null,
-    isUpdatingAlarm: Boolean = false
+    isUpdatingAlarm: Boolean = false,
+    selectedDays: Int = 127
 )
 {
-    var isAlarmSuccessfullyScheduled: Boolean
+    var isAlarmSuccessfullyScheduled = true
     val contactId = contact.id.toString().toLongOrNull() ?: return
 
     val context = getApplication<Application>()
     val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    val now = System.currentTimeMillis()
-    val applyAt = startAtMillis.coerceAtLeast(now)
-    val revertAt = endAtMillis.coerceAtLeast(now)
+    // Extract selected days (0=Sun, 1=Mon, ...)
+    val daysList = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(selectedDays)
+    
+    // If no days selected, don't schedule anything
+    if (daysList.isEmpty()) return
 
-    val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-        action = AliasAlarmReceiver.ACTION_ALIAS
-        putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
-        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-        putExtra(AliasAlarmReceiver.EXTRA_NAME, temporaryName)
-    }
-    val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-        action = AliasAlarmReceiver.ACTION_ALIAS
-        putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
-        putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-        putExtra(AliasAlarmReceiver.EXTRA_NAME, originalName)
-    }
+    daysList.forEach { dayOfWeek ->
+        // Calculate next occurrence for this day
+        val applyAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
+        val revertAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
 
-    val applyReqCode = (contactId % Int.MAX_VALUE).toInt()
-    val revertReqCode = ((contactId % Int.MAX_VALUE).toInt() + 1)
+        // Unique request codes for each day: (contactId * 10 + day)
+        // We use a base ID derived from contactId, but we need to be careful about collisions
+        // A better approach for request codes: (contactId.hashCode() + day * 100)
+        // Or just use a random seed if we don't need to cancel them explicitly by ID (we usually overwrite)
+        
+        // Using a deterministic request code scheme:
+        // Base: contactId.toInt()
+        // Apply: base + (day * 2)
+        // Revert: base + (day * 2) + 1
+        val baseReqCode = (contactId % 1000000).toInt() * 100
+        val applyReqCode = baseReqCode + (dayOfWeek * 2)
+        val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
 
-    val applyPending = PendingIntent.getBroadcast(
-        context,
-        applyReqCode,
-        applyIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val revertPending = PendingIntent.getBroadcast(
-        context,
-        revertReqCode,
-        revertIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
+        val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
+            action = AliasAlarmReceiver.ACTION_ALIAS
+            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
+            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
+            putExtra(AliasAlarmReceiver.EXTRA_NAME, temporaryName)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
+            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
+        }
+        val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
+            action = AliasAlarmReceiver.ACTION_ALIAS
+            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
+            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
+            putExtra(AliasAlarmReceiver.EXTRA_NAME, originalName)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
+            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
+        }
 
-    try {
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC,
-            applyAt,
-            applyPending
+        val applyPending = PendingIntent.getBroadcast(
+            context,
+            applyReqCode,
+            applyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        isAlarmSuccessfullyScheduled = true
-    }
-    catch (e: SecurityException) {
-        Log.d("alarm_error", e.localizedMessage.toString())
-        isAlarmSuccessfullyScheduled = false
-    }
-    try {
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC,
-            revertAt,
-            revertPending
+        val revertPending = PendingIntent.getBroadcast(
+            context,
+            revertReqCode,
+            revertIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        isAlarmSuccessfullyScheduled = true
-    }
-    catch (e: SecurityException) {
-        Log.d("alarm_error", e.localizedMessage.toString())
-        isAlarmSuccessfullyScheduled = false
+
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC,
+                applyAt,
+                applyPending
+            )
+        }
+        catch (e: SecurityException) {
+            Log.d("alarm_error", e.localizedMessage.toString())
+            isAlarmSuccessfullyScheduled = false
+        }
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC,
+                revertAt,
+                revertPending
+            )
+        }
+        catch (e: SecurityException) {
+            Log.d("alarm_error", e.localizedMessage.toString())
+            isAlarmSuccessfullyScheduled = false
+        }
     }
 
     if(isAlarmSuccessfullyScheduled)
@@ -281,7 +312,8 @@ private fun SchedulesViewModel.scheduleAlarms(
                 scheduleId = scheduleId,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
             )
         }
         else
@@ -290,7 +322,8 @@ private fun SchedulesViewModel.scheduleAlarms(
                 contact = contact,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays
             )
         }
     }
