@@ -52,6 +52,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -288,11 +289,12 @@ fun SchedulesScreen(
                                 shape = RoundedCornerShape(10.dp)
                             )
                             .fillMaxWidth()
-                            .padding(horizontal = 15.dp, vertical = 10.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .clickable {
                                 schedulesViewModel.loadContacts()
                                 showContactSheet = true
-                            },
+                            }
+                            .padding(horizontal = 15.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -468,6 +470,13 @@ fun SchedulesScreen(
                 if(endMillis == startMillis)
                 {
                     schedulesViewModel.showError("End time and start time can not be same")
+
+                    return@EditScheduleSheet
+                }
+
+                if(selectedDays.isEmpty())
+                {
+                    schedulesViewModel.showError("Select at least one day")
 
                     return@EditScheduleSheet
                 }
