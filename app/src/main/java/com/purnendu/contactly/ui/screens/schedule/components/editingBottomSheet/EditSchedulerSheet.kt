@@ -73,7 +73,6 @@ fun EditScheduleSheet(
     ) {
         Column(
             modifier = Modifier
-                 .fillMaxHeight(0.9f)
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
