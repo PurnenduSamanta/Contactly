@@ -9,6 +9,7 @@ import android.util.Log
 import com.purnendu.contactly.data.ContactsRepository
 import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
+import com.purnendu.contactly.utils.DayUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,7 +23,6 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val alarmManager = context.getSystemService(AlarmManager::class.java)
-                val now = System.currentTimeMillis()
                 val repo = SchedulesRepository(AppDatabase.getDataBase(context))
                 val contactsRepo = ContactsRepository.get(context)
                 val entities = repo.getAllEntities()
@@ -43,53 +43,82 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
                         return@forEach // Skip to next schedule
                     }
 
-                    if (e.startAtMillis > now) {
+                    // Extract selected days from bitmask (e.g., 127 = all days)
+                    val daysList = DayUtils.extractDaysFromBitmask(e.selectedDays)
+                    
+                    // If no days selected, skip this schedule
+                    if (daysList.isEmpty()) {
+                        Log.w("RescheduleAlarmsRx", "No days selected for schedule ${e.scheduleId}, skipping")
+                        return@forEach
+                    }
+
+                    // Schedule alarms for each selected day
+                    daysList.forEach { dayOfWeek ->
+                        // Calculate next occurrence for this specific day
+                        val applyAt = DayUtils.calculateNextOccurrence(e.startAtMillis, dayOfWeek)
+                        val revertAt = DayUtils.calculateNextOccurrence(e.endAtMillis, dayOfWeek)
+
+                        // Generate unique request codes matching SchedulesViewModel's scheme
+                        val baseReqCode = (e.contactId % 1000000).toInt() * 100
+                        val applyReqCode = baseReqCode + (dayOfWeek * 2)
+                        val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
+
+                        // Create APPLY alarm intent
                         val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
                             action = AliasAlarmReceiver.ACTION_ALIAS
                             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
                             putExtra(AliasAlarmReceiver.EXTRA_NAME, e.temporaryName)
+                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
+                            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek) // Important!
                         }
-                        val applyReqCode = (e.contactId % Int.MAX_VALUE).toInt()
+                        
                         val applyPending = PendingIntent.getBroadcast(
                             context,
                             applyReqCode,
                             applyIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
+
+                        // Schedule APPLY alarm
                         try {
                             alarmManager.setExactAndAllowWhileIdle(
-                                AlarmManager.RTC_WAKEUP,
-                                e.startAtMillis,
+                                AlarmManager.RTC,
+                                applyAt,
                                 applyPending
                             )
-                        } catch (_: SecurityException) {
-                            alarmManager.set(AlarmManager.RTC_WAKEUP, e.startAtMillis, applyPending)
+                            Log.d("RescheduleAlarmsRx", "Scheduled APPLY for contact ${e.contactId}, day $dayOfWeek at $applyAt")
+                        } catch (ex: SecurityException) {
+                            Log.e("RescheduleAlarmsRx", "Failed to schedule APPLY alarm", ex)
                         }
-                    }
 
-                    if (e.endAtMillis > now) {
+                        // Create REVERT alarm intent
                         val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
                             action = AliasAlarmReceiver.ACTION_ALIAS
                             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
                             putExtra(AliasAlarmReceiver.EXTRA_NAME, e.originalName)
+                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
+                            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek) // Important!
                         }
-                        val revertReqCode = ((e.contactId % Int.MAX_VALUE).toInt() + 1)
+                        
                         val revertPending = PendingIntent.getBroadcast(
                             context,
                             revertReqCode,
                             revertIntent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                         )
+
+                        // Schedule REVERT alarm
                         try {
                             alarmManager.setExactAndAllowWhileIdle(
-                                AlarmManager.RTC_WAKEUP,
-                                e.endAtMillis,
+                                AlarmManager.RTC,
+                                revertAt,
                                 revertPending
                             )
-                        } catch (_: SecurityException) {
-                            alarmManager.set(AlarmManager.RTC_WAKEUP, e.endAtMillis, revertPending)
+                            Log.d("RescheduleAlarmsRx", "Scheduled REVERT for contact ${e.contactId}, day $dayOfWeek at $revertAt")
+                        } catch (ex: SecurityException) {
+                            Log.e("RescheduleAlarmsRx", "Failed to schedule REVERT alarm", ex)
                         }
                     }
                 }
