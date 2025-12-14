@@ -75,7 +75,7 @@ import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBot
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.components.ContactlyDialog
-import com.purnendu.contactly.components.pickTime
+import com.purnendu.contactly.components.ContactlyTimePicker
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -99,6 +99,10 @@ fun SchedulesScreen(
     var startMillis by remember { mutableStateOf(0L) }
     var endMillis by remember { mutableStateOf(0L) }
     var selectedDays by remember { mutableStateOf(setOf(0, 1, 2, 3, 4, 5, 6)) }
+    
+    // Custom time picker states
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
 
     val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
     val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
@@ -415,20 +419,8 @@ fun SchedulesScreen(
             selectedDays = selectedDays,
             onTemporaryNameChange = { temporaryName = it },
             onDaysChanged = { selectedDays = it },
-            onStartTimeClick = {
-                pickTime(context,{
-                       millis, label ->
-                   startMillis = millis
-                   startTimeText = label
-               })
-            },
-            onEndTimeClick = {
-                pickTime(context,{
-                        millis, label ->
-                    endMillis = millis
-                    endTimeText = label
-                })
-            },
+            onStartTimeClick = { showStartTimePicker = true },
+            onEndTimeClick = { showEndTimePicker = true },
             onCancel = {
                 showEditSheet = false
                 showContactSheet = false
@@ -509,6 +501,43 @@ fun SchedulesScreen(
             }
         )
     }
+    
+    // Custom Time Pickers
+    if (showStartTimePicker) {
+        ContactlyTimePicker(
+            onDismiss = { showStartTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val cal = java.util.Calendar.getInstance().apply {
+                    set(java.util.Calendar.HOUR_OF_DAY, hour)
+                    set(java.util.Calendar.MINUTE, minute)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                }
+                startMillis = cal.timeInMillis
+                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                startTimeText = formatter.format(cal.time)
+                showStartTimePicker = false
+            }
+        )
+    }
+    
+    if (showEndTimePicker) {
+        ContactlyTimePicker(
+            onDismiss = { showEndTimePicker = false },
+            onTimeSelected = { hour, minute ->
+                val cal = java.util.Calendar.getInstance().apply {
+                    set(java.util.Calendar.HOUR_OF_DAY, hour)
+                    set(java.util.Calendar.MINUTE, minute)
+                    set(java.util.Calendar.SECOND, 0)
+                    set(java.util.Calendar.MILLISECOND, 0)
+                }
+                endMillis = cal.timeInMillis
+                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                endTimeText = formatter.format(cal.time)
+                showEndTimePicker = false
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)
@@ -520,3 +549,5 @@ fun SchedulesScreenPreview() {
         )
     }
 }
+
+

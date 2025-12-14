@@ -2,9 +2,6 @@ package com.purnendu.contactly
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
-import android.app.AlarmManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -36,7 +33,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.purnendu.contactly.components.pickTime
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 
@@ -147,3 +143,4 @@ class MainActivity : ComponentActivity() {
     }
 }
                 
+
