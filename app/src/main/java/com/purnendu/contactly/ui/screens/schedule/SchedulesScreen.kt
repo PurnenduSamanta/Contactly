@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +53,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -96,13 +99,21 @@ fun SchedulesScreen(
     var temporaryName by remember { mutableStateOf("") }
     var startTimeText by remember { mutableStateOf("") }
     var endTimeText by remember { mutableStateOf("") }
-    var startMillis by remember { mutableStateOf(0L) }
-    var endMillis by remember { mutableStateOf(0L) }
+    var startMillis by remember { mutableLongStateOf(0L) }
+    var endMillis by remember { mutableLongStateOf(0L) }
     var selectedDays by remember { mutableStateOf(setOf(0, 1, 2, 3, 4, 5, 6)) }
     
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    
+    // FAB scroll behavior
+    val listState = rememberLazyListState()
+    val fabVisible by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+        }
+    }
 
     val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
     val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
@@ -205,7 +216,24 @@ fun SchedulesScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            if (schedules.isNotEmpty()) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = fabVisible && schedules.isNotEmpty(),
+                enter = androidx.compose.animation.slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = androidx.compose.animation.core.spring(
+                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    )
+                ) + androidx.compose.animation.fadeIn(
+                    animationSpec = androidx.compose.animation.core.tween(300)
+                ),
+                exit = androidx.compose.animation.slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = androidx.compose.animation.core.tween(300)
+                ) + androidx.compose.animation.fadeOut(
+                    animationSpec = androidx.compose.animation.core.tween(200)
+                )
+            ) {
                 ExtendedFloatingActionButton(
                     onClick = {
                         schedulesViewModel.loadContacts()
@@ -319,6 +347,7 @@ fun SchedulesScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
