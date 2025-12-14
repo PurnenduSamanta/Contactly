@@ -399,6 +399,23 @@ fun SchedulesScreen(
                                     }
                                 }
                             }
+                        },
+                        onContactDetailsClick = { sched ->
+                            val contactId = sched.contactId
+                            if (contactId != null) {
+                                try {
+                                    val intent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        android.provider.ContactsContract.Contacts.getLookupUri(
+                                            contactId,
+                                            schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
+                                        )
+                                    )
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     )
                 }

@@ -30,6 +30,8 @@ import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 
@@ -40,6 +42,7 @@ fun ScheduleItem(
     avatarUri: String? = null,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
+    onContactDetailsClick: (schedule: Schedule) -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -61,11 +64,15 @@ fun ScheduleItem(
             ),
         )
         {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -147,6 +154,23 @@ fun ScheduleItem(
                     modifier = Modifier.padding(start = 0.dp)
                 )
             }
+                
+                // Contact details icon button (upper right corner)
+                androidx.compose.material3.IconButton(
+                    onClick = { onContactDetailsClick(schedule) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(36.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "View Contact Details",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -215,3 +239,4 @@ fun ScheduleItemPreview() {
         )
     }
 }
+
