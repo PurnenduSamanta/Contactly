@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.purnendu.contactly.ui.screens.schedule.components.DayChip
 import com.purnendu.contactly.ui.theme.ChipBorder
 import com.purnendu.contactly.ui.theme.ChipSelectedBorder
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -92,76 +93,6 @@ fun DayPickerWheel(
                     .padding(8.dp)
             )
         }
-    }
-}
-
-/**
- * Individual day chip with selection animation
- */
-@Composable
-private fun DayChip(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        label = "backgroundColor"
-    )
-    
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            ChipSelectedBorder
-        } else {
-            ChipBorder
-        },
-        label = "borderColor"
-    )
-    
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-        label = "textColor"
-    )
-    
-    val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.05f else 1f,
-        label = "scale"
-    )
-    
-    Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .scale(scale)
-            .background(
-                color = backgroundColor,
-                shape = CircleShape
-            )
-            .border(
-                width = 2.dp,
-                color = borderColor,
-                shape = CircleShape
-            )
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = textColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center
-        )
     }
 }
 

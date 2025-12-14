@@ -87,6 +87,21 @@ fun ScheduleItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold
                         )
+                        
+                        // Scheduled time display
+                        if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                            val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
+                            val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
+                            
+                            Text(
+                                text = "$startTime - $endTime",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
                     // Avatar with expressive rounded corners
@@ -123,6 +138,14 @@ fun ScheduleItem(
                         }
                     }
                 }
+                
+                // Selected days display
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                DayChips(
+                    selectedDays = schedule.selectedDays,
+                    modifier = Modifier.padding(start = 0.dp)
+                )
             }
         }
 

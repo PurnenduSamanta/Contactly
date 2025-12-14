@@ -15,7 +15,10 @@ class SchedulesRepository(private val database: AppDatabase) {
                 name = e.temporaryName,
                 originalName = e.originalName,
                 avatarResId = null,
-                contactId = e.contactId
+                contactId = e.contactId,
+                selectedDays = e.selectedDays,
+                startAtMillis = e.startAtMillis,
+                endAtMillis = e.endAtMillis
             )
         }
     }
