@@ -75,4 +75,7 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.accompanist.permissions)
+    
+    // Gson for alarm metadata JSON serialization
+    implementation("com.google.code.gson:gson:2.10.1")
 }

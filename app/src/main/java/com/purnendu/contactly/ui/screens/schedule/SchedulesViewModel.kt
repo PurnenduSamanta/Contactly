@@ -18,6 +18,8 @@ import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
+import com.purnendu.contactly.alarm.AlarmMetadata
+import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.data.local.room.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -146,12 +148,16 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int
+        selectedDays: Int,
+        alarmMetadata: List<AlarmMetadata>
     )
     {
         val id = contact.id ?: return
         viewModelScope.launch(Dispatchers.IO)
         {
+            val syncManager = AlarmSyncManager(application)
+            val metadataJson = syncManager.toJson(alarmMetadata)
+            
             schedulesRepo.create(
                 contactId = id,
                 contactLookupKey = contact.lookupKey,
@@ -159,7 +165,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                scheduledAlarmsMetadata = metadataJson
             )
         }
     }
@@ -169,38 +176,23 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int
+        selectedDays: Int,
+        alarmMetadata: List<AlarmMetadata>
     )
     {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
+            val syncManager = AlarmSyncManager(application)
+            val metadataJson = syncManager.toJson(alarmMetadata)
+            
             val updated = current.copy(
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                scheduledAlarmsMetadata = metadataJson
             )
             schedulesRepo.update(updated)
-        }
-    }
-
-    fun cleanupOrphanedSchedules() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val allSchedules = schedulesRepo.getAllEntities()
-                allSchedules.forEach { schedule ->
-                    // Check if the contact still exists
-                    val contact = contactsRepo.fetchContactById(schedule.contactId)
-                    if (contact == null) {
-                        // Contact was deleted, remove the schedule
-                        schedulesRepo.deleteByContactId(schedule.contactId)
-                        Log.d("SchedulesViewModel", "Removed orphaned schedule for deleted contact ID: ${schedule.contactId}")
-                    }
-                }
-            } catch (e: Exception) {
-                // Handle any errors gracefully
-                Log.e("SchedulesViewModel", "Error cleaning up orphaned schedules", e)
-            }
         }
     }
 
@@ -228,6 +220,9 @@ private fun SchedulesViewModel.scheduleAlarms(
     
     // If no days selected, don't schedule anything
     if (daysList.isEmpty()) return
+    
+    // Track alarm metadata for database storage
+    val alarmMetadataList = mutableListOf<AlarmMetadata>()
 
     daysList.forEach { dayOfWeek ->
         // Calculate next occurrence for this day
@@ -246,6 +241,24 @@ private fun SchedulesViewModel.scheduleAlarms(
         val baseReqCode = (contactId % 1000000).toInt() * 100
         val applyReqCode = baseReqCode + (dayOfWeek * 2)
         val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
+        
+        // Store metadata for this alarm
+        alarmMetadataList.add(
+            AlarmMetadata(
+                requestCode = applyReqCode,
+                dayOfWeek = dayOfWeek,
+                operation = AliasAlarmReceiver.OP_APPLY,
+                triggerTimeMillis = applyAt
+            )
+        )
+        alarmMetadataList.add(
+            AlarmMetadata(
+                requestCode = revertReqCode,
+                dayOfWeek = dayOfWeek,
+                operation = AliasAlarmReceiver.OP_REVERT,
+                triggerTimeMillis = revertAt
+            )
+        )
 
         val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
             action = AliasAlarmReceiver.ACTION_ALIAS
@@ -313,7 +326,8 @@ private fun SchedulesViewModel.scheduleAlarms(
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                alarmMetadata = alarmMetadataList
             )
         }
         else
@@ -323,7 +337,8 @@ private fun SchedulesViewModel.scheduleAlarms(
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                alarmMetadata = alarmMetadataList
             )
         }
     }
