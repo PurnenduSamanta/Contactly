@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,8 +30,8 @@ fun DayChips(
     
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         maxItemsInEachRow = 7
     ) {
         dayNames.forEachIndexed { index, dayName ->
@@ -40,7 +41,7 @@ fun DayChips(
                 label = dayName,
                 isSelected = isSelected,
                 onClick = null,  // Display-only, no interaction
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.size(28.dp)
             )
         }
     }

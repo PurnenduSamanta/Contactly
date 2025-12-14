@@ -38,10 +38,10 @@ import com.purnendu.contactly.utils.AppThemeMode
  */
 @Composable
 fun DayChip(
+    modifier: Modifier = Modifier,
     label: String,
     isSelected: Boolean,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
         targetValue = if (isSelected) {
@@ -96,14 +96,14 @@ fun DayChip(
                     Modifier
                 }
             )
-            .padding(8.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             color = textColor,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 12.sp,
             textAlign = TextAlign.Center
         )
     }

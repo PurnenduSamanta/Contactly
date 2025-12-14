@@ -3,7 +3,6 @@ package com.purnendu.contactly.ui.screens.schedule
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -24,6 +23,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,6 +77,7 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
+import com.purnendu.contactly.ui.screens.schedule.components.ScheduleGridItem
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -92,6 +96,11 @@ fun SchedulesScreen(
     val schedules by schedulesViewModel.schedules.collectAsState()
     val contacts by schedulesViewModel.contacts.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    
+    // View mode preference
+    val viewMode by com.purnendu.contactly.data.preferences.ViewPreferences
+        .viewModeFlow(context)
+        .collectAsState(initial = com.purnendu.contactly.utils.ViewMode.LIST)
 
     var showContactSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
@@ -109,9 +118,17 @@ fun SchedulesScreen(
     
     // FAB scroll behavior
     val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
     val fabVisible by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+            when (viewMode) {
+                com.purnendu.contactly.utils.ViewMode.LIST -> {
+                    listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                }
+                com.purnendu.contactly.utils.ViewMode.GRID -> {
+                    gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+                }
+            }
         }
     }
 
@@ -346,78 +363,163 @@ fun SchedulesScreen(
                 }
             }
         } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(schedules) { schedule ->
-                    ScheduleItem(
-                        schedule = schedule,
-                        avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
-                        onEditClick = { sched ->
-                            val cid = sched.contactId
-                            if (cid != null) {
-                                val contact = schedulesViewModel.contactForId(cid)
-                                if (contact != null) {
-                                    selectedContact = contact
-                                    temporaryName = sched.name
-                                    val sid = sched.id.toLongOrNull()
-                                    if (sid != null) {
+            // Conditional rendering based on view mode
+            when (viewMode) {
+                com.purnendu.contactly.utils.ViewMode.LIST -> {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(schedules) { schedule ->
+                            ScheduleItem(
+                                schedule = schedule,
+                                avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
+                                onEditClick = { sched ->
+                                    val cid = sched.contactId
+                                    if (cid != null) {
+                                        val contact = schedulesViewModel.contactForId(cid)
+                                        if (contact != null) {
+                                            selectedContact = contact
+                                            temporaryName = sched.name
+                                            val sid = sched.id.toLongOrNull()
+                                            if (sid != null) {
+                                                coroutineScope.launch {
+                                                    val entity = schedulesViewModel.loadScheduleEntity(sid)
+                                                    startMillis = entity?.startAtMillis ?: 0L
+                                                    endMillis = entity?.endAtMillis ?: 0L
+                                                    selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
+                                                    startTimeText =
+                                                        if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
+                                                            java.util.Date(startMillis)
+                                                        ) else ""
+                                                    endTimeText =
+                                                        if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
+                                                            java.util.Date(endMillis)
+                                                        ) else ""
+                                                    showEditSheet = true
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                onDeleteClick = {
+                                    if(snackBarHostState.currentSnackbarData==null)
+                                    {
                                         coroutineScope.launch {
-                                            val entity = schedulesViewModel.loadScheduleEntity(sid)
-                                            startMillis = entity?.startAtMillis ?: 0L
-                                            endMillis = entity?.endAtMillis ?: 0L
-                                            selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                                            startTimeText =
-                                                if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                    java.util.Date(startMillis)
-                                                ) else ""
-                                            endTimeText =
-                                                if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                    java.util.Date(endMillis)
-                                                ) else ""
-                                            showEditSheet = true
+                                            val result = snackBarHostState.showSnackbar(
+                                                message = "Do you want to delete this schedule?",
+                                                actionLabel = "Delete",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                schedulesViewModel.deleteSchedule(it)
+                                            }
+                                        }
+                                    }
+                                },
+                                onContactDetailsClick = { sched ->
+                                    val contactId = sched.contactId
+                                    if (contactId != null) {
+                                        try {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                android.provider.ContactsContract.Contacts.getLookupUri(
+                                                    contactId,
+                                                    schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
+                                                )
+                                            )
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 }
-                            }
-                        },
-                        onDeleteClick = {
-                            if(snackBarHostState.currentSnackbarData==null)
-                            {
-                                coroutineScope.launch {
-                                    val result = snackBarHostState.showSnackbar(
-                                        message = "Do you want to delete this schedule?",
-                                        actionLabel = "Delete",
-                                        duration = SnackbarDuration.Short
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        schedulesViewModel.deleteSchedule(it)
+                            )
+                        }
+                    }
+                }
+                
+                com.purnendu.contactly.utils.ViewMode.GRID -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = gridState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(schedules) { schedule ->
+                            ScheduleGridItem(
+                                schedule = schedule,
+                                avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
+                                onEditClick = { sched ->
+                                    val cid = sched.contactId
+                                    if (cid != null) {
+                                        val contact = schedulesViewModel.contactForId(cid)
+                                        if (contact != null) {
+                                            selectedContact = contact
+                                            temporaryName = sched.name
+                                            val sid = sched.id.toLongOrNull()
+                                            if (sid != null) {
+                                                coroutineScope.launch {
+                                                    val entity = schedulesViewModel.loadScheduleEntity(sid)
+                                                    startMillis = entity?.startAtMillis ?: 0L
+                                                    endMillis = entity?.endAtMillis ?: 0L
+                                                    selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
+                                                    startTimeText =
+                                                        if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
+                                                            java.util.Date(startMillis)
+                                                        ) else ""
+                                                    endTimeText =
+                                                        if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
+                                                            java.util.Date(endMillis)
+                                                        ) else ""
+                                                    showEditSheet = true
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                onDeleteClick = {
+                                    if(snackBarHostState.currentSnackbarData==null)
+                                    {
+                                        coroutineScope.launch {
+                                            val result = snackBarHostState.showSnackbar(
+                                                message = "Do you want to delete this schedule?",
+                                                actionLabel = "Delete",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                schedulesViewModel.deleteSchedule(it)
+                                            }
+                                        }
+                                    }
+                                },
+                                onContactDetailsClick = { sched ->
+                                    val contactId = sched.contactId
+                                    if (contactId != null) {
+                                        try {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                android.provider.ContactsContract.Contacts.getLookupUri(
+                                                    contactId,
+                                                    schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
+                                                )
+                                            )
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        onContactDetailsClick = { sched ->
-                            val contactId = sched.contactId
-                            if (contactId != null) {
-                                try {
-                                    val intent = Intent(
-                                        Intent.ACTION_VIEW,
-                                        android.provider.ContactsContract.Contacts.getLookupUri(
-                                            contactId,
-                                            schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
-                                        )
-                                    )
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
-                                }
-                            }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }

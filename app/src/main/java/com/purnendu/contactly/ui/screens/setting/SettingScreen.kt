@@ -1,6 +1,5 @@
 package com.purnendu.contactly.ui.screens.setting
 
-import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
+import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
 import com.purnendu.contactly.utils.AppThemeMode
 import androidx.compose.ui.res.stringResource
 import com.purnendu.contactly.R
@@ -41,6 +40,7 @@ fun SettingsScreen(
 ) {
 
     val themeMode by settingsViewModel.theme.collectAsState()
+    val viewMode by settingsViewModel.viewMode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -104,6 +104,29 @@ fun SettingsScreen(
                         settingsViewModel.setTheme(AppThemeMode.SYSTEM)
                     }
                 }
+            }
+
+            // View Mode Section
+            item {
+                Text(
+                    "View Mode",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        top = 28.dp,
+                        bottom = 10.dp
+                    )
+                )
+            }
+            
+            item {
+                ViewModeToggle(
+                    selectedMode = viewMode,
+                    onModeChange = { settingsViewModel.setViewMode(it) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
 
             item {
