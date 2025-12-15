@@ -111,6 +111,7 @@ fun SchedulesScreen(
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
     var selectedDays by remember { mutableStateOf(setOf(0, 1, 2, 3, 4, 5, 6)) }
+    var scheduleType by remember { mutableStateOf(com.purnendu.contactly.utils.ScheduleType.ONE_TIME) }
     
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -565,8 +566,17 @@ fun SchedulesScreen(
             startTime = if(startMillis==0L) "" else formatter.format(startMillis),
             endTime = if(endMillis==0L) "" else formatter.format(endMillis),
             selectedDays = selectedDays,
+            scheduleType = scheduleType,
             onTemporaryNameChange = { temporaryName = it },
             onDaysChanged = { selectedDays = it },
+            onScheduleTypeChange = { newType ->
+                scheduleType = newType
+                // When switching to ONE_TIME, set today's day by default
+                if (newType == com.purnendu.contactly.utils.ScheduleType.ONE_TIME) {
+                    val today = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) - 1
+                    selectedDays = setOf(today)
+                }
+            },
             onStartTimeClick = { showStartTimePicker = true },
             onEndTimeClick = { showEndTimePicker = true },
             onCancel = {

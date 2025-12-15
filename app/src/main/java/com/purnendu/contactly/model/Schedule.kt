@@ -1,6 +1,7 @@
 package com.purnendu.contactly.model
 
 import androidx.annotation.DrawableRes
+import com.purnendu.contactly.utils.ScheduleType
 
 data class Schedule(
     val id: String,
@@ -10,5 +11,6 @@ data class Schedule(
     val contactId: Long? = null,
     val selectedDays: Int = 127,  // Bitmask: 127 = all days (Sun-Sat)
     val startAtMillis: Long = 0L,
-    val endAtMillis: Long = 0L
+    val endAtMillis: Long = 0L,
+    val scheduleType: ScheduleType = ScheduleType.ONE_TIME  // Default to REPEAT for backward compatibility
 )

@@ -32,12 +32,14 @@ import com.purnendu.contactly.utils.DayUtils
  * iOS-style day picker with circular chips for each day of the week
  * @param selectedDays Set of selected day indices (0=Sunday, 1=Monday, ..., 6=Saturday)
  * @param onDaysChanged Callback when days selection changes
+ * @param singleSelection If true, only one day can be selected at a time
  */
 @Composable
 fun DayPickerWheel(
     selectedDays: Set<Int>,
     onDaysChanged: (Set<Int>) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    singleSelection: Boolean = false
 ) {
     val dayLabels = DayUtils.getShortDayNames()
     
@@ -55,10 +57,16 @@ fun DayPickerWheel(
                     label = dayLabel,
                     isSelected = isSelected,
                     onClick = {
-                        val newSelection = if (isSelected) {
-                            selectedDays - index
+                        val newSelection = if (singleSelection) {
+                            // Single selection mode: replace with new day
+                            setOf(index)
                         } else {
-                            selectedDays + index
+                            // Multiple selection mode: toggle
+                            if (isSelected) {
+                                selectedDays - index
+                            } else {
+                                selectedDays + index
+                            }
                         }
                         onDaysChanged(newSelection)
                     },
@@ -71,27 +79,29 @@ fun DayPickerWheel(
             }
         }
         
-        // Quick select button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            val allSelected = selectedDays.size == 7
-            Text(
-                text = if (allSelected) "Deselect All" else "Every Day",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+        // Quick select button (Only show for multiple selection mode)
+        if (!singleSelection) {
+            Row(
                 modifier = Modifier
-                    .clickable {
-                        onDaysChanged(
-                            if (allSelected) emptySet() else setOf(0, 1, 2, 3, 4, 5, 6)
-                        )
-                    }
-                    .padding(8.dp)
-            )
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                val allSelected = selectedDays.size == 7
+                Text(
+                    text = if (allSelected) "Deselect All" else "Every Day",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clickable {
+                            onDaysChanged(
+                                if (allSelected) emptySet() else setOf(0, 1, 2, 3, 4, 5, 6)
+                            )
+                        }
+                        .padding(8.dp)
+                )
+            }
         }
     }
 }

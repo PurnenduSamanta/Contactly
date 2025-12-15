@@ -48,6 +48,7 @@ import com.purnendu.contactly.ui.theme.SaveButtonColor
 import com.purnendu.contactly.ui.theme.SheetBackground
 import com.purnendu.contactly.ui.theme.SheetTitleColor
 import com.purnendu.contactly.ui.theme.SubtitleTextColor
+import com.purnendu.contactly.utils.ScheduleType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,12 +58,14 @@ fun EditScheduleSheet(
     startTime: String,
     endTime: String,
     selectedDays: Set<Int> = setOf(0, 1, 2, 3, 4, 5, 6),  // Default: all days
+    scheduleType: ScheduleType = ScheduleType.ONE_TIME,  // NEW: Schedule type
     error:String?,
     onErrorCardDismiss: () -> Unit,
     onTemporaryNameChange: (String) -> Unit,
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
     onDaysChanged: (Set<Int>) -> Unit,
+    onScheduleTypeChange: (ScheduleType) -> Unit,  // NEW: Schedule type change
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -173,20 +176,40 @@ fun EditScheduleSheet(
                         value = endTime,
                         onClick = onEndTimeClick
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
                 }
 
-                // Day Picker
+                // Schedule Type Toggle
                 item {
                     Text(
-                        text = "Repeat On",
+                        text = "Schedule Type",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ScheduleTypeToggle(
+                        selectedType = scheduleType,
+                        onTypeChange = onScheduleTypeChange
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
+
+                // Day Picker (Always shown, but label changes)
+                item {
+                    Text(
+                        text = if (scheduleType == ScheduleType.ONE_TIME) {
+                            "Select Day"  // One day only
+                        } else {
+                            "Repeat On"   // Multiple days
+                        },
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(Modifier.height(8.dp))
                     DayPickerWheel(
                         selectedDays = selectedDays,
-                        onDaysChanged = onDaysChanged
+                        onDaysChanged = onDaysChanged,
+                        singleSelection = scheduleType == ScheduleType.ONE_TIME
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -231,10 +254,12 @@ fun EditScheduleSheetPreview() {
         startTime = "",
         endTime ="",
         selectedDays = setOf(1, 3, 5),  // Mon, Wed, Fri
+        scheduleType = ScheduleType.REPEAT,
         onTemporaryNameChange = {},
         onStartTimeClick = {},
         onEndTimeClick = {},
         onDaysChanged = {},
+        onScheduleTypeChange = {},
         onCancel = {},
         onSave = {}
     )

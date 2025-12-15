@@ -3,9 +3,10 @@ package com.purnendu.contactly.data
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Schedule
+import com.purnendu.contactly.utils.ScheduleType
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 class SchedulesRepository(private val database: AppDatabase) {
     fun getSchedules(): Flow<List<Schedule>> = database.scheduleDao().getAll().map { list ->
@@ -18,7 +19,8 @@ class SchedulesRepository(private val database: AppDatabase) {
                 contactId = e.contactId,
                 selectedDays = e.selectedDays,
                 startAtMillis = e.startAtMillis,
-                endAtMillis = e.endAtMillis
+                endAtMillis = e.endAtMillis,
+                scheduleType = if (e.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
             )
         }
     }
@@ -31,7 +33,8 @@ class SchedulesRepository(private val database: AppDatabase) {
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int = 127,  // Default to all days
-        scheduledAlarmsMetadata: String? = null
+        scheduledAlarmsMetadata: String? = null,
+        scheduleType: ScheduleType = ScheduleType.ONE_TIME
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
@@ -42,7 +45,8 @@ class SchedulesRepository(private val database: AppDatabase) {
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduledAlarmsMetadata = scheduledAlarmsMetadata
+                scheduledAlarmsMetadata = scheduledAlarmsMetadata,
+                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1
             )
         )
     }
