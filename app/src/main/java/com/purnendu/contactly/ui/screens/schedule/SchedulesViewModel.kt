@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SchedulesViewModel(private val application: Application) : AndroidViewModel(application) {
     private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(application))
@@ -96,6 +97,11 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         endAtMillis: Long,
         selectedDays: Int = 127
     ) {
+        viewModelScope.launch {
+            // First, cancel all existing alarms
+            cancelScheduleAlarms(scheduleId)
+            
+            // Then schedule new alarms
             scheduleAlarms(
                 isUpdatingAlarm = true,
                 contact = contact,
@@ -106,6 +112,42 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 scheduleId = scheduleId,
                 selectedDays = selectedDays
             )
+        }
+    }
+    
+    private suspend fun cancelScheduleAlarms(scheduleId: Long) {
+        withContext(Dispatchers.IO) {
+            val existingSchedule = schedulesRepo.getById(scheduleId) ?: return@withContext
+            val metadataJson = existingSchedule.scheduledAlarmsMetadata
+            
+            // If no metadata exists, nothing to cancel
+            if (metadataJson.isNullOrEmpty()) return@withContext
+
+            val alarmManager = application.getSystemService(AlarmManager::class.java)
+            val syncManager = AlarmSyncManager(application)
+            val oldAlarms = syncManager.parseAlarmMetadata(metadataJson)
+            
+            // Cancel all old alarms
+            oldAlarms.forEach { oldAlarm ->
+                val oldIntent = Intent(application, AliasAlarmReceiver::class.java).apply {
+                    action = AliasAlarmReceiver.ACTION_ALIAS
+                    putExtra(AliasAlarmReceiver.EXTRA_OPERATION, oldAlarm.operation)
+                    putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, existingSchedule.contactId)
+                    putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
+                    putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
+                }
+                
+                val oldPending = PendingIntent.getBroadcast(
+                    application,
+                    oldAlarm.requestCode,
+                    oldIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                
+                alarmManager.cancel(oldPending)
+                oldPending.cancel()
+            }
+        }
     }
 
     fun checkCriticalPermissions() {
