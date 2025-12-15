@@ -65,7 +65,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -97,8 +96,9 @@ fun SchedulesScreen(
     val contacts by schedulesViewModel.contacts.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     
+    
     // View mode preference
-    val viewMode by com.purnendu.contactly.data.preferences.ViewPreferences
+    val viewMode by com.purnendu.contactly.data.preferences.AppPreferences
         .viewModeFlow(context)
         .collectAsState(initial = com.purnendu.contactly.utils.ViewMode.LIST)
 
