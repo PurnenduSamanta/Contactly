@@ -45,7 +45,12 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
 
-    init {checkCriticalPermissions()}
+    init
+    {
+        checkCriticalPermissions()
+        if(!_showContactPermissionDialog.value)
+        loadContacts()
+    }
 
     fun loadContacts() {
         viewModelScope.launch {

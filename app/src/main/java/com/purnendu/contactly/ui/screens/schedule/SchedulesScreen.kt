@@ -254,7 +254,6 @@ fun SchedulesScreen(
             ) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        schedulesViewModel.loadContacts()
                         showContactSheet = true
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -339,10 +338,7 @@ fun SchedulesScreen(
                             )
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .clickable {
-                                schedulesViewModel.loadContacts()
-                                showContactSheet = true
-                            }
+                            .clickable { showContactSheet = true }
                             .padding(horizontal = 15.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center

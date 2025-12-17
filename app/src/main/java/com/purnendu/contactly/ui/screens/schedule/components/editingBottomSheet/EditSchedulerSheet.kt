@@ -4,9 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,12 +43,6 @@ import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ErrorMessageCard
-import com.purnendu.contactly.ui.theme.CancelButtonColor
-import com.purnendu.contactly.ui.theme.InputBorder
-import com.purnendu.contactly.ui.theme.SaveButtonColor
-import com.purnendu.contactly.ui.theme.SheetBackground
-import com.purnendu.contactly.ui.theme.SheetTitleColor
-import com.purnendu.contactly.ui.theme.SubtitleTextColor
 import com.purnendu.contactly.utils.ScheduleType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,62 +67,63 @@ fun EditScheduleSheet(
     ModalBottomSheet(
         onDismissRequest = { onCancel() },
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        contentWindowInsets = {WindowInsets.navigationBars}
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(vertical = 16.dp, horizontal = 16.dp)
         ) {
 
             if(error!=null)
             {
-                ErrorMessageCard(
-                    message = error,
-                    onDismiss = { onErrorCardDismiss() }
-                )
-            }
-
-            // Header Section
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                IconButton(onClick = onCancel) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(id = R.string.cd_back),
-                        tint = MaterialTheme.colorScheme.onSurface
+                stickyHeader{
+                    ErrorMessageCard(
+                        message = error,
+                        onDismiss = { onErrorCardDismiss() }
                     )
                 }
 
-                AsyncImage(
-                    model = contact.image,
-                    contentDescription = contact.name,
-                    placeholder = painterResource(R.drawable.avatar_liam) ,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-
-                Spacer(Modifier.width(10.dp))
-
-                Column {
-                    Text(contact.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-                    Text(contact.phone, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            // Header Section
+            item{
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+                {
+                    IconButton(onClick = onCancel) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(id = R.string.cd_back),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
+                    AsyncImage(
+                        model = contact.image,
+                        contentDescription = contact.name,
+                        placeholder = painterResource(R.drawable.avatar_liam) ,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(Modifier.width(10.dp))
+
+                    Column {
+                        Text(contact.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                        Text(contact.phone, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            }
 
                 item {
                     Spacer(Modifier.height(16.dp))
@@ -212,32 +208,33 @@ fun EditScheduleSheet(
                         singleSelection = scheduleType == ScheduleType.ONE_TIME
                     )
                     Spacer(Modifier.height(24.dp))
+
+                    // Footer Buttons
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    )
+                    {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onSurface) }
+
+                        Button(
+                            onClick = onSave,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text(stringResource(id = R.string.action_save), color = MaterialTheme.colorScheme.onPrimary) }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
                 }
-            }
 
-            // Footer Buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(12.dp)
-                ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onSurface) }
-
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(12.dp)
-                ) { Text(stringResource(id = R.string.action_save), color = MaterialTheme.colorScheme.onPrimary) }
-            }
-
-            Spacer(Modifier.height(10.dp))
         }
     }
 }
