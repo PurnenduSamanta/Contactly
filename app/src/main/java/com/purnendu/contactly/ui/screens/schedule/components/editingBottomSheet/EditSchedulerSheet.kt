@@ -110,6 +110,7 @@ fun EditScheduleSheet(
                         model = contact.image,
                         contentDescription = contact.name,
                         placeholder = painterResource(R.drawable.avatar_liam) ,
+                        error = painterResource(R.drawable.avatar_ethan),
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape),
