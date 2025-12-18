@@ -1,17 +1,17 @@
 package com.purnendu.contactly
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.purnendu.contactly.ui.Screen
 import androidx.navigation.compose.NavHost
@@ -54,10 +55,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            val themeMode by settingsViewModel.theme.collectAsState()
-            ContactlyTheme(appThemeMode = themeMode) {
-                ContactlyApp()
-            }
+            val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
+            ContactlyTheme(appThemeMode = themeMode) { ContactlyApp() }
         }
     }
 
@@ -72,9 +71,10 @@ class MainActivity : ComponentActivity() {
         Scaffold(
             bottomBar = {
                 Column(modifier = Modifier.fillMaxWidth()) {
+
                     HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant)
 
-                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface)
+                    NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.surface)
                     {
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
@@ -115,29 +115,10 @@ class MainActivity : ComponentActivity() {
                 navController,
                 startDestination = Screen.Schedules,
                 Modifier.padding(innerPadding)
-            ) {
-                composable<Screen.Schedules> {
-                    SchedulesScreen(navController=navController)
-                }
-                composable<Screen.Settings> {
-                    SettingsScreen(
-                        settingsViewModel = settingsViewModel,
-                        onPrivacyPolicyClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://example.com/privacy")
-                            )
-                            startActivity(intent)
-                        },
-                        onTermsClick = {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://example.com/terms")
-                            )
-                            startActivity(intent)
-                        }
-                    )
-                }
+            )
+            {
+                composable<Screen.Schedules> { SchedulesScreen(navController=navController) }
+                composable<Screen.Settings> { SettingsScreen()}
             }
         }
     }

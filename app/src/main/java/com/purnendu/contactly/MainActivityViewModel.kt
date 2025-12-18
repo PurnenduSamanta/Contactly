@@ -5,11 +5,8 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.AlarmSyncManager
-import com.purnendu.contactly.data.SchedulesRepository
-import com.purnendu.contactly.data.local.room.AppDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivityViewModel(private val context: Application) : AndroidViewModel(context) {
@@ -17,15 +14,9 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
     private val _isAppReady = MutableStateFlow(false)
     val isAppReady: StateFlow<Boolean> = _isAppReady
 
-    private val _showExactAlarmPermissionDialog = MutableStateFlow(false)
-    val showExactAlarmPermissionDialog: StateFlow<Boolean> = _showExactAlarmPermissionDialog
-
     init {
         viewModelScope.launch {
             try {
-                // Initialize database first
-                initializeDatabase()
-                
                 // Sync alarms with AlarmManager (keeps splash screen visible)
                 syncAlarms()
                 
@@ -36,13 +27,6 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
                 _isAppReady.value = true
             }
         }
-    }
-    
-    private suspend fun initializeDatabase() {
-        val database = AppDatabase.getDataBase(context)
-        val repo = SchedulesRepository(database)
-        repo.getAllEntities()
-        repo.getSchedules().first()
     }
 
     /**

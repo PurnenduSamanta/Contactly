@@ -120,7 +120,7 @@ fun ScheduleItem(
                         when {
                             schedule.avatarResId != null -> {
                                 Image(
-                                    painter = painterResource(id = schedule.avatarResId!!),
+                                    painter = painterResource(id = schedule.avatarResId),
                                     contentDescription = "Avatar for ${schedule.name}",
                                     modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f,true),
                                     contentScale = ContentScale.Crop

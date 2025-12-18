@@ -21,6 +21,10 @@ import kotlinx.coroutines.withContext
  */
 class AlarmSyncManager(private val context: Context) {
 
+    val database = AppDatabase.getDataBase(context)
+    val schedulesRepo = SchedulesRepository(database)
+    val contactsRepo = ContactsRepository.get(context)
+    val alarmManager: AlarmManager? = context.getSystemService(AlarmManager::class.java)
     private val gson = Gson()
     private val TAG = "AlarmSyncManager"
 
@@ -141,7 +145,6 @@ class AlarmSyncManager(private val context: Context) {
      * Schedule a single alarm based on metadata
      */
     private fun scheduleAlarm(
-        alarmManager: AlarmManager,
         schedule: ScheduleEntity,
         metadata: AlarmMetadata
     ) {
@@ -168,7 +171,7 @@ class AlarmSyncManager(private val context: Context) {
         )
 
         try {
-            alarmManager.setExactAndAllowWhileIdle(
+            alarmManager?.setExactAndAllowWhileIdle(
                 AlarmManager.RTC,
                 metadata.triggerTimeMillis,
                 pendingIntent
@@ -185,11 +188,6 @@ class AlarmSyncManager(private val context: Context) {
      */
     suspend fun syncAllSchedules(): SyncResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting alarm sync...")
-        val database = AppDatabase.getDataBase(context)
-        val schedulesRepo = SchedulesRepository(database)
-        val contactsRepo = ContactsRepository.get(context)
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
         val allSchedules = schedulesRepo.getAllEntities()
         var scheduledCount = 0
         var skippedCount = 0
@@ -212,6 +210,7 @@ class AlarmSyncManager(private val context: Context) {
                 // If no permission, skip validation and proceed to sync
                 if (hasContactPermission && contact == null) {
                     Log.d(TAG, "Contact ${schedule.contactId} not found, removing schedule")
+                    cancelScheduleAlarms(schedule.scheduleId)
                     schedulesRepo.deleteByContactId(schedule.contactId)
                     orphanedCount++
                     return@forEach
@@ -228,7 +227,7 @@ class AlarmSyncManager(private val context: Context) {
                     
                     // Schedule all alarms
                     newMetadata.forEach { metadata ->
-                        scheduleAlarm(alarmManager, schedule, metadata)
+                        scheduleAlarm( schedule, metadata)
                         scheduledCount++
                     }
                     
@@ -255,7 +254,7 @@ class AlarmSyncManager(private val context: Context) {
 
                         if (!exists) {
                             Log.d(TAG, "Alarm missing, rescheduling: reqCode=${metadata.requestCode}")
-                            scheduleAlarm(alarmManager, schedule, metadata)
+                            scheduleAlarm(schedule, metadata)
                             scheduledCount++
                         } else {
                             skippedCount++
@@ -278,6 +277,38 @@ class AlarmSyncManager(private val context: Context) {
         
         Log.d(TAG, "Sync complete: $result")
         result
+    }
+
+     suspend fun cancelScheduleAlarms(scheduleId: Long) {
+        withContext(Dispatchers.IO) {
+            val existingSchedule = schedulesRepo.getById(scheduleId) ?: return@withContext
+            val metadataJson = existingSchedule.scheduledAlarmsMetadata
+
+            // If no metadata exists, nothing to cancel
+            if (metadataJson.isNullOrEmpty()) return@withContext
+            val oldAlarms = parseAlarmMetadata(metadataJson)
+
+            // Cancel all old alarms
+            oldAlarms.forEach { oldAlarm ->
+                val oldIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
+                    action = AliasAlarmReceiver.ACTION_ALIAS
+                    putExtra(AliasAlarmReceiver.EXTRA_OPERATION, oldAlarm.operation)
+                    putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, existingSchedule.contactId)
+                    putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
+                    putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
+                }
+
+                val oldPending = PendingIntent.getBroadcast(
+                    context,
+                    oldAlarm.requestCode,
+                    oldIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                alarmManager?.cancel(oldPending)
+                oldPending.cancel()
+            }
+        }
     }
 
     data class SyncResult(

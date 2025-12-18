@@ -1,5 +1,6 @@
 package com.purnendu.contactly.ui.screens.setting
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,11 +35,8 @@ import com.purnendu.contactly.ui.theme.ContactlyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    settingsViewModel: SettingsViewModel,
-    onPrivacyPolicyClick: () -> Unit,
-    onTermsClick: () -> Unit
-) {
+fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
+    val context = LocalContext.current
 
     val themeMode by settingsViewModel.theme.collectAsState()
     val viewMode by settingsViewModel.viewMode.collectAsState()
@@ -153,7 +152,14 @@ fun SettingsScreen(
                 SettingsRow(
                     name = stringResource(id = R.string.row_privacy_policy),
                     value = null
-                ) { onPrivacyPolicyClick() }
+                )
+                {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://example.com/privacy")
+                    )
+                    context.startActivity(intent)
+                }
             }
 
             // Terms Row
@@ -161,7 +167,14 @@ fun SettingsScreen(
                 SettingsRow(
                     name = stringResource(id = R.string.row_terms),
                     value = null
-                ) { onTermsClick() }
+                )
+                {
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://example.com/terms")
+                    )
+                    context.startActivity(intent)
+                }
             }
         }
     }
@@ -171,11 +184,5 @@ fun SettingsScreen(
 @Preview
 @Composable
 fun SettingsScreenPreview() {
-    ContactlyTheme {
-        SettingsScreen(
-            settingsViewModel = viewModel(),
-            onPrivacyPolicyClick = {},
-            onTermsClick = {}
-        )
-    }
+    ContactlyTheme {SettingsScreen()}
 }
