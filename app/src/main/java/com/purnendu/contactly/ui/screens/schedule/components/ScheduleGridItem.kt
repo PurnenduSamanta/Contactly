@@ -55,7 +55,7 @@ fun ScheduleGridItem(
             .fillMaxWidth()
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shape = RoundedCornerShape(15.dp)
             )
             .expressiveScale(expressiveScale.value),

@@ -57,7 +57,7 @@ fun ScheduleItem(
             .expressiveScale(expressiveScale.value)
     ) {
         Card(
-            modifier = Modifier.border(width = 1.dp, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant),
+            modifier = Modifier.border(width = 1.dp, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh),
             shape = RoundedCornerShape(15.dp), // Enhanced rounded corners for Material 3 Expressive
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -191,7 +191,6 @@ fun ScheduleItem(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
-                interactionSource = interactionSource
             ) {
                 Text(
                     stringResource(id = R.string.action_delete),
@@ -211,7 +210,6 @@ fun ScheduleItem(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
-                interactionSource = interactionSource
             ) {
                 Text(
                     stringResource(id = R.string.action_edit),
