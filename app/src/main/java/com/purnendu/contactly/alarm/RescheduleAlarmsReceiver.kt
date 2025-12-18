@@ -9,6 +9,7 @@ import android.util.Log
 import com.purnendu.contactly.data.ContactsRepository
 import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
+import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,10 +59,9 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
                         val applyAt = DayUtils.calculateNextOccurrence(e.startAtMillis, dayOfWeek)
                         val revertAt = DayUtils.calculateNextOccurrence(e.endAtMillis, dayOfWeek)
 
-                        // Generate unique request codes matching SchedulesViewModel's scheme
-                        val baseReqCode = (e.contactId % 1000000).toInt() * 100
-                        val applyReqCode = baseReqCode + (dayOfWeek * 2)
-                        val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
+                        // Generate unique request codes using centralized utility
+                        val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(e.contactId, dayOfWeek)
+                        val revertReqCode = AlarmRequestCodeUtils.generateRevertRequestCode(e.contactId, dayOfWeek)
 
                         // Create APPLY alarm intent
                         val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {

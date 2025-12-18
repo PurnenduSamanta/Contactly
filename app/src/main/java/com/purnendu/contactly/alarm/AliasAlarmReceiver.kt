@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import java.util.Calendar
 
 class AliasAlarmReceiver : BroadcastReceiver() {
@@ -71,14 +72,13 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             putExtra(EXTRA_DAY_OF_WEEK, dayOfWeek)
         }
 
-        // Generate request code (must be same for same alarm to update it)
+        // Generate request code using centralized utility
         val contactId = originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L)
         val op = originalIntent.getStringExtra(EXTRA_OPERATION)
-        val baseReqCode = (contactId % 1000000).toInt() * 100
         val reqCode = if (op == OP_APPLY) {
-            baseReqCode + (dayOfWeek * 2)
+            AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
         } else {
-            baseReqCode + (dayOfWeek * 2) + 1
+            AlarmRequestCodeUtils.generateRevertRequestCode(contactId, dayOfWeek)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

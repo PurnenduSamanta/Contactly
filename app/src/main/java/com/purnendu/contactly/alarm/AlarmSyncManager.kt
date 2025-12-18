@@ -11,6 +11,7 @@ import com.purnendu.contactly.data.ContactsRepository
 import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity
+import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -111,14 +112,14 @@ class AlarmSyncManager(private val context: Context) {
         selectedDays: List<Int>
     ): List<AlarmMetadata> {
         val metadata = mutableListOf<AlarmMetadata>()
-        val baseReqCode = (schedule.contactId % 1000000).toInt() * 100
 
         selectedDays.forEach { dayOfWeek ->
             val applyAt = DayUtils.calculateNextOccurrence(schedule.startAtMillis, dayOfWeek)
             val revertAt = DayUtils.calculateNextOccurrence(schedule.endAtMillis, dayOfWeek)
 
-            val applyReqCode = baseReqCode + (dayOfWeek * 2)
-            val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
+            // Use centralized utility for request code generation
+            val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(schedule.contactId, dayOfWeek)
+            val revertReqCode = AlarmRequestCodeUtils.generateRevertRequestCode(schedule.contactId, dayOfWeek)
 
             metadata.add(
                 AlarmMetadata(

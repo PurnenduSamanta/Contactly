@@ -21,6 +21,7 @@ import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.alarm.AlarmMetadata
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.data.local.room.AppDatabase
+import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -245,18 +246,9 @@ private fun SchedulesViewModel.scheduleAlarms(
         val applyAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
         val revertAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
 
-        // Unique request codes for each day: (contactId * 10 + day)
-        // We use a base ID derived from contactId, but we need to be careful about collisions
-        // A better approach for request codes: (contactId.hashCode() + day * 100)
-        // Or just use a random seed if we don't need to cancel them explicitly by ID (we usually overwrite)
-        
-        // Using a deterministic request code scheme:
-        // Base: contactId.toInt()
-        // Apply: base + (day * 2)
-        // Revert: base + (day * 2) + 1
-        val baseReqCode = (contactId % 1000000).toInt() * 100
-        val applyReqCode = baseReqCode + (dayOfWeek * 2)
-        val revertReqCode = baseReqCode + (dayOfWeek * 2) + 1
+        // Generate unique request codes using centralized utility
+        val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
+        val revertReqCode = AlarmRequestCodeUtils.generateRevertRequestCode(contactId, dayOfWeek)
         
         // Store metadata for this alarm
         alarmMetadataList.add(
