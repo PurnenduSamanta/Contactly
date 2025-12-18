@@ -2,8 +2,10 @@ package com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBo
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,7 +48,8 @@ fun ContactSelectionBottomSheet(
         onDismissRequest = {onDismissContactSelection() },
         shape = RoundedCornerShape(15.dp),
         containerColor = MaterialTheme.colorScheme.surface,
-        modifier = modifier
+        modifier = modifier,
+        contentWindowInsets = {WindowInsets.navigationBars}
     )
     {
             Column(modifier = Modifier.fillMaxHeight(0.9f)) {
