@@ -602,16 +602,24 @@ fun SchedulesScreen(
                     return@EditScheduleSheet
                 }
 
-                if(endMillis < startMillis)
+                // Extract time-of-day only (ignore date) for comparison
+                val startCal = java.util.Calendar.getInstance().apply { timeInMillis = startMillis }
+                val endCal = java.util.Calendar.getInstance().apply { timeInMillis = endMillis }
+                val startTimeOfDay = startCal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + startCal.get(java.util.Calendar.MINUTE)
+                val endTimeOfDay = endCal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + endCal.get(java.util.Calendar.MINUTE)
+
+                if(startTimeOfDay == endTimeOfDay)
                 {
-                    schedulesViewModel.showError("End time can not be before start time")
+                    schedulesViewModel.showError("End time and start time can not be same")
 
                     return@EditScheduleSheet
                 }
 
-                if(endMillis == startMillis)
+                // End time must be greater than start time (no crossing midnight allowed)
+                // Schedules must be within a single 24-hour day
+                if(endTimeOfDay < startTimeOfDay)
                 {
-                    schedulesViewModel.showError("End time and start time can not be same")
+                    schedulesViewModel.showError("End time must be after start time. For overnight schedules, please create separate schedules for each day.")
 
                     return@EditScheduleSheet
                 }
