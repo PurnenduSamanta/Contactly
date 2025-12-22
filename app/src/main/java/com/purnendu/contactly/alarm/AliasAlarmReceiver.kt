@@ -10,16 +10,23 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 class AliasAlarmReceiver : BroadcastReceiver() {
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
         val op = intent.getStringExtra(EXTRA_OPERATION) ?: return
         val contactId = intent.getLongExtra(EXTRA_CONTACT_ID, -1L)
         val newName = intent.getStringExtra(EXTRA_NAME) ?: return
         val scheduleId = intent.getLongExtra(EXTRA_SCHEDULE_ID, -1L)
         val dayOfWeek = intent.getIntExtra(EXTRA_DAY_OF_WEEK, -1)
+        val scheduleType = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
         if (contactId <= 0) return
 
         if (!hasWriteContactsPermission(context)) return
@@ -30,8 +37,21 @@ class AliasAlarmReceiver : BroadcastReceiver() {
                 OP_REVERT -> applyName(context, contactId, newName)
             }
             
-            // Reschedule for next week if this is a recurring alarm
-            if (dayOfWeek >= 0) {
+            // For one-time schedules: delete from database after revert (end time) completes
+            if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
+                GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val repo = SchedulesRepository(AppDatabase.getDataBase(context))
+                        repo.deleteById(scheduleId)
+                        Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
+                    } catch (e: Exception) {
+                        Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
+                    }
+                }
+            }
+            
+            // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
+            if (scheduleType == 1 && dayOfWeek >= 0) {
                 rescheduleForNextWeek(context, intent, dayOfWeek)
             }
         } catch (e: Throwable) {
@@ -70,6 +90,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             putExtra(EXTRA_NAME, originalIntent.getStringExtra(EXTRA_NAME))
             putExtra(EXTRA_SCHEDULE_ID, originalIntent.getLongExtra(EXTRA_SCHEDULE_ID, -1L))
             putExtra(EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(EXTRA_SCHEDULE_TYPE, originalIntent.getIntExtra(EXTRA_SCHEDULE_TYPE, 1)) // Default to REPEAT since we only reschedule repeating alarms
         }
 
         // Generate request code using centralized utility
@@ -146,6 +167,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_NAME = "name"
         const val EXTRA_SCHEDULE_ID = "scheduleId"
         const val EXTRA_DAY_OF_WEEK = "dayOfWeek"
+        const val EXTRA_SCHEDULE_TYPE = "scheduleType"
         const val OP_APPLY = "apply"
         const val OP_REVERT = "revert"
     }

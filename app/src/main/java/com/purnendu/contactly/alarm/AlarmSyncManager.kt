@@ -38,7 +38,8 @@ class AlarmSyncManager(private val context: Context) {
         name: String,
         operation: String,
         dayOfWeek: Int,
-        scheduleId: Long
+        scheduleId: Long,
+        scheduleType: Int = 0
     ): Boolean {
         val intent = buildAlarmIntent(
             context = context,
@@ -46,7 +47,8 @@ class AlarmSyncManager(private val context: Context) {
             name = name,
             operation = operation,
             dayOfWeek = dayOfWeek,
-            scheduleId = scheduleId
+            scheduleId = scheduleId,
+            scheduleType = scheduleType
         )
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -71,7 +73,8 @@ class AlarmSyncManager(private val context: Context) {
         name: String,
         operation: String,
         dayOfWeek: Int,
-        scheduleId: Long
+        scheduleId: Long,
+        scheduleType: Int = 0
     ): Intent {
         return Intent(context, AliasAlarmReceiver::class.java).apply {
             action = AliasAlarmReceiver.ACTION_ALIAS
@@ -80,6 +83,7 @@ class AlarmSyncManager(private val context: Context) {
             putExtra(AliasAlarmReceiver.EXTRA_NAME, name)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, scheduleType)
         }
     }
 
@@ -161,7 +165,8 @@ class AlarmSyncManager(private val context: Context) {
             name = name,
             operation = metadata.operation,
             dayOfWeek = metadata.dayOfWeek,
-            scheduleId = schedule.scheduleId
+            scheduleId = schedule.scheduleId,
+            scheduleType = schedule.scheduleType
         )
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -250,7 +255,8 @@ class AlarmSyncManager(private val context: Context) {
                             name = name,
                             operation = metadata.operation,
                             dayOfWeek = metadata.dayOfWeek,
-                            scheduleId = schedule.scheduleId
+                            scheduleId = schedule.scheduleId,
+                            scheduleType = schedule.scheduleType
                         )
 
                         if (!exists) {
