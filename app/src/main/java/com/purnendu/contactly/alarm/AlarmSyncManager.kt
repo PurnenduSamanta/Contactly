@@ -35,16 +35,18 @@ class AlarmSyncManager(private val context: Context) {
     fun isAlarmScheduled(
         requestCode: Int,
         contactId: Long,
-        name: String,
+        originalName: String,
+        temporaryName: String,
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
-        scheduleType: Int = 0
+        scheduleType: Int
     ): Boolean {
         val intent = buildAlarmIntent(
             context = context,
             contactId = contactId,
-            name = name,
+            originalName = originalName,
+            temporaryName = temporaryName,
             operation = operation,
             dayOfWeek = dayOfWeek,
             scheduleId = scheduleId,
@@ -70,17 +72,19 @@ class AlarmSyncManager(private val context: Context) {
     private fun buildAlarmIntent(
         context: Context,
         contactId: Long,
-        name: String,
+        originalName: String,
+        temporaryName: String,
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
-        scheduleType: Int = 0
+        scheduleType: Int
     ): Intent {
         return Intent(context, AliasAlarmReceiver::class.java).apply {
             action = AliasAlarmReceiver.ACTION_ALIAS
             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, operation)
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
-            putExtra(AliasAlarmReceiver.EXTRA_NAME, name)
+            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
+            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, scheduleType)
@@ -153,16 +157,11 @@ class AlarmSyncManager(private val context: Context) {
         schedule: ScheduleEntity,
         metadata: AlarmMetadata
     ) {
-        val name = if (metadata.operation == AliasAlarmReceiver.OP_APPLY) {
-            schedule.temporaryName
-        } else {
-            schedule.originalName
-        }
-
         val intent = buildAlarmIntent(
             context = context,
             contactId = schedule.contactId,
-            name = name,
+            originalName = schedule.originalName,
+            temporaryName = schedule.temporaryName,
             operation = metadata.operation,
             dayOfWeek = metadata.dayOfWeek,
             scheduleId = schedule.scheduleId,
@@ -243,16 +242,11 @@ class AlarmSyncManager(private val context: Context) {
                 } else {
                     // Check each alarm and reschedule if missing
                     storedMetadata.forEach { metadata ->
-                        val name = if (metadata.operation == AliasAlarmReceiver.OP_APPLY) {
-                            schedule.temporaryName
-                        } else {
-                            schedule.originalName
-                        }
-
                         val exists = isAlarmScheduled(
                             requestCode = metadata.requestCode,
                             contactId = schedule.contactId,
-                            name = name,
+                            originalName = schedule.originalName,
+                            temporaryName = schedule.temporaryName,
                             operation = metadata.operation,
                             dayOfWeek = metadata.dayOfWeek,
                             scheduleId = schedule.scheduleId,
@@ -301,8 +295,11 @@ class AlarmSyncManager(private val context: Context) {
                     action = AliasAlarmReceiver.ACTION_ALIAS
                     putExtra(AliasAlarmReceiver.EXTRA_OPERATION, oldAlarm.operation)
                     putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, existingSchedule.contactId)
+                    putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, existingSchedule.originalName)
+                    putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, existingSchedule.temporaryName)
                     putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                     putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
+                    putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, existingSchedule.scheduleType)
                 }
 
                 val oldPending = PendingIntent.getBroadcast(

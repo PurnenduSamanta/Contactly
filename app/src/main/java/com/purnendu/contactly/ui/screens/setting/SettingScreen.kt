@@ -1,6 +1,10 @@
 package com.purnendu.contactly.ui.screens.setting
 
+import android.Manifest
 import android.content.Intent
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +28,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
+import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,9 +67,19 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
 
     val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
     val viewMode by settingsViewModel.viewMode.collectAsStateWithLifecycle()
+    val notificationsEnabled by settingsViewModel.notificationsEnabled.collectAsStateWithLifecycle()
     val alarmStatusList by settingsViewModel.alarmStatusList.collectAsStateWithLifecycle()
     
     var showAlarmsDialog by remember { mutableStateOf(false) }
+    
+    // Permission launcher for POST_NOTIFICATIONS (Android 13+)
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            settingsViewModel.setNotificationsEnabled(true)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -133,6 +149,60 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                     onModeChange = { settingsViewModel.setViewMode(it) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
+            }
+            
+            // Notifications Section
+            item {
+                Text(
+                    "Notifications",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        top = 28.dp,
+                        bottom = 10.dp
+                    )
+                )
+            }
+            
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Schedule Notifications",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            "Get fun notifications while changing your contact name 🎭",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                    }
+                    Switch(
+                        checked = notificationsEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                // Check if we need to request permission (Android 13+)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
+                                    !NotificationHelper.hasNotificationPermission(context)) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    settingsViewModel.setNotificationsEnabled(true)
+                                }
+                            } else {
+                                settingsViewModel.setNotificationsEnabled(false)
+                            }
+                        }
+                    )
+                }
             }
 
             item {

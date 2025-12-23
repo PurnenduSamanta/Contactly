@@ -12,9 +12,8 @@ data class ScheduleEntity(
     val temporaryName: String,
     val startAtMillis: Long,
     val endAtMillis: Long,
-    val applied: Boolean = false,
-    val selectedDays: Int = 127,  // Bitmask: 127 = all days (Sun-Sat)
+    val selectedDays: Int,
     val scheduledAlarmsMetadata: String? = null,  // JSON array of AlarmMetadata
-    val scheduleType: Int = 0  // 0 = ONE_TIME, 1 = REPEAT (default for backward compatibility)
+    val scheduleType: Int // 0 = ONE_TIME, 1 = REPEAT (default for backward compatibility)
 )
 

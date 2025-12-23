@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import androidx.compose.material3.NavigationBar
@@ -61,6 +62,9 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Create notification channel for alarm notifications
+        NotificationHelper.createNotificationChannel(this)
 
         setContent {
             val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()

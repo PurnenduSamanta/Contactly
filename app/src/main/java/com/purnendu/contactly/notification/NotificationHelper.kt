@@ -1,0 +1,161 @@
+package com.purnendu.contactly.notification
+
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import com.purnendu.contactly.R
+import kotlin.random.Random
+
+/**
+ * Helper class to show fun notifications when alarms trigger
+ */
+object NotificationHelper {
+    
+    private const val CHANNEL_ID = "contactly_alarm_notifications"
+    private const val CHANNEL_NAME = "Schedule Notifications"
+    private const val CHANNEL_DESCRIPTION = "Notifications when contact names are changed"
+    
+    // Funny messages for APPLY (name change)
+    private val applyMessages = listOf(
+        "🎭 Identity swap activated!",
+        "🦸 Secret identity engaged!",
+        "🎪 Time to put on a mask!",
+        "🥷 Ninja mode: ON",
+        "🎬 And... ACTION!",
+        "🕵️ Undercover operation started!",
+        "🦎 Chameleon mode activated!",
+        "🎩 *waves magic wand* Alakazam!",
+        "🚀 Transformation complete!",
+        "🌟 Poof! New name unlocked!",
+        "🎯 Mission: Rename initiated!",
+        "🤖 Beep boop! Name changed!",
+        "🎪 The show begins now!",
+        "🦹 Superhero mode: ENGAGED",
+        "🎭 Plot twist incoming!"
+    )
+    
+    // Funny messages for REVERT (name restore)
+    private val revertMessages = listOf(
+        "🎭 Back to reality!",
+        "🦸 Secret identity revealed!",
+        "🎪 Mask off time!",
+        "🥷 Ninja mode: OFF",
+        "🎬 That's a wrap!",
+        "🕵️ Mission accomplished!",
+        "🦎 Chameleon is tired now!",
+        "🎩 *poof* Spell broken!",
+        "🚀 Landed back home!",
+        "🌟 Original name restored!",
+        "🎯 Mission complete!",
+        "🤖 Beep boop! Name restored!",
+        "🎪 Show's over folks!",
+        "🦹 Superhero needs rest!",
+        "🎭 Plot twist resolved!"
+    )
+    
+    /**
+     * Create the notification channel (required for Android O+)
+     */
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+                description = CHANNEL_DESCRIPTION
+                enableVibration(true)
+                setShowBadge(true)
+            }
+            
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+    
+    /**
+     * Check if notification permission is granted (Android 13+)
+     */
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Permission not needed for older Android versions
+        }
+    }
+    
+    /**
+     * Show a fun notification when an alarm triggers
+     * Note: Caller should check if notifications are enabled before calling this
+     */
+    fun showAlarmNotification(
+        context: Context,
+        originalName: String,
+        temporaryName: String,
+        isApply: Boolean, // true = APPLY (change name), false = REVERT (restore name)
+        scheduleType: Int // 0 = ONE_TIME, 1 = REPEAT
+    ) {
+        if (!hasNotificationPermission(context)) return
+        
+        // Create channel if not exists
+        createNotificationChannel(context)
+        
+        // Select random funny message
+        val funnyMessage = if (isApply) {
+            applyMessages[Random.nextInt(applyMessages.size)]
+        } else {
+            revertMessages[Random.nextInt(revertMessages.size)]
+        }
+        
+        // Build notification content
+        val scheduleTypeText = if (scheduleType == 0) "One-Time" else "Repeat"
+        val actionText = if (isApply) "changed to" else "restored to"
+        
+        val title = funnyMessage
+        val content = if (isApply) {
+            "\"$originalName\" → \"$temporaryName\" 📝 ($scheduleTypeText)"
+        } else {
+            "\"$temporaryName\" → \"$originalName\" 📝 ($scheduleTypeText)"
+        }
+        
+        val expandedText = buildString {
+            append("Contact name $actionText: ")
+            if (isApply) {
+                append("\"$temporaryName\"")
+                appendLine()
+                append("Original: $originalName")
+            } else {
+                append("\"$originalName\"")
+                appendLine()
+                append("Was using: $temporaryName")
+            }
+            appendLine()
+            append("Schedule: $scheduleTypeText")
+        }
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(expandedText))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true) // Dismissible
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+        
+        // Generate unique notification ID based on timestamp
+        val notificationId = System.currentTimeMillis().toInt()
+        
+        try {
+            NotificationManagerCompat.from(context).notify(notificationId, notification)
+        } catch (e: SecurityException) {
+            // Permission not granted, silently fail
+        }
+    }
+}

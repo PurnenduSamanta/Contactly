@@ -22,6 +22,8 @@ import com.purnendu.contactly.alarm.AlarmMetadata
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
+import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.utils.ScheduleType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -79,7 +81,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int = 127
+        selectedDays: Int ,
+        scheduleType: ScheduleType
     )
     {
         scheduleAlarms(
@@ -88,7 +91,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                scheduleType=scheduleType
         )
     }
 
@@ -115,7 +119,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int = 127
+        selectedDays: Int,
+        scheduleType: ScheduleType
     ) {
         val syncManager = AlarmSyncManager(application)
         viewModelScope.launch {
@@ -131,7 +136,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 scheduleId = scheduleId,
-                selectedDays = selectedDays
+                selectedDays = selectedDays,
+                scheduleType = scheduleType
             )
         }
     }
@@ -176,6 +182,7 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
+        scheduleType: ScheduleType,
         alarmMetadata: List<AlarmMetadata>
     )
     {
@@ -193,17 +200,20 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduledAlarmsMetadata = metadataJson
+                scheduledAlarmsMetadata = metadataJson,
+                scheduleType = scheduleType
             )
         }
     }
 
     fun updateAlarmToDatabase(
         scheduleId: Long,
+        originalName: String,
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
+        scheduleType: ScheduleType,
         alarmMetadata: List<AlarmMetadata>
     )
     {
@@ -213,10 +223,12 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             val metadataJson = syncManager.toJson(alarmMetadata)
             
             val updated = current.copy(
+                originalName=originalName,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
+                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
                 scheduledAlarmsMetadata = metadataJson
             )
             schedulesRepo.update(updated)
@@ -233,7 +245,8 @@ private fun SchedulesViewModel.scheduleAlarms(
     endAtMillis: Long,
     scheduleId: Long?=null,
     isUpdatingAlarm: Boolean = false,
-    selectedDays: Int = 127
+    selectedDays: Int,
+    scheduleType: ScheduleType
 )
 {
     var isAlarmSuccessfullyScheduled = true
@@ -243,7 +256,7 @@ private fun SchedulesViewModel.scheduleAlarms(
     val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     // Extract selected days (0=Sun, 1=Mon, ...)
-    val daysList = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(selectedDays)
+    val daysList = DayUtils.extractDaysFromBitmask(selectedDays)
     
     // If no days selected, don't schedule anything
     if (daysList.isEmpty()) return
@@ -253,8 +266,8 @@ private fun SchedulesViewModel.scheduleAlarms(
 
     daysList.forEach { dayOfWeek ->
         // Calculate next occurrence for this day
-        val applyAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
-        val revertAt = com.purnendu.contactly.utils.DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
+        val applyAt = DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
+        val revertAt = DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
 
         // Generate unique request codes using centralized utility
         val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
@@ -282,17 +295,21 @@ private fun SchedulesViewModel.scheduleAlarms(
             action = AliasAlarmReceiver.ACTION_ALIAS
             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-            putExtra(AliasAlarmReceiver.EXTRA_NAME, temporaryName)
+            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
+            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
         }
         val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
             action = AliasAlarmReceiver.ACTION_ALIAS
             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-            putExtra(AliasAlarmReceiver.EXTRA_NAME, originalName)
+            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
+            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
         }
 
         val applyPending = PendingIntent.getBroadcast(
@@ -341,11 +358,13 @@ private fun SchedulesViewModel.scheduleAlarms(
 
             updateAlarmToDatabase(
                 scheduleId = scheduleId,
+                originalName = originalName,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                alarmMetadata = alarmMetadataList
+                alarmMetadata = alarmMetadataList,
+                scheduleType = scheduleType
             )
         }
         else
@@ -356,7 +375,8 @@ private fun SchedulesViewModel.scheduleAlarms(
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                alarmMetadata = alarmMetadataList
+                alarmMetadata = alarmMetadataList,
+                scheduleType =  scheduleType
             )
         }
     }

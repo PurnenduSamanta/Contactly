@@ -12,10 +12,15 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
+import com.purnendu.contactly.data.preferences.AppPreferences
+import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 class AliasAlarmReceiver : BroadcastReceiver() {
@@ -23,7 +28,8 @@ class AliasAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val op = intent.getStringExtra(EXTRA_OPERATION) ?: return
         val contactId = intent.getLongExtra(EXTRA_CONTACT_ID, -1L)
-        val newName = intent.getStringExtra(EXTRA_NAME) ?: return
+        val originalName = intent.getStringExtra(EXTRA_ORIGINAL_NAME) ?: return
+        val temporaryName = intent.getStringExtra(EXTRA_TEMPORARY_NAME) ?: return
         val scheduleId = intent.getLongExtra(EXTRA_SCHEDULE_ID, -1L)
         val dayOfWeek = intent.getIntExtra(EXTRA_DAY_OF_WEEK, -1)
         val scheduleType = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
@@ -31,15 +37,42 @@ class AliasAlarmReceiver : BroadcastReceiver() {
 
         if (!hasWriteContactsPermission(context)) return
 
+        // Derive the name to apply based on operation
+        val isApply = op == OP_APPLY
+        val nameToApply = if (isApply) temporaryName else originalName
+
         try {
-            when (op) {
-                OP_APPLY -> applyName(context, contactId, newName)
-                OP_REVERT -> applyName(context, contactId, newName)
-            }
+            applyName(context, contactId, nameToApply)
             
-            // For one-time schedules: delete from database after revert (end time) completes
-            if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
-                GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // Handle async operations in a coroutine
+            GlobalScope.launch(Dispatchers.IO) {
+                // Read preference from DataStore (IO thread)
+                val notificationsEnabled = try {
+                   AppPreferences.notificationsEnabledFlow(context).first()
+                } catch (e: Exception) {
+                    Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
+                    false // Default to disabled if read fails
+                }
+                
+                // Show notification on Main thread (best practice for system APIs)
+                if (notificationsEnabled) {
+                    withContext(Dispatchers.Main) {
+                        try {
+                            NotificationHelper.showAlarmNotification(
+                                context = context,
+                                originalName = originalName,
+                                temporaryName = temporaryName,
+                                isApply = isApply,
+                                scheduleType = scheduleType
+                            )
+                        } catch (e: Exception) {
+                            Log.e("AliasAlarmReceiver", "Failed to show notification", e)
+                        }
+                    }
+                }
+                
+                // For one-time schedules: delete from database (IO thread)
+                if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
                     try {
                         val repo = SchedulesRepository(AppDatabase.getDataBase(context))
                         repo.deleteById(scheduleId)
@@ -87,10 +120,11 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             action = originalIntent.action
             putExtra(EXTRA_OPERATION, originalIntent.getStringExtra(EXTRA_OPERATION))
             putExtra(EXTRA_CONTACT_ID, originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L))
-            putExtra(EXTRA_NAME, originalIntent.getStringExtra(EXTRA_NAME))
+            putExtra(EXTRA_ORIGINAL_NAME, originalIntent.getStringExtra(EXTRA_ORIGINAL_NAME))
+            putExtra(EXTRA_TEMPORARY_NAME, originalIntent.getStringExtra(EXTRA_TEMPORARY_NAME))
             putExtra(EXTRA_SCHEDULE_ID, originalIntent.getLongExtra(EXTRA_SCHEDULE_ID, -1L))
             putExtra(EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(EXTRA_SCHEDULE_TYPE, originalIntent.getIntExtra(EXTRA_SCHEDULE_TYPE, 1)) // Default to REPEAT since we only reschedule repeating alarms
+            putExtra(EXTRA_SCHEDULE_TYPE, originalIntent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0)) // Default to ONE-TIME
         }
 
         // Generate request code using centralized utility
@@ -164,7 +198,8 @@ class AliasAlarmReceiver : BroadcastReceiver() {
         const val ACTION_ALIAS = "com.purnendu.contactly.action.ALIAS"
         const val EXTRA_OPERATION = "operation"
         const val EXTRA_CONTACT_ID = "contactId"
-        const val EXTRA_NAME = "name"
+        const val EXTRA_ORIGINAL_NAME = "originalName"
+        const val EXTRA_TEMPORARY_NAME = "temporaryName"
         const val EXTRA_SCHEDULE_ID = "scheduleId"
         const val EXTRA_DAY_OF_WEEK = "dayOfWeek"
         const val EXTRA_SCHEDULE_TYPE = "scheduleType"

@@ -3,6 +3,7 @@ package com.purnendu.contactly.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -23,6 +24,7 @@ object AppPreferences {
     // Preference Keys
     private val KEY_THEME = intPreferencesKey("theme_mode")
     private val KEY_VIEW_MODE = intPreferencesKey("view_mode")
+    private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     
     // ========== Theme Preferences ==========
     
@@ -77,6 +79,27 @@ object AppPreferences {
                 ViewMode.LIST -> 0
                 ViewMode.GRID -> 1
             }
+        }
+    }
+    
+    // ========== Notification Preferences ==========
+    
+    /**
+     * Get notifications enabled state as a Flow
+     * @return Flow of Boolean (true = enabled, false = disabled)
+     */
+    fun notificationsEnabledFlow(context: Context): Flow<Boolean> =
+        context.dataStore.data.map { prefs ->
+            prefs[KEY_NOTIFICATIONS_ENABLED] ?: true // Default to enabled
+        }
+    
+    /**
+     * Set notifications enabled state
+     * @param enabled Boolean to enable/disable notifications
+     */
+    suspend fun setNotificationsEnabled(context: Context, enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_NOTIFICATIONS_ENABLED] = enabled
         }
     }
 }

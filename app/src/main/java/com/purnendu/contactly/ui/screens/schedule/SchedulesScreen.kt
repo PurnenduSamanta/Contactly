@@ -81,6 +81,7 @@ import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.components.ContactlyDialog
 import com.purnendu.contactly.components.ContactlyTimePicker
+import com.purnendu.contactly.utils.ScheduleType
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -92,8 +93,8 @@ fun SchedulesScreen(
     schedulesViewModel: SchedulesViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val schedules by schedulesViewModel.schedules.collectAsState()
-    val contacts by schedulesViewModel.contacts.collectAsState()
+    val schedules by schedulesViewModel.schedules.collectAsStateWithLifecycle()
+    val contacts by schedulesViewModel.contacts.collectAsStateWithLifecycle()
     val isContactsLoading by schedulesViewModel.isContactsLoading.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     
@@ -111,7 +112,7 @@ fun SchedulesScreen(
     var endTimeText by remember { mutableStateOf("") }
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
-    var scheduleType by remember { mutableStateOf(com.purnendu.contactly.utils.ScheduleType.ONE_TIME) }
+    var scheduleType by remember { mutableStateOf(ScheduleType.ONE_TIME) }
     var selectedDays by remember { mutableStateOf(setOf(java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) - 1)) }
     
     // Custom time picker states
@@ -381,6 +382,7 @@ fun SchedulesScreen(
                                                         if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
                                                             java.util.Date(endMillis)
                                                         ) else ""
+                                                    scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
                                                     showEditSheet = true
                                                 }
                                             }
@@ -633,11 +635,12 @@ fun SchedulesScreen(
                             temporaryName,
                             startMillis,
                             endMillis,
-                            selectedDaysBitmask
+                            selectedDaysBitmask,
+                            scheduleType
                         )
                         Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
                     } else {
-                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis, selectedDaysBitmask)
+                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
                         Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false

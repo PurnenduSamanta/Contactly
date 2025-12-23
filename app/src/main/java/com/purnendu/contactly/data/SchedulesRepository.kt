@@ -32,9 +32,9 @@ class SchedulesRepository(private val database: AppDatabase) {
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int = 127,  // Default to all days
+        selectedDays: Int ,  // Default to all days
         scheduledAlarmsMetadata: String? = null,
-        scheduleType: ScheduleType = ScheduleType.ONE_TIME
+        scheduleType: ScheduleType
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(

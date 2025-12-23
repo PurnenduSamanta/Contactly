@@ -68,7 +68,8 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
                             action = AliasAlarmReceiver.ACTION_ALIAS
                             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
-                            putExtra(AliasAlarmReceiver.EXTRA_NAME, e.temporaryName)
+                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
+                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
@@ -98,7 +99,8 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
                             action = AliasAlarmReceiver.ACTION_ALIAS
                             putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
-                            putExtra(AliasAlarmReceiver.EXTRA_NAME, e.originalName)
+                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
+                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
