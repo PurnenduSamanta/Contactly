@@ -199,6 +199,7 @@ fun SchedulesScreen(
         when {
             permissionState.allPermissionsGranted -> {
                 showPermissionDialog.value = false
+                if(contacts.isEmpty())
                 schedulesViewModel.loadContacts()
             }
 

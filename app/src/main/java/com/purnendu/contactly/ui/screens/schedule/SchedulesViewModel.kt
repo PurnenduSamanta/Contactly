@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SchedulesViewModel(private val application: Application) : AndroidViewModel(application) {
     private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(application))
@@ -49,19 +48,17 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     init
     {
         checkCriticalPermissions()
-        if(!_showContactPermissionDialog.value)
+        if(!_showContactPermissionDialog.value && _contacts.value.isEmpty())
         loadContacts()
     }
 
     fun loadContacts() {
-        viewModelScope.launch {
             try {
                 _contacts.value = contactsRepo.fetchContacts()
             } catch (e: SecurityException) {
                 // Handle the case where contacts permissions are not granted
                 _contacts.value = emptyList()
             }
-        }
     }
 
     fun addSchedule(
