@@ -32,7 +32,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,8 +50,9 @@ import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
 import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.DayUtils
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -65,9 +65,9 @@ import java.util.Locale
 fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
     val context = LocalContext.current
 
-    val themeMode by settingsViewModel.theme.collectAsState()
-    val viewMode by settingsViewModel.viewMode.collectAsState()
-    val alarmStatusList by settingsViewModel.alarmStatusList.collectAsState()
+    val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
+    val viewMode by settingsViewModel.viewMode.collectAsStateWithLifecycle()
+    val alarmStatusList by settingsViewModel.alarmStatusList.collectAsStateWithLifecycle()
     
     var showAlarmsDialog by remember { mutableStateOf(false) }
 
@@ -172,7 +172,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
             item {
                 SettingsRow(
                     name = stringResource(id = R.string.row_version),
-                    value = "1.0.0",
+                    value = BuildConfig.VERSION_NAME,
                     onClick = null
                 )
             }
@@ -206,26 +206,31 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                     context.startActivity(intent)
                 }
             }
-            
-            // Debug Section
-            item {
-                Text(
-                    "Debug",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.padding(start = 16.dp, top = 28.dp, bottom = 6.dp)
-                )
-            }
-            
-            // View Scheduled Alarms Row
-            item {
-                SettingsRow(
-                    name = "View AlarmManager Status",
-                    value = null
-                ) {
-                    settingsViewModel.loadAlarmStatus()
-                    showAlarmsDialog = true
+
+
+            if(BuildConfig.DEBUG)
+            {
+                // Debug Section
+                item {
+                    Text(
+                        "Debug",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(start = 16.dp, top = 28.dp, bottom = 6.dp)
+                    )
+                }
+
+                // View Scheduled Alarms Row
+                item {
+                    SettingsRow(
+                        name = "View Alarm Status",
+                        value = null
+                    )
+                    {
+                        settingsViewModel.loadAlarmStatus(true)
+                        showAlarmsDialog = true
+                    }
                 }
             }
         }
@@ -245,7 +250,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
             title = { 
                 Column {
                     Text(
-                        "AlarmManager Status",
+                        "Alarm Status",
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -257,7 +262,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
             },
             text = {
                 if (alarmStatusList.isEmpty()) {
-                    Text("No schedules found in database")
+                    Text("No schedules found")
                 } else {
                     LazyColumn(
                         modifier = Modifier.heightIn(max = 400.dp),

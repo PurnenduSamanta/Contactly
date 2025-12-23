@@ -3,7 +3,9 @@ package com.purnendu.contactly.ui.screens.setting
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.purnendu.contactly.alarm.AlarmCheckResult
 import com.purnendu.contactly.alarm.AlarmMetadata
+import com.purnendu.contactly.alarm.AlarmStatusInfo
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.data.SchedulesRepository
@@ -21,16 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class AlarmStatusInfo(
-    val schedule: ScheduleEntity,
-    val alarms: List<AlarmCheckResult>
-)
-
-data class AlarmCheckResult(
-    val metadata: AlarmMetadata,
-    val isSetInAlarmManager: Boolean,
-    val name: String
-)
 
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(app))
@@ -55,9 +47,10 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { AppPreferences.setViewMode(getApplication(), mode) }
     }
     
-    fun loadAlarmStatus() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+    fun loadAlarmStatus(isInDebugMode: Boolean) {
+        if(!isInDebugMode)
+            return
+        viewModelScope.launch(Dispatchers.IO) {
                 val schedules = schedulesRepo.getAllEntities()
                 val statusList = schedules.map { schedule ->
                     val metadata = alarmSyncManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
@@ -85,8 +78,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                     AlarmStatusInfo(schedule = schedule, alarms = alarmResults)
                 }
                 _alarmStatusList.value = statusList
-            }
         }
     }
 }
+
+
+
+
 
