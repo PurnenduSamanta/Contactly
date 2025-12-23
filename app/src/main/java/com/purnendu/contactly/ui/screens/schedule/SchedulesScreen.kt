@@ -32,14 +32,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.stringResource
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -66,7 +64,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -97,6 +94,7 @@ fun SchedulesScreen(
     val context = LocalContext.current
     val schedules by schedulesViewModel.schedules.collectAsState()
     val contacts by schedulesViewModel.contacts.collectAsState()
+    val isContactsLoading by schedulesViewModel.isContactsLoading.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     
     
@@ -509,6 +507,8 @@ fun SchedulesScreen(
 
     if (showContactSheet) {
         ContactSelectionBottomSheet(
+            isLoading = isContactsLoading,
+            onSyncClick = { schedulesViewModel.loadContacts() },
             error = errorMessage.value,
             onErrorCardDismiss = {schedulesViewModel.clearError()},
             contacts = contacts,

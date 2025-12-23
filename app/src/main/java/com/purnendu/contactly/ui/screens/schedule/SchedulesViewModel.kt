@@ -44,6 +44,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
+    private val _isContactsLoading = MutableStateFlow(false)
+    val isContactsLoading: StateFlow<Boolean> = _isContactsLoading
 
     init
     {
@@ -53,11 +55,18 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     }
 
     fun loadContacts() {
+        checkCriticalPermissions()
+        if(_showContactPermissionDialog.value) return 
+
+            _isContactsLoading.value = true
             try {
-                _contacts.value = contactsRepo.fetchContacts()
+                val fetchedContacts = contactsRepo.fetchContacts()
+                _contacts.value = fetchedContacts
             } catch (e: SecurityException) {
                 // Handle the case where contacts permissions are not granted
                 _contacts.value = emptyList()
+            } finally {
+                _isContactsLoading.value = false
             }
     }
 
