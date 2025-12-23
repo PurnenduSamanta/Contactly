@@ -6,14 +6,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
@@ -24,8 +29,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.purnendu.contactly.ui.Screen
@@ -60,6 +68,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ContactlyApp() {
         val navController = rememberNavController()
@@ -67,41 +76,72 @@ class MainActivity : ComponentActivity() {
             Screen.Schedules,
             Screen.Settings,
         )
+        
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        
+        // Determine current screen for top bar title
+        val currentScreen = items.find { screen ->
+            currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName } == true
+        } ?: Screen.Schedules
 
         Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = when (currentScreen) {
+                                Screen.Schedules -> stringResource(id = R.string.title_schedules)
+                                Screen.Settings ->  stringResource(id = R.string.title_settings)
+                            },
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            },
             bottomBar = {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    )
 
-                    HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant)
-
-                    NavigationBar(windowInsets = WindowInsets.navigationBars, containerColor = MaterialTheme.colorScheme.surface)
-                    {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
+                    NavigationBar(
+                        windowInsets = WindowInsets.navigationBars,
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
                         items.forEach { screen ->
-                            val isSelected =  currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName  } == true
+                            val isSelected = currentDestination?.hierarchy?.any { 
+                                it.route == screen::class.qualifiedName 
+                            } == true
                             NavigationBarItem(
                                 colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
                                 icon = {
                                     Icon(
-                                        if(isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
+                                        if (isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
                                         contentDescription = screen.title
                                     )
                                 },
-                                label = { Text(screen.title!!, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal) },
+                                label = {
+                                    Text(
+                                        screen.title!!,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
                                 selected = isSelected,
                                 onClick = {
                                     navController.navigate(screen) {
-                                        // Pop up to the start destination of the graph to
-                                        // avoid building up a large stack of destinations
-                                        // on the back stack as users select items
                                         popUpTo(navController.graph.findStartDestination().id) {
                                             saveState = true
                                         }
-                                        // Avoid multiple copies of the same destination when
-                                        // reselecting the same item
                                         launchSingleTop = true
-                                        // Restore state when reselecting a previously selected item
                                         restoreState = true
                                     }
                                 }
@@ -109,19 +149,25 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
+            // All padding controlled from here - single source of truth
             NavHost(
-                navController,
+                navController = navController,
                 startDestination = Screen.Schedules,
-                Modifier.padding(innerPadding)
-            )
-            {
-                composable<Screen.Schedules> { SchedulesScreen(navController=navController) }
-                composable<Screen.Settings> { SettingsScreen()}
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable<Screen.Schedules> { 
+                    SchedulesScreen(
+                        navController = navController,
+                        contentPadding = PaddingValues() // No extra padding needed
+                    ) 
+                }
+                composable<Screen.Settings> { 
+                    SettingsScreen() 
+                }
             }
         }
     }
 }
-                
-
