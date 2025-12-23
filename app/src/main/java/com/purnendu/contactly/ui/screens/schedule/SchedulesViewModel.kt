@@ -56,9 +56,11 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     fun loadContacts() {
         checkCriticalPermissions()
-        if(_showContactPermissionDialog.value) return 
-
+        if(_showContactPermissionDialog.value) return
             _isContactsLoading.value = true
+
+        viewModelScope.launch(Dispatchers.IO)
+        {
             try {
                 val fetchedContacts = contactsRepo.fetchContacts()
                 _contacts.value = fetchedContacts
@@ -68,6 +70,8 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             } finally {
                 _isContactsLoading.value = false
             }
+        }
+
     }
 
     fun addSchedule(
