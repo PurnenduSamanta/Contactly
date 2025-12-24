@@ -37,6 +37,11 @@ class AliasAlarmReceiver : BroadcastReceiver() {
 
         if (!hasWriteContactsPermission(context)) return
 
+        // Create a Clean up for the PendingIntent that triggered this alarm
+        // This ensures that for one-time alarms, the "Active" status clears immediately
+        val syncManager = AlarmSyncManager(context)
+        syncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
+
         // Derive the name to apply based on operation
         val isApply = op == OP_APPLY
         val nameToApply = if (isApply) temporaryName else originalName
@@ -193,6 +198,8 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             resolver.insert(ContactsContract.Data.CONTENT_URI, insertValues)
         }
     }
+
+
 
     companion object {
         const val ACTION_ALIAS = "com.purnendu.contactly.action.ALIAS"

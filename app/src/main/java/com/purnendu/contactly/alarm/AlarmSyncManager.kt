@@ -315,6 +315,36 @@ class AlarmSyncManager(private val context: Context) {
         }
     }
 
+    /**
+     * Cancel a specific alarm PendingIntent.
+     * This is used to clean up "Apply" alarms after they fire, so they don't show as active.
+     */
+    fun cancelSpecificAlarm(
+        contactId: Long,
+        dayOfWeek: Int,
+        operation: String
+    ) {
+        val reqCode = if (operation == AliasAlarmReceiver.OP_APPLY) {
+            AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
+        } else {
+            AlarmRequestCodeUtils.generateRevertRequestCode(contactId, dayOfWeek)
+        }
+
+        val intent = Intent(context, AliasAlarmReceiver::class.java).apply {
+            action = AliasAlarmReceiver.ACTION_ALIAS
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            reqCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        pendingIntent?.cancel()
+        Log.d(TAG, "Cancelled specific alarm PendingIntent: reqCode=$reqCode, op=$operation")
+    }
+
     data class SyncResult(
         val totalSchedules: Int,
         val alarmsScheduled: Int,

@@ -461,6 +461,7 @@ fun SchedulesScreen(
                                                         if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
                                                             java.util.Date(endMillis)
                                                         ) else ""
+                                                    scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
                                                     showEditSheet = true
                                                 }
                                             }
