@@ -15,6 +15,7 @@ import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.preferences.AppPreferences
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -35,6 +36,8 @@ class AliasAlarmReceiver : BroadcastReceiver() {
         val scheduleType = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
         if (contactId <= 0) return
 
+        val pendingResult = goAsync()
+
         if (!hasWriteContactsPermission(context)) return
 
         // Create a Clean up for the PendingIntent that triggered this alarm
@@ -50,7 +53,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             applyName(context, contactId, nameToApply)
             
             // Handle async operations in a coroutine
-            GlobalScope.launch(Dispatchers.IO) {
+            CoroutineScope(Dispatchers.IO).launch{
                 // Read preference from DataStore (IO thread)
                 val notificationsEnabled = try {
                    AppPreferences.notificationsEnabledFlow(context).first()
@@ -94,6 +97,9 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             }
         } catch (e: Throwable) {
             Log.e("AliasAlarmReceiver", "Error processing alarm", e)
+        }
+        finally {
+            pendingResult.finish()
         }
     }
 
