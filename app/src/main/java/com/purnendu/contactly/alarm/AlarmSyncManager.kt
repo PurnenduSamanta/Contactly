@@ -242,6 +242,17 @@ class AlarmSyncManager(private val context: Context) {
                 } else {
                     // Check each alarm and reschedule if missing
                     storedMetadata.forEach { metadata ->
+                        // CRITICAL FIX: For ONE_TIME schedules, never reschedule ANY alarm (Apply or Revert) that is in the past.
+                        // This prevents "Ghost Alarms" where an executed alarm gets resurrected by sync because 
+                        // the DB deletion of the One-Time schedule hasn't finished yet.
+                        val isOneTime = schedule.scheduleType == 0
+                        val isExpired = metadata.triggerTimeMillis < System.currentTimeMillis()
+
+                        if (isOneTime && isExpired) {
+                            Log.d(TAG, "Skipping expired One-Time alarm: op=${metadata.operation}, time=${metadata.triggerTimeMillis}")
+                            return@forEach
+                        }
+
                         val exists = isAlarmScheduled(
                             requestCode = metadata.requestCode,
                             contactId = schedule.contactId,
