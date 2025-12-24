@@ -18,7 +18,6 @@ import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,66 +39,66 @@ class AliasAlarmReceiver : BroadcastReceiver() {
 
         if (!hasWriteContactsPermission(context)) return
 
-        // Create a Clean up for the PendingIntent that triggered this alarm
-        // This ensures that for one-time alarms, the "Active" status clears immediately
-        val syncManager = AlarmSyncManager(context)
-        syncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
+        CoroutineScope(Dispatchers.IO).launch{
+            try {
+                // Create a Clean up for the PendingIntent that triggered this alarm
+                // This ensures that for one-time alarms, the "Active" status clears immediately
+                val syncManager = AlarmSyncManager(context)
+                syncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
 
-        // Derive the name to apply based on operation
-        val isApply = op == OP_APPLY
-        val nameToApply = if (isApply) temporaryName else originalName
+                // Derive the name to apply based on operation
+                val isApply = op == OP_APPLY
+                val nameToApply = if (isApply) temporaryName else originalName
 
-        try {
-            applyName(context, contactId, nameToApply)
-            
-            // Handle async operations in a coroutine
-            CoroutineScope(Dispatchers.IO).launch{
-                // Read preference from DataStore (IO thread)
-                val notificationsEnabled = try {
-                   AppPreferences.notificationsEnabledFlow(context).first()
-                } catch (e: Exception) {
-                    Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
-                    false // Default to disabled if read fails
-                }
-                
-                // Show notification on Main thread (best practice for system APIs)
-                if (notificationsEnabled) {
-                    withContext(Dispatchers.Main) {
-                        try {
-                            NotificationHelper.showAlarmNotification(
-                                context = context,
-                                originalName = originalName,
-                                temporaryName = temporaryName,
-                                isApply = isApply,
-                                scheduleType = scheduleType
-                            )
-                        } catch (e: Exception) {
-                            Log.e("AliasAlarmReceiver", "Failed to show notification", e)
+                    applyName(context, contactId, nameToApply)
+
+                    val notificationsEnabled = try {
+                        AppPreferences.notificationsEnabledFlow(context).first()
+                    } catch (e: Exception) {
+                        Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
+                        false // Default to disabled if read fails
+                    }
+
+                    // Show notification on Main thread (best practice for system APIs)
+                    if (notificationsEnabled) {
+                        withContext(Dispatchers.Main) {
+                            try {
+                                NotificationHelper.showAlarmNotification(
+                                    context = context,
+                                    originalName = originalName,
+                                    temporaryName = temporaryName,
+                                    isApply = isApply,
+                                    scheduleType = scheduleType
+                                )
+                            } catch (e: Exception) {
+                                Log.e("AliasAlarmReceiver", "Failed to show notification", e)
+                            }
                         }
                     }
-                }
-                
-                // For one-time schedules: delete from database (IO thread)
-                if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
-                    try {
-                        val repo = SchedulesRepository(AppDatabase.getDataBase(context))
-                        repo.deleteById(scheduleId)
-                        Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
-                    } catch (e: Exception) {
-                        Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
+
+                    // For one-time schedules: delete from database (IO thread)
+                    if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
+                        try {
+                            val repo = SchedulesRepository(AppDatabase.getDataBase(context))
+                            repo.deleteById(scheduleId)
+                            Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
+                        } catch (e: Exception) {
+                            Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
+                        }
                     }
-                }
+
+
+                    // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
+                    if (scheduleType == 1 && dayOfWeek >= 0) {
+                        rescheduleForNextWeek(context, intent, dayOfWeek)
+                    }
             }
-            
-            // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
-            if (scheduleType == 1 && dayOfWeek >= 0) {
-                rescheduleForNextWeek(context, intent, dayOfWeek)
+            catch (e: Throwable) {
+                Log.e("AliasAlarmReceiver", "Error processing alarm", e)
             }
-        } catch (e: Throwable) {
-            Log.e("AliasAlarmReceiver", "Error processing alarm", e)
-        }
-        finally {
-            pendingResult.finish()
+            finally {
+                pendingResult.finish()
+            }
         }
     }
 

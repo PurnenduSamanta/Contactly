@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "schedules")
 data class ScheduleEntity(
-    @PrimaryKey(autoGenerate = true) val scheduleId: Long = 0,
+    @PrimaryKey(autoGenerate = false) val scheduleId: Long,
     val contactId: Long,
     val contactLookupKey: String?,
     val originalName: String,

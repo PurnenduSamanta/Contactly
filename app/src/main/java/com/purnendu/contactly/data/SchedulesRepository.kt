@@ -26,6 +26,7 @@ class SchedulesRepository(private val database: AppDatabase) {
     }
 
     suspend fun create(
+        scheduleId: Long,
         contactId: Long,
         contactLookupKey: String?,
         originalName: String,
@@ -38,6 +39,7 @@ class SchedulesRepository(private val database: AppDatabase) {
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
+                scheduleId = scheduleId,
                 contactId = contactId,
                 contactLookupKey = contactLookupKey,
                 originalName = originalName,

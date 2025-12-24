@@ -78,6 +78,7 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     fun addSchedule(
         contact: Contact,
+        scheduleId: Long,
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
@@ -87,6 +88,7 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     {
         scheduleAlarms(
                 contact = contact,
+                scheduleId = scheduleId,
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
@@ -129,13 +131,13 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             
             // Then schedule new alarms
             scheduleAlarms(
+                scheduleId = scheduleId,
                 isUpdatingAlarm = true,
                 contact = contact,
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
-                scheduleId = scheduleId,
                 selectedDays = selectedDays,
                 scheduleType = scheduleType
             )
@@ -177,6 +179,7 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     }
 
     fun addAlarmToDatabase(
+        scheduleId: Long,
         contact: Contact,
         temporaryName: String,
         startAtMillis: Long,
@@ -193,6 +196,7 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
             val metadataJson = syncManager.toJson(alarmMetadata)
             
             schedulesRepo.create(
+                scheduleId = scheduleId,
                 contactId = id,
                 contactLookupKey = contact.lookupKey,
                 originalName = contact.name,
@@ -243,7 +247,7 @@ private fun SchedulesViewModel.scheduleAlarms(
     temporaryName: String,
     startAtMillis: Long,
     endAtMillis: Long,
-    scheduleId: Long?=null,
+    scheduleId: Long,
     isUpdatingAlarm: Boolean = false,
     selectedDays: Int,
     scheduleType: ScheduleType
@@ -370,6 +374,7 @@ private fun SchedulesViewModel.scheduleAlarms(
         else
         {
             addAlarmToDatabase(
+                scheduleId = scheduleId,
                 contact = contact,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,

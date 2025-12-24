@@ -83,6 +83,7 @@ import com.purnendu.contactly.components.ContactlyDialog
 import com.purnendu.contactly.components.ContactlyTimePicker
 import com.purnendu.contactly.utils.ScheduleType
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -641,7 +642,8 @@ fun SchedulesScreen(
                         )
                         Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
                     } else {
-                        schedulesViewModel.addSchedule(contact, temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
+                        schedulesViewModel.addSchedule(contact,
+                            kotlin.math.abs(UUID.randomUUID().mostSignificantBits), temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
                         Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false
