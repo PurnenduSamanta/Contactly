@@ -2,9 +2,9 @@ package com.purnendu.contactly.ui.screens.setting
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +33,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,16 +54,26 @@ import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
 import com.purnendu.contactly.utils.AppThemeMode
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionState
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
+import com.purnendu.contactly.components.ContactlyDialog
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
     val context = LocalContext.current
@@ -71,15 +84,69 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
     val alarmStatusList by settingsViewModel.alarmStatusList.collectAsStateWithLifecycle()
     
     var showAlarmsDialog by remember { mutableStateOf(false) }
+    val showPermissionDialog = remember { mutableStateOf(false) }
+    val isNotificationSwitchTryToOn = remember { mutableIntStateOf(-1) }
     
     // Permission launcher for POST_NOTIFICATIONS (Android 13+)
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            settingsViewModel.setNotificationsEnabled(true)
+    val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        remember { mutableStateOf<PermissionState?>(null) }
+    } as PermissionState
+
+    LaunchedEffect(key1 = notificationPermissionState.status, key2 = isNotificationSwitchTryToOn.value)
+    {
+        if(isNotificationSwitchTryToOn.intValue==-1)
+            return@LaunchedEffect
+        //Checking permission status
+        when {
+            notificationPermissionState.status.isGranted -> {
+                showPermissionDialog.value = false
+                settingsViewModel.setNotificationsEnabled(true)
+            }
+
+            notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
+
+            !notificationPermissionState.status.isGranted && !notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
         }
     }
+
+    if(showPermissionDialog.value)
+    {
+        context.apply {
+            ContactlyDialog(
+                isConfirmButtonAvailable = true,
+                isDismissButtonAvailable = true,
+                title =   getString(R.string.dialog_notification_title),
+                message = getString(R.string.dialog_notification_message),
+                onConfirm = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    startActivity(intent)
+                    showPermissionDialog.value =false
+                },
+                onDismiss = { showPermissionDialog.value =false },
+                confirmButtonText = getString(R.string.action_settings),
+                dismissButtonText = getString(R.string.action_cancel)
+            )
+        }
+    }
+
+    val lifeCycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(key1 = lifeCycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if(!NotificationHelper.hasNotificationPermission(context))
+                    settingsViewModel.setNotificationsEnabled(false)
+            }
+        }
+        lifeCycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifeCycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
 
     LazyColumn(
         modifier = Modifier
@@ -189,15 +256,18 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                     Switch(
                         checked = notificationsEnabled,
                         onCheckedChange = { enabled ->
+                            println("Switch $enabled")
                             if (enabled) {
+                                isNotificationSwitchTryToOn.intValue += 1
                                 // Check if we need to request permission (Android 13+)
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
                                     !NotificationHelper.hasNotificationPermission(context)) {
-                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    notificationPermissionState.launchPermissionRequest()
                                 } else {
                                     settingsViewModel.setNotificationsEnabled(true)
                                 }
                             } else {
+                                isNotificationSwitchTryToOn.intValue = -1
                                 settingsViewModel.setNotificationsEnabled(false)
                             }
                         }

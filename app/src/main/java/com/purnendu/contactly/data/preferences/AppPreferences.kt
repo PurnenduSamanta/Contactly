@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.flow.Flow
@@ -90,7 +91,7 @@ object AppPreferences {
      */
     fun notificationsEnabledFlow(context: Context): Flow<Boolean> =
         context.dataStore.data.map { prefs ->
-            prefs[KEY_NOTIFICATIONS_ENABLED] ?: true // Default to enabled
+            prefs[KEY_NOTIFICATIONS_ENABLED] ?: NotificationHelper.hasNotificationPermission(context) // Default to enabled
         }
     
     /**
