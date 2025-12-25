@@ -38,7 +38,9 @@
     <string name="dialog_exact_alarm_title">Exact Alarm Permission Required</string>
     <string name="dialog_exact_alarm_message">This app needs permission to schedule exact alarms to properly rename and restore your contacts at the scheduled times. Please enable this permission in settings.</string>
     <string name="dialog_contacts_title">Contacts Permission Required</string>
+    <string name="dialog_notification_title">Notification Permission Required</string>
     <string name="dialog_contacts_message">This app needs permission to read and write contacts to rename them as scheduled. Please enable these permissions in settings.</string>
+    <string name="dialog_notification_message">This app needs permission for showing notifications keeping up to date with the schedules. Please enable these permissions in settings.</string>
     <string name="duplicate_contact_alert">You can not schedule duplicate contact</string>
     <string name="ok">Ok</string>
     <string name="ScheduleUpdated">Schedule updated</string>
