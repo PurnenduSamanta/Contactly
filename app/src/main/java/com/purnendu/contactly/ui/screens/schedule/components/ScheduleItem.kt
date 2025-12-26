@@ -32,8 +32,12 @@ import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ScheduleItem(
@@ -129,9 +133,9 @@ private fun ListScheduleItem(
                             // Scheduled time display
                             if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                                val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
-                                val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
+                                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                val startTime = formatter.format(Date(schedule.startAtMillis))
+                                val endTime = formatter.format(Date(schedule.endAtMillis))
 
                                 Text(
                                     text = "$startTime - $endTime",
@@ -351,9 +355,9 @@ private fun GridScheduleItem(
 
                 // Time
                 if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
-                    val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                    val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
-                    val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
+                    val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                    val startTime = formatter.format(Date(schedule.startAtMillis))
+                    val endTime = formatter.format(Date(schedule.endAtMillis))
 
                     Text(
                         text = "$startTime - $endTime",
@@ -426,7 +430,7 @@ private fun GridScheduleItem(
 @Preview(showBackground = true)
 @Composable
 fun ScheduleItemPreview() {
-    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
+    ContactlyTheme(appThemeMode = AppThemeMode.LIGHT) {
         Column {
             Text("List View:")
             ScheduleItem(

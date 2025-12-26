@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
+import android.content.ContentValues
 import com.purnendu.contactly.data.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.preferences.AppPreferences
@@ -177,7 +178,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             if (c.moveToFirst()) c.getLong(0) else null
         }
 
-        val values = android.content.ContentValues().apply {
+        val values = ContentValues().apply {
             put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
             put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
         }
@@ -194,7 +195,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
         )
 
         if (updated == 0 && rawId != null) {
-            val insertValues = android.content.ContentValues().apply {
+            val insertValues = ContentValues().apply {
                 put(ContactsContract.Data.RAW_CONTACT_ID, rawId)
                 put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                 put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)

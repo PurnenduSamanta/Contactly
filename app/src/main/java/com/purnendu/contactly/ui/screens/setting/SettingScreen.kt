@@ -307,7 +307,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                 {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        android.net.Uri.parse("https://example.com/privacy")
+                        Uri.parse("https://example.com/privacy")
                     )
                     context.startActivity(intent)
                 }
@@ -322,7 +322,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                 {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        android.net.Uri.parse("https://example.com/terms")
+                        Uri.parse("https://example.com/terms")
                     )
                     context.startActivity(intent)
                 }

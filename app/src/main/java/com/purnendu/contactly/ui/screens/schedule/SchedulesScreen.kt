@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.provider.ContactsContract
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -74,8 +75,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
-
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -83,9 +84,12 @@ import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.ui.components.ContactlyTimePicker
 import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.utils.AppThemeMode
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
@@ -133,7 +137,7 @@ fun SchedulesScreen(
                 ViewMode.LIST -> {
                     listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
                 }
-                com.purnendu.contactly.utils.ViewMode.GRID -> {
+                ViewMode.GRID -> {
                     gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
                 }
             }
@@ -225,7 +229,7 @@ fun SchedulesScreen(
 
 
     // Shared callbacks for Schedule Items
-    val onEditClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+    val onEditClick: (Schedule) -> Unit = { sched ->
         val cid = sched.contactId
         if (cid != null) {
             val contact = schedulesViewModel.contactForId(cid)
@@ -238,9 +242,9 @@ fun SchedulesScreen(
                         val entity = schedulesViewModel.loadScheduleEntity(sid)
                         startMillis = entity?.startAtMillis ?: 0L
                         endMillis = entity?.endAtMillis ?: 0L
-                        selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                        startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(java.util.Date(startMillis)) else ""
-                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(java.util.Date(endMillis)) else ""
+                        selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
+                        startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(Date(startMillis)) else ""
+                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(Date(endMillis)) else ""
                         scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
                         showEditSheet = true
                     }
@@ -249,7 +253,7 @@ fun SchedulesScreen(
         }
     }
 
-    val onDeleteClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+    val onDeleteClick: (Schedule) -> Unit = { sched ->
         if(snackBarHostState.currentSnackbarData == null) {
             coroutineScope.launch {
                 val result = snackBarHostState.showSnackbar(
@@ -264,13 +268,13 @@ fun SchedulesScreen(
         }
     }
 
-    val onContactDetailsClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+    val onContactDetailsClick: (Schedule) -> Unit = { sched ->
         val contactId = sched.contactId
         if (contactId != null) {
             try {
                 val intent = Intent(
                     Intent.ACTION_VIEW,
-                    android.provider.ContactsContract.Contacts.getLookupUri(
+                    ContactsContract.Contacts.getLookupUri(
                         contactId,
                         schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
                     )
@@ -423,7 +427,7 @@ fun SchedulesScreen(
                         items(schedules) { schedule ->
                             ScheduleItem(
                                 schedule = schedule,
-                                viewMode = com.purnendu.contactly.utils.ViewMode.LIST,
+                                viewMode = ViewMode.LIST,
                                 avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
                                 onEditClick = onEditClick,
                                 onDeleteClick = onDeleteClick,
@@ -491,7 +495,7 @@ fun SchedulesScreen(
     if (showEditSheet) {
 
         val contact = selectedContact ?: Contact("", "", null)
-        val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+        val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
         EditScheduleSheet(
             error = errorMessage.value,
             onErrorCardDismiss = { schedulesViewModel.clearError() },
@@ -505,7 +509,7 @@ fun SchedulesScreen(
             onDaysChanged = { selectedDays = it },
             onScheduleTypeChange = { newType ->
                 scheduleType = newType
-                val today = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) - 1
+                val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
                 selectedDays = setOf(today)
             },
             onStartTimeClick = { showStartTimePicker = true },
@@ -577,7 +581,7 @@ fun SchedulesScreen(
                     context.startActivity(i)
                     return@EditScheduleSheet
                 }
-                val selectedDaysBitmask = com.purnendu.contactly.utils.DayUtils.daysToBitmask(selectedDays)
+                val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
                     val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
                     if (editingId != null) {
                         schedulesViewModel.updateSchedule(
@@ -642,7 +646,7 @@ fun SchedulesScreen(
 @Preview(showBackground = true)
 @Composable
 fun SchedulesScreenPreview() {
-    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
+    ContactlyTheme(appThemeMode = AppThemeMode.LIGHT) {
         SchedulesScreen(
             schedulesViewModel = viewModel()
         )
