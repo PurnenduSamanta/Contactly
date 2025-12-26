@@ -65,7 +65,7 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import com.purnendu.contactly.components.ContactlyDialog
+import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import java.text.SimpleDateFormat

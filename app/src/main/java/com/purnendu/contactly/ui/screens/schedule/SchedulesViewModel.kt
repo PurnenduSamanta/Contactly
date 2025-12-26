@@ -301,7 +301,7 @@ private fun SchedulesViewModel.scheduleAlarms(
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
             putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
         }
@@ -311,7 +311,7 @@ private fun SchedulesViewModel.scheduleAlarms(
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
             putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId ?: -1L)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
         }
@@ -337,7 +337,7 @@ private fun SchedulesViewModel.scheduleAlarms(
             )
         }
         catch (e: SecurityException) {
-            Log.d("alarm_error", e.localizedMessage.toString())
+            Log.d("alarm_error", e.localizedMessage ?: "Unknown error")
             isAlarmSuccessfullyScheduled = false
         }
         try {
@@ -348,7 +348,7 @@ private fun SchedulesViewModel.scheduleAlarms(
             )
         }
         catch (e: SecurityException) {
-            Log.d("alarm_error", e.localizedMessage.toString())
+            Log.d("alarm_error", e.localizedMessage ?: "Unknown error")
             isAlarmSuccessfullyScheduled = false
         }
     }
@@ -357,9 +357,6 @@ private fun SchedulesViewModel.scheduleAlarms(
     {
         if(isUpdatingAlarm)
         {
-            if(scheduleId==null)
-                return
-
             updateAlarmToDatabase(
                 scheduleId = scheduleId,
                 originalName = originalName,

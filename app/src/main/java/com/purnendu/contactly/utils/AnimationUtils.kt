@@ -18,6 +18,7 @@ import kotlin.math.abs
 
 // A reusable animation that simu
 // lates the "expressive" feel with bouncy transitions
+@Suppress("UNCHECKED_CAST")
 @Composable
 fun <T> rememberExpressiveAnimation(
     targetValue: T,

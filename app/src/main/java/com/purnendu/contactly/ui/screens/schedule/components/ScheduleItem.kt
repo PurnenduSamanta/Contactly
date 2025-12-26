@@ -3,46 +3,79 @@ package com.purnendu.contactly.ui.screens.schedule.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import androidx.compose.ui.res.stringResource
-import coil.compose.AsyncImage
+import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 
 @Composable
 fun ScheduleItem(
     modifier: Modifier = Modifier,
     schedule: Schedule,
+    viewMode: ViewMode = ViewMode.LIST,
     avatarUri: String? = null,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
-    onContactDetailsClick: (schedule: Schedule) -> Unit = {},
+    onContactDetailsClick: (schedule: Schedule) -> Unit,
+) {
+    if (viewMode == ViewMode.LIST)
+    {
+        ListScheduleItem(
+            modifier = modifier,
+            schedule = schedule,
+            avatarUri = avatarUri,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onContactDetailsClick = onContactDetailsClick
+        )
+    }
+    else {
+        GridScheduleItem(
+            modifier = modifier,
+            schedule = schedule,
+            avatarUri = avatarUri,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+            onContactDetailsClick = onContactDetailsClick
+        )
+    }
+}
+
+@Composable
+private fun ListScheduleItem(
+    modifier: Modifier,
+    schedule: Schedule,
+    avatarUri: String?,
+    onEditClick: (schedule: Schedule) -> Unit,
+    onDeleteClick: (schedule: Schedule) -> Unit,
+    onContactDetailsClick: (schedule: Schedule) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -58,112 +91,110 @@ fun ScheduleItem(
     ) {
         Card(
             modifier = Modifier.border(width = 1.dp, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = RoundedCornerShape(15.dp), // Enhanced rounded corners for Material 3 Expressive
+            shape = RoundedCornerShape(15.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-        )
-        {
+        ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Contact info
-                    Column(
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = schedule.name,
-                            style = MaterialTheme.typography.titleLarge, // Using expressive typography
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(id = R.string.original_name, schedule.originalName),
-                            style = MaterialTheme.typography.bodyMedium, // Using expressive typography
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        
-                        // Scheduled time display
-                        if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
-                            val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
-                            val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
-                            
+                        // Contact info
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Text(
-                                text = "$startTime - $endTime",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium
+                                text = schedule.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.original_name, schedule.originalName),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            // Scheduled time display
+                            if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                                val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
+                                val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
+
+                                Text(
+                                    text = "$startTime - $endTime",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        // Avatar
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            when {
+                                schedule.avatarResId != null -> {
+                                    Image(
+                                        painter = painterResource(id = schedule.avatarResId),
+                                        contentDescription = "Avatar for ${schedule.name}",
+                                        modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f, true),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                !avatarUri.isNullOrBlank() -> {
+                                    AsyncImage(
+                                        model = avatarUri,
+                                        contentDescription = "Avatar for ${schedule.name}",
+                                        modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f, true),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                else -> {
+                                    Image(
+                                        modifier = Modifier.size(width = 119.dp, height = 58.dp),
+                                        painter = painterResource(id = R.drawable.avatar_placeholder),
+                                        contentDescription = "Avatar placeholder",
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    // Avatar with expressive rounded corners
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(15.dp)) // Enhanced rounded corners
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        when {
-                            schedule.avatarResId != null -> {
-                                Image(
-                                    painter = painterResource(id = schedule.avatarResId),
-                                    contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f,true),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                            avatarUri != null && avatarUri.isNotBlank() -> {
-                                AsyncImage(
-                                    model = avatarUri,
-                                    contentDescription = "Avatar for ${schedule.name}",
-                                    modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f,true),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                            else -> {
-                                Image(
-                                    modifier = Modifier.size(width = 119.dp, height = 58.dp),
-                                    painter = painterResource(id = R.drawable.avatar_placeholder),
-                                    contentDescription = "Avatar placeholder",
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                        }
-                    }
+                    // Selected days display
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    DayChips(
+                        selectedDays = schedule.selectedDays,
+                        modifier = Modifier.padding(start = 0.dp)
+                    )
                 }
-                
-                // Selected days display
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                DayChips(
-                    selectedDays = schedule.selectedDays,
-                    modifier = Modifier.padding(start = 0.dp)
-                )
-            }
-                
-                // Contact details icon button (upper right corner)
-                androidx.compose.material3.IconButton(
+
+                // Contact details icon button
+                IconButton(
                     onClick = { onContactDetailsClick(schedule) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(4.dp)
                         .size(36.dp)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Outlined.Info,
                         contentDescription = "View Contact Details",
                         tint = MaterialTheme.colorScheme.primary,
@@ -175,26 +206,25 @@ fun ScheduleItem(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Action buttons with expressive styling
+        // Action buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
-        )
-        {
+        ) {
             Button(
                 onClick = { onDeleteClick(schedule) },
                 modifier = Modifier
                     .height(40.dp)
-                    .expressiveScale(if (isPressed) 0.95f else 1f), // Expressive press animation
+                    .expressiveScale(if (isPressed) 0.95f else 1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Text(
                     stringResource(id = R.string.action_delete),
-                    style = MaterialTheme.typography.labelLarge, // Using expressive typography
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
@@ -204,18 +234,189 @@ fun ScheduleItem(
                 onClick = { onEditClick(schedule) },
                 modifier = Modifier
                     .height(40.dp)
-                    .expressiveScale(if (isPressed) 0.95f else 1f), // Expressive press animation
+                    .expressiveScale(if (isPressed) 0.95f else 1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                shape = RoundedCornerShape(12.dp), // Enhanced rounded corners for buttons
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Text(
                     stringResource(id = R.string.action_edit),
-                    style = MaterialTheme.typography.labelLarge, // Using expressive typography
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GridScheduleItem(
+    modifier: Modifier,
+    schedule: Schedule,
+    avatarUri: String?,
+    onEditClick: (schedule: Schedule) -> Unit,
+    onDeleteClick: (schedule: Schedule) -> Unit,
+    onContactDetailsClick: (schedule: Schedule) -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val expressiveScale = rememberExpressiveAnimation(
+        targetValue = if (isPressed) 0.97f else 1f
+    )
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(15.dp)
+            )
+            .expressiveScale(expressiveScale.value),
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when {
+                        schedule.avatarResId != null -> {
+                            Image(
+                                painter = painterResource(id = schedule.avatarResId),
+                                contentDescription = "Avatar for ${schedule.name}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        !avatarUri.isNullOrBlank() -> {
+                            AsyncImage(
+                                model = avatarUri,
+                                contentDescription = "Avatar for ${schedule.name}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        else -> {
+                            Icon(
+                                painter = painterResource(id = R.drawable.avatar_placeholder),
+                                contentDescription = "Avatar placeholder",
+                                modifier = Modifier.size(50.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Name
+                Text(
+                    text = schedule.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // Original name
+                Text(
+                    text = stringResource(id = R.string.original_name, schedule.originalName),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Time
+                if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
+                    val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                    val startTime = formatter.format(java.util.Date(schedule.startAtMillis))
+                    val endTime = formatter.format(java.util.Date(schedule.endAtMillis))
+
+                    Text(
+                        text = "$startTime - $endTime",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                // Compact Day Chips
+                DayChips(
+                    selectedDays = schedule.selectedDays,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = { onDeleteClick(schedule) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onEditClick(schedule) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            // Contact details icon button
+            IconButton(
+                onClick = { onContactDetailsClick(schedule) },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(28.dp)
+                ) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "View Contact Details",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -226,15 +427,33 @@ fun ScheduleItem(
 @Composable
 fun ScheduleItemPreview() {
     ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
-        ScheduleItem(
-            schedule = Schedule(
-                id = "1",
-                name = "Ethan Carter",
-                originalName = "Ethan"
-            ),
-            onEditClick = {},
-            onDeleteClick = {}
-        )
+        Column {
+            Text("List View:")
+            ScheduleItem(
+                schedule = Schedule(
+                    id = "1",
+                    name = "Ethan Carter",
+                    originalName = "Ethan"
+                ),
+                viewMode = ViewMode.LIST,
+                onEditClick = {},
+                onDeleteClick = {},
+                onContactDetailsClick = {}
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Grid View:")
+             ScheduleItem(
+                schedule = Schedule(
+                    id = "1",
+                    name = "Ethan Carter",
+                    originalName = "Ethan"
+                ),
+                viewMode = ViewMode.GRID,
+                onEditClick = {},
+                onDeleteClick = {},
+                 onContactDetailsClick = {}
+            )
+        }
     }
 }
 

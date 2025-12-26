@@ -1,4 +1,4 @@
-package com.purnendu.contactly.components
+package com.purnendu.contactly.ui.components
 
 
 import androidx.compose.material3.AlertDialog

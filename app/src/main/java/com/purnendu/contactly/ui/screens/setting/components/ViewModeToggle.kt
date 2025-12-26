@@ -8,7 +8,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +36,7 @@ fun ViewModeToggle(
     ) {
         ViewModeChip(
             text = "List",
-            icon = Icons.Default.List,
+            icon = Icons.AutoMirrored.Filled.List,
             selected = selectedMode == ViewMode.LIST,
             onClick = { onModeChange(ViewMode.LIST) },
             modifier = Modifier.weight(1f)

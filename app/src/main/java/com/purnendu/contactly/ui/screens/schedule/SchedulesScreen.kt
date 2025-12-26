@@ -75,14 +75,18 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
-import com.purnendu.contactly.ui.screens.schedule.components.ScheduleGridItem
+
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.components.ContactlyDialog
-import com.purnendu.contactly.components.ContactlyTimePicker
+import com.purnendu.contactly.ui.components.ContactlyDialog
+import com.purnendu.contactly.ui.components.ContactlyTimePicker
 import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -103,7 +107,7 @@ fun SchedulesScreen(
     // View mode preference
     val viewMode by com.purnendu.contactly.data.preferences.AppPreferences
         .viewModeFlow(context)
-        .collectAsState(initial = com.purnendu.contactly.utils.ViewMode.LIST)
+        .collectAsState(initial = ViewMode.LIST)
 
     var showContactSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
@@ -114,7 +118,7 @@ fun SchedulesScreen(
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
     var scheduleType by remember { mutableStateOf(ScheduleType.ONE_TIME) }
-    var selectedDays by remember { mutableStateOf(setOf(java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) - 1)) }
+    var selectedDays by remember { mutableStateOf(setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)) }
     
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -126,7 +130,7 @@ fun SchedulesScreen(
     val fabVisible by remember {
         derivedStateOf {
             when (viewMode) {
-                com.purnendu.contactly.utils.ViewMode.LIST -> {
+                ViewMode.LIST -> {
                     listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
                 }
                 com.purnendu.contactly.utils.ViewMode.GRID -> {
@@ -218,6 +222,65 @@ fun SchedulesScreen(
 
     val snackBarHostState = remember { SnackbarHostState() }
 
+
+
+    // Shared callbacks for Schedule Items
+    val onEditClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+        val cid = sched.contactId
+        if (cid != null) {
+            val contact = schedulesViewModel.contactForId(cid)
+            if (contact != null) {
+                selectedContact = contact
+                temporaryName = sched.name
+                val sid = sched.id.toLongOrNull()
+                if (sid != null) {
+                    coroutineScope.launch {
+                        val entity = schedulesViewModel.loadScheduleEntity(sid)
+                        startMillis = entity?.startAtMillis ?: 0L
+                        endMillis = entity?.endAtMillis ?: 0L
+                        selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
+                        startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(java.util.Date(startMillis)) else ""
+                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(java.util.Date(endMillis)) else ""
+                        scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
+                        showEditSheet = true
+                    }
+                }
+            }
+        }
+    }
+
+    val onDeleteClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+        if(snackBarHostState.currentSnackbarData == null) {
+            coroutineScope.launch {
+                val result = snackBarHostState.showSnackbar(
+                    message = "Do you want to delete this schedule?",
+                    actionLabel = "Delete",
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    schedulesViewModel.deleteSchedule(sched)
+                }
+            }
+        }
+    }
+
+    val onContactDetailsClick: (com.purnendu.contactly.model.Schedule) -> Unit = { sched ->
+        val contactId = sched.contactId
+        if (contactId != null) {
+            try {
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    android.provider.ContactsContract.Contacts.getLookupUri(
+                        contactId,
+                        schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
+                    )
+                )
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -351,7 +414,7 @@ fun SchedulesScreen(
         } else {
             // Conditional rendering based on view mode
             when (viewMode) {
-                com.purnendu.contactly.utils.ViewMode.LIST -> {
+                ViewMode.LIST -> {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -360,74 +423,17 @@ fun SchedulesScreen(
                         items(schedules) { schedule ->
                             ScheduleItem(
                                 schedule = schedule,
+                                viewMode = com.purnendu.contactly.utils.ViewMode.LIST,
                                 avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
-                                onEditClick = { sched ->
-                                    val cid = sched.contactId
-                                    if (cid != null) {
-                                        val contact = schedulesViewModel.contactForId(cid)
-                                        if (contact != null) {
-                                            selectedContact = contact
-                                            temporaryName = sched.name
-                                            val sid = sched.id.toLongOrNull()
-                                            if (sid != null) {
-                                                coroutineScope.launch {
-                                                    val entity = schedulesViewModel.loadScheduleEntity(sid)
-                                                    startMillis = entity?.startAtMillis ?: 0L
-                                                    endMillis = entity?.endAtMillis ?: 0L
-                                                    selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                                                    startTimeText =
-                                                        if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                            java.util.Date(startMillis)
-                                                        ) else ""
-                                                    endTimeText =
-                                                        if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                            java.util.Date(endMillis)
-                                                        ) else ""
-                                                    scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
-                                                    showEditSheet = true
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                onDeleteClick = {
-                                    if(snackBarHostState.currentSnackbarData==null)
-                                    {
-                                        coroutineScope.launch {
-                                            val result = snackBarHostState.showSnackbar(
-                                                message = "Do you want to delete this schedule?",
-                                                actionLabel = "Delete",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                schedulesViewModel.deleteSchedule(it)
-                                            }
-                                        }
-                                    }
-                                },
-                                onContactDetailsClick = { sched ->
-                                    val contactId = sched.contactId
-                                    if (contactId != null) {
-                                        try {
-                                            val intent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                android.provider.ContactsContract.Contacts.getLookupUri(
-                                                    contactId,
-                                                    schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
-                                                )
-                                            )
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
+                                onEditClick = onEditClick,
+                                onDeleteClick = onDeleteClick,
+                                onContactDetailsClick = onContactDetailsClick
                             )
                         }
                     }
                 }
                 
-                com.purnendu.contactly.utils.ViewMode.GRID -> {
+                ViewMode.GRID -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         state = gridState,
@@ -437,70 +443,13 @@ fun SchedulesScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(schedules) { schedule ->
-                            ScheduleGridItem(
+                            ScheduleItem(
                                 schedule = schedule,
+                                viewMode = ViewMode.GRID,
                                 avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
-                                onEditClick = { sched ->
-                                    val cid = sched.contactId
-                                    if (cid != null) {
-                                        val contact = schedulesViewModel.contactForId(cid)
-                                        if (contact != null) {
-                                            selectedContact = contact
-                                            temporaryName = sched.name
-                                            val sid = sched.id.toLongOrNull()
-                                            if (sid != null) {
-                                                coroutineScope.launch {
-                                                    val entity = schedulesViewModel.loadScheduleEntity(sid)
-                                                    startMillis = entity?.startAtMillis ?: 0L
-                                                    endMillis = entity?.endAtMillis ?: 0L
-                                                    selectedDays = com.purnendu.contactly.utils.DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                                                    startTimeText =
-                                                        if (startMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                            java.util.Date(startMillis)
-                                                        ) else ""
-                                                    endTimeText =
-                                                        if (endMillis > 0) java.text.SimpleDateFormat("HH:mm").format(
-                                                            java.util.Date(endMillis)
-                                                        ) else ""
-                                                    scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
-                                                    showEditSheet = true
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                                onDeleteClick = {
-                                    if(snackBarHostState.currentSnackbarData==null)
-                                    {
-                                        coroutineScope.launch {
-                                            val result = snackBarHostState.showSnackbar(
-                                                message = "Do you want to delete this schedule?",
-                                                actionLabel = "Delete",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                schedulesViewModel.deleteSchedule(it)
-                                            }
-                                        }
-                                    }
-                                },
-                                onContactDetailsClick = { sched ->
-                                    val contactId = sched.contactId
-                                    if (contactId != null) {
-                                        try {
-                                            val intent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                android.provider.ContactsContract.Contacts.getLookupUri(
-                                                    contactId,
-                                                    schedulesViewModel.contactForId(contactId)?.lookupKey ?: ""
-                                                )
-                                            )
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Unable to open contact", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
+                                onEditClick = onEditClick,
+                                onDeleteClick = onDeleteClick,
+                                onContactDetailsClick = onContactDetailsClick
                             )
                         }
                     }
@@ -592,10 +541,10 @@ fun SchedulesScreen(
                 }
 
                 // Extract time-of-day only (ignore date) for comparison
-                val startCal = java.util.Calendar.getInstance().apply { timeInMillis = startMillis }
-                val endCal = java.util.Calendar.getInstance().apply { timeInMillis = endMillis }
-                val startTimeOfDay = startCal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + startCal.get(java.util.Calendar.MINUTE)
-                val endTimeOfDay = endCal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + endCal.get(java.util.Calendar.MINUTE)
+                val startCal = Calendar.getInstance().apply { timeInMillis = startMillis }
+                val endCal = Calendar.getInstance().apply { timeInMillis = endMillis }
+                val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
+                val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
 
                 if(startTimeOfDay == endTimeOfDay)
                 {
@@ -657,14 +606,14 @@ fun SchedulesScreen(
         ContactlyTimePicker(
             onDismiss = { showStartTimePicker = false },
             onTimeSelected = { hour, minute ->
-                val cal = java.util.Calendar.getInstance().apply {
-                    set(java.util.Calendar.HOUR_OF_DAY, hour)
-                    set(java.util.Calendar.MINUTE, minute)
-                    set(java.util.Calendar.SECOND, 0)
-                    set(java.util.Calendar.MILLISECOND, 0)
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                 }
                 startMillis = cal.timeInMillis
-                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
                 startTimeText = formatter.format(cal.time)
                 showStartTimePicker = false
             }
@@ -675,14 +624,14 @@ fun SchedulesScreen(
         ContactlyTimePicker(
             onDismiss = { showEndTimePicker = false },
             onTimeSelected = { hour, minute ->
-                val cal = java.util.Calendar.getInstance().apply {
-                    set(java.util.Calendar.HOUR_OF_DAY, hour)
-                    set(java.util.Calendar.MINUTE, minute)
-                    set(java.util.Calendar.SECOND, 0)
-                    set(java.util.Calendar.MILLISECOND, 0)
+                val cal = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hour)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                 }
                 endMillis = cal.timeInMillis
-                val formatter = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault())
+                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
                 endTimeText = formatter.format(cal.time)
                 showEndTimePicker = false
             }
