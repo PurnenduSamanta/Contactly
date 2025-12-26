@@ -1,14 +1,12 @@
 package com.purnendu.contactly.ui.screens.setting
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.models.AlarmCheckResult
 import com.purnendu.contactly.alarm.models.AlarmStatusInfo
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ViewMode
@@ -20,36 +18,41 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-
-class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
-    private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(app))
-    private val alarmSyncManager = AlarmSyncManager(app)
+/**
+ * ViewModel for Settings screen.
+ * 
+ * Manages app preferences (theme, view mode, notifications) and alarm status debugging.
+ * 
+ * Dependencies are injected via Koin using interfaces for testability.
+ */
+class SettingsViewModel(
+    private val schedulesRepo: SchedulesRepository,
+    private val alarmSyncManager: AlarmSyncManager,
+    private val appPreferences: AppPreferences
+) : ViewModel() {
     
-    val theme: StateFlow<AppThemeMode> = AppPreferences
-        .themeFlow(app)
+    val theme: StateFlow<AppThemeMode> = appPreferences.themeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppThemeMode.SYSTEM)
     
-    val viewMode: StateFlow<ViewMode> = AppPreferences
-        .viewModeFlow(app)
+    val viewMode: StateFlow<ViewMode> = appPreferences.viewModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ViewMode.LIST)
     
-    val notificationsEnabled: StateFlow<Boolean> = AppPreferences
-        .notificationsEnabledFlow(app)
+    val notificationsEnabled: StateFlow<Boolean> = appPreferences.notificationsEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _alarmStatusList = MutableStateFlow<List<AlarmStatusInfo>>(emptyList())
     val alarmStatusList: StateFlow<List<AlarmStatusInfo>> = _alarmStatusList.asStateFlow()
 
     fun setTheme(mode: AppThemeMode) {
-        viewModelScope.launch(Dispatchers.IO) { AppPreferences.setTheme(app, mode) }
+        viewModelScope.launch(Dispatchers.IO) { appPreferences.setTheme(mode) }
     }
     
     fun setViewMode(mode: ViewMode) {
-        viewModelScope.launch(Dispatchers.IO) { AppPreferences.setViewMode(app, mode) }
+        viewModelScope.launch(Dispatchers.IO) { appPreferences.setViewMode(mode) }
     }
     
     fun setNotificationsEnabled(enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) { AppPreferences.setNotificationsEnabled(app, enabled) }
+        viewModelScope.launch(Dispatchers.IO) { appPreferences.setNotificationsEnabled(enabled) }
     }
     
     fun loadAlarmStatus(isInDebugMode: Boolean) {
@@ -87,8 +90,3 @@ class SettingsViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 }
-
-
-
-
-

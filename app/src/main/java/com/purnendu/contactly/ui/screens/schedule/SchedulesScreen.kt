@@ -40,7 +40,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,7 +76,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -101,7 +100,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
-import com.purnendu.contactly.data.local.preferences.AppPreferences
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -109,7 +107,7 @@ fun SchedulesScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     navController: NavController? = null,
-    schedulesViewModel: SchedulesViewModel = viewModel()
+    schedulesViewModel: SchedulesViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
     val schedules by schedulesViewModel.schedules.collectAsStateWithLifecycle()
@@ -117,11 +115,8 @@ fun SchedulesScreen(
     val isContactsLoading by schedulesViewModel.isContactsLoading.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     
-    
-    // View mode preference
-    val viewMode by AppPreferences
-        .viewModeFlow(context)
-        .collectAsState(initial = ViewMode.LIST)
+    // View mode preference from ViewModel
+    val viewMode by schedulesViewModel.viewMode.collectAsStateWithLifecycle()
 
     var showContactSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
@@ -658,7 +653,7 @@ fun SchedulesScreen(
 fun SchedulesScreenPreview() {
     ContactlyTheme(appThemeMode = AppThemeMode.LIGHT) {
         SchedulesScreen(
-            schedulesViewModel = viewModel()
+            schedulesViewModel = koinViewModel()
         )
     }
 }

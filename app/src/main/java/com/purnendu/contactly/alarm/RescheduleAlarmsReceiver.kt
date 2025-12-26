@@ -8,14 +8,24 @@ import android.content.Intent
 import android.util.Log
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class RescheduleAlarmsReceiver : BroadcastReceiver() {
+/**
+ * BroadcastReceiver that reschedules all alarms after device boot.
+ * 
+ * Uses Koin for dependency injection via KoinComponent interface.
+ */
+class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
+    
+    private val schedulesRepo: SchedulesRepository by inject()
+    private val contactsRepo: ContactsRepository by inject()
+    
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
@@ -24,9 +34,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val alarmManager = context.getSystemService(AlarmManager::class.java)
-                val repo = SchedulesRepository(AppDatabase.getDataBase(context))
-                val contactsRepo = ContactsRepository.get(context)
-                val entities = repo.getAllEntities()
+                val entities = schedulesRepo.getAllEntities()
 
                 entities.forEach { e ->
                     // Check if the contact still exists
@@ -40,7 +48,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
                     // If contact doesn't exist, remove from database and skip scheduling
                     if (contact == null) {
                         Log.d("RescheduleAlarmsRx", "Contact ${e.contactId} not found, removing schedule")
-                        repo.deleteByContactId(e.contactId)
+                        schedulesRepo.deleteByContactId(e.contactId)
                         return@forEach // Skip to next schedule
                     }
 

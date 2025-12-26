@@ -1,29 +1,18 @@
 package com.purnendu.contactly.ui.screens.schedule
 
-import android.Manifest
-import android.app.Application
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
+import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import com.purnendu.contactly.alarm.models.AlarmMetadata
-import com.purnendu.contactly.alarm.AlarmSyncManager
-import com.purnendu.contactly.data.local.room.AppDatabase
-import com.purnendu.contactly.utils.AlarmRequestCodeUtils
-import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.alarm.AlarmScheduler
+import com.purnendu.contactly.utils.PermissionChecker
 import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,9 +21,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class SchedulesViewModel(private val application: Application) : AndroidViewModel(application) {
-    private val schedulesRepo = SchedulesRepository(AppDatabase.getDataBase(application))
-    private val contactsRepo by lazy { ContactsRepository.get(application) }
+/**
+ * ViewModel for Schedules screen.
+ * 
+ * Manages schedule CRUD operations, contact loading, and alarm scheduling.
+ * 
+ * All dependencies are injected via Koin using interfaces:
+ * - PermissionChecker: Abstracts Android permission checks
+ * - AlarmScheduler: Abstracts Android AlarmManager operations
+ * - AppPreferences: Abstracts DataStore preferences
+ * 
+ * This design makes the ViewModel fully testable without needing Android mocks.
+ */
+class SchedulesViewModel(
+    private val permissionChecker: PermissionChecker,
+    private val schedulesRepo: SchedulesRepository,
+    private val contactsRepo: ContactsRepository,
+    private val alarmScheduler: AlarmScheduler,
+    appPreferences: AppPreferences
+) : ViewModel() {
 
     private val _showContactPermissionDialog = MutableStateFlow(false)
     val showContactPermissionDialog: StateFlow<Boolean> = _showContactPermissionDialog
@@ -44,25 +49,28 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
 
     val schedules: StateFlow<List<Schedule>> = schedulesRepo.getSchedules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // View mode preference from DataStore
+    val viewMode: StateFlow<ViewMode> = appPreferences.viewModeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ViewMode.LIST)
+
     private val _contacts = MutableStateFlow<List<Contact>>(emptyList())
     val contacts: StateFlow<List<Contact>> = _contacts
     private val _isContactsLoading = MutableStateFlow(false)
     val isContactsLoading: StateFlow<Boolean> = _isContactsLoading
 
-    init
-    {
+    init {
         checkCriticalPermissions()
-        if(!_showContactPermissionDialog.value && _contacts.value.isEmpty())
-        loadContacts()
+        if (!_showContactPermissionDialog.value && _contacts.value.isEmpty()) {
+            loadContacts()
+        }
     }
 
     fun loadContacts() {
         checkCriticalPermissions()
-        if(_showContactPermissionDialog.value) return
-            _isContactsLoading.value = true
+        if (_showContactPermissionDialog.value) return
+        _isContactsLoading.value = true
 
-        viewModelScope.launch(Dispatchers.IO)
-        {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val fetchedContacts = contactsRepo.fetchContacts()
                 _contacts.value = fetchedContacts
@@ -73,7 +81,6 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 _isContactsLoading.value = false
             }
         }
-
     }
 
     fun addSchedule(
@@ -82,27 +89,26 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int ,
+        selectedDays: Int,
         scheduleType: ScheduleType
-    )
-    {
+    ) {
         scheduleAlarms(
-                contact = contact,
-                scheduleId = scheduleId,
-                originalName = contact.name,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                scheduleType=scheduleType
+            contact = contact,
+            scheduleId = scheduleId,
+            originalName = contact.name,
+            temporaryName = temporaryName,
+            startAtMillis = startAtMillis,
+            endAtMillis = endAtMillis,
+            selectedDays = selectedDays,
+            scheduleType = scheduleType,
+            isUpdating = false
         )
     }
 
     fun deleteSchedule(schedule: Schedule) {
         val id = schedule.id.toLongOrNull() ?: return
-        val syncManager = AlarmSyncManager(application)
         viewModelScope.launch {
-            syncManager.cancelScheduleAlarms(id)
+            alarmScheduler.cancelScheduleAlarms(id)
             schedulesRepo.deleteById(id)
         }
     }
@@ -124,36 +130,27 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         selectedDays: Int,
         scheduleType: ScheduleType
     ) {
-        val syncManager = AlarmSyncManager(application)
         viewModelScope.launch {
             // First, cancel all existing alarms
-            syncManager.cancelScheduleAlarms(scheduleId)
+            alarmScheduler.cancelScheduleAlarms(scheduleId)
             
             // Then schedule new alarms
             scheduleAlarms(
                 scheduleId = scheduleId,
-                isUpdatingAlarm = true,
                 contact = contact,
                 originalName = contact.name,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduleType = scheduleType
+                scheduleType = scheduleType,
+                isUpdating = true
             )
         }
     }
+
     fun checkCriticalPermissions() {
-
-        val hasContactPermissions = ContextCompat.checkSelfPermission(
-            application,
-            Manifest.permission.READ_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-            application,
-            Manifest.permission.WRITE_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-
-        // Update dialog states
+        val hasContactPermissions = permissionChecker.hasContactsPermission()
         _showContactPermissionDialog.value = !hasContactPermissions
     }
 
@@ -170,15 +167,61 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
     }
 
     fun canScheduleExactAlarmPermissions(): Boolean {
-        val alarmManager = application.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        return  if (Build.VERSION.SDK_INT >= 31) {
-            alarmManager.canScheduleExactAlarms()
+        return permissionChecker.canScheduleExactAlarms()
+    }
+
+    private fun scheduleAlarms(
+        contact: Contact,
+        scheduleId: Long,
+        originalName: String,
+        temporaryName: String,
+        startAtMillis: Long,
+        endAtMillis: Long,
+        selectedDays: Int,
+        scheduleType: ScheduleType,
+        isUpdating: Boolean
+    ) {
+        val result = alarmScheduler.scheduleAlarms(
+            contact = contact,
+            scheduleId = scheduleId,
+            originalName = originalName,
+            temporaryName = temporaryName,
+            startAtMillis = startAtMillis,
+            endAtMillis = endAtMillis,
+            selectedDays = selectedDays,
+            scheduleType = scheduleType
+        )
+
+        if (result.success) {
+            if (isUpdating) {
+                updateAlarmToDatabase(
+                    scheduleId = scheduleId,
+                    originalName = originalName,
+                    temporaryName = temporaryName,
+                    startAtMillis = startAtMillis,
+                    endAtMillis = endAtMillis,
+                    selectedDays = selectedDays,
+                    scheduleType = scheduleType,
+                    alarmMetadataJson = alarmScheduler.toJson(result.alarmMetadata)
+                )
+            } else {
+                addAlarmToDatabase(
+                    scheduleId = scheduleId,
+                    contact = contact,
+                    temporaryName = temporaryName,
+                    startAtMillis = startAtMillis,
+                    endAtMillis = endAtMillis,
+                    selectedDays = selectedDays,
+                    scheduleType = scheduleType,
+                    alarmMetadataJson = alarmScheduler.toJson(result.alarmMetadata)
+                )
+            }
         } else {
-            true // Exact alarms permission not required on older Android versions
+            Log.e("SchedulesViewModel", "Failed to schedule alarms")
         }
     }
 
-    fun addAlarmToDatabase(
+    private fun addAlarmToDatabase(
         scheduleId: Long,
         contact: Contact,
         temporaryName: String,
@@ -186,15 +229,10 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         endAtMillis: Long,
         selectedDays: Int,
         scheduleType: ScheduleType,
-        alarmMetadata: List<AlarmMetadata>
-    )
-    {
+        alarmMetadataJson: String
+    ) {
         val id = contact.id ?: return
-        viewModelScope.launch(Dispatchers.IO)
-        {
-            val syncManager = AlarmSyncManager(application)
-            val metadataJson = syncManager.toJson(alarmMetadata)
-            
+        viewModelScope.launch(Dispatchers.IO) {
             schedulesRepo.create(
                 scheduleId = scheduleId,
                 contactId = id,
@@ -204,13 +242,13 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduledAlarmsMetadata = metadataJson,
+                scheduledAlarmsMetadata = alarmMetadataJson,
                 scheduleType = scheduleType
             )
         }
     }
 
-    fun updateAlarmToDatabase(
+    private fun updateAlarmToDatabase(
         scheduleId: Long,
         originalName: String,
         temporaryName: String,
@@ -218,168 +256,21 @@ class SchedulesViewModel(private val application: Application) : AndroidViewMode
         endAtMillis: Long,
         selectedDays: Int,
         scheduleType: ScheduleType,
-        alarmMetadata: List<AlarmMetadata>
-    )
-    {
+        alarmMetadataJson: String
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
-            val syncManager = AlarmSyncManager(application)
-            val metadataJson = syncManager.toJson(alarmMetadata)
             
             val updated = current.copy(
-                originalName=originalName,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
-                scheduledAlarmsMetadata = metadataJson
-            )
-            schedulesRepo.update(updated)
-        }
-    }
-
-}
-
-private fun SchedulesViewModel.scheduleAlarms(
-    contact: Contact,
-    originalName: String,
-    temporaryName: String,
-    startAtMillis: Long,
-    endAtMillis: Long,
-    scheduleId: Long,
-    isUpdatingAlarm: Boolean = false,
-    selectedDays: Int,
-    scheduleType: ScheduleType
-)
-{
-    var isAlarmSuccessfullyScheduled = true
-    val contactId = contact.id.toString().toLongOrNull() ?: return
-
-    val context = getApplication<Application>()
-    val alarmManager = context.getSystemService(AlarmManager::class.java)
-
-    // Extract selected days (0=Sun, 1=Mon, ...)
-    val daysList = DayUtils.extractDaysFromBitmask(selectedDays)
-    
-    // If no days selected, don't schedule anything
-    if (daysList.isEmpty()) return
-    
-    // Track alarm metadata for database storage
-    val alarmMetadataList = mutableListOf<AlarmMetadata>()
-
-    daysList.forEach { dayOfWeek ->
-        // Calculate next occurrence for this day
-        val applyAt = DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
-        val revertAt = DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
-
-        // Generate unique request codes using centralized utility
-        val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
-        val revertReqCode = AlarmRequestCodeUtils.generateRevertRequestCode(contactId, dayOfWeek)
-        
-        // Store metadata for this alarm
-        alarmMetadataList.add(
-            AlarmMetadata(
-                requestCode = applyReqCode,
-                dayOfWeek = dayOfWeek,
-                operation = AliasAlarmReceiver.OP_APPLY,
-                triggerTimeMillis = applyAt
-            )
-        )
-        alarmMetadataList.add(
-            AlarmMetadata(
-                requestCode = revertReqCode,
-                dayOfWeek = dayOfWeek,
-                operation = AliasAlarmReceiver.OP_REVERT,
-                triggerTimeMillis = revertAt
-            )
-        )
-
-        val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-            action = AliasAlarmReceiver.ACTION_ALIAS
-            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
-            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
-            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
-            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
-        }
-        val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-            action = AliasAlarmReceiver.ACTION_ALIAS
-            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
-            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
-            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
-            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
-        }
-
-        val applyPending = PendingIntent.getBroadcast(
-            context,
-            applyReqCode,
-            applyIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val revertPending = PendingIntent.getBroadcast(
-            context,
-            revertReqCode,
-            revertIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC,
-                applyAt,
-                applyPending
-            )
-        }
-        catch (e: SecurityException) {
-            Log.d("alarm_error", e.localizedMessage ?: "Unknown error")
-            isAlarmSuccessfullyScheduled = false
-        }
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC,
-                revertAt,
-                revertPending
-            )
-        }
-        catch (e: SecurityException) {
-            Log.d("alarm_error", e.localizedMessage ?: "Unknown error")
-            isAlarmSuccessfullyScheduled = false
-        }
-    }
-
-    if(isAlarmSuccessfullyScheduled)
-    {
-        if(isUpdatingAlarm)
-        {
-            updateAlarmToDatabase(
-                scheduleId = scheduleId,
                 originalName = originalName,
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                alarmMetadata = alarmMetadataList,
-                scheduleType = scheduleType
+                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
+                scheduledAlarmsMetadata = alarmMetadataJson
             )
-        }
-        else
-        {
-            addAlarmToDatabase(
-                scheduleId = scheduleId,
-                contact = contact,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                alarmMetadata = alarmMetadataList,
-                scheduleType =  scheduleType
-            )
+            schedulesRepo.update(updated)
         }
     }
 }

@@ -79,4 +79,11 @@ dependencies {
     
     // Gson for alarm metadata JSON serialization
     implementation(libs.gson)
+    
+    // Koin for Dependency Injection
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
 }

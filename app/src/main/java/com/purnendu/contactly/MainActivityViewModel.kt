@@ -1,15 +1,22 @@
 package com.purnendu.contactly
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class MainActivityViewModel(private val context: Application) : AndroidViewModel(context) {
+/**
+ * ViewModel for MainActivity.
+ * 
+ * Handles app initialization including alarm synchronization during splash screen.
+ * Dependencies are injected via Koin.
+ */
+class MainActivityViewModel(
+    private val alarmSyncManager: AlarmSyncManager
+) : ViewModel() {
 
     private val _isAppReady = MutableStateFlow(false)
     val isAppReady: StateFlow<Boolean> = _isAppReady
@@ -35,8 +42,7 @@ class MainActivityViewModel(private val context: Application) : AndroidViewModel
      */
     private suspend fun syncAlarms() {
         try {
-            val syncManager = AlarmSyncManager(context)
-            val result = syncManager.syncAllSchedules()
+            val result = alarmSyncManager.syncAllSchedules()
             
             Log.d("MainActivityViewModel", "Alarm sync completed: " +
                     "scheduled=${result.alarmsScheduled}, " +

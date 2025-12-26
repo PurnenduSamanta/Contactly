@@ -48,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
 import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
@@ -74,7 +74,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
+fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
     val context = LocalContext.current
 
     val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()

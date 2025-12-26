@@ -1,11 +1,15 @@
 package com.purnendu.contactly.data.repository
 
 import android.content.ContentResolver
-import android.content.Context
 import android.provider.ContactsContract
 import com.purnendu.contactly.model.Contact
 
-class ContactsRepository private constructor(
+/**
+ * Repository for accessing device contacts.
+ * 
+ * Instance is managed by Koin DI as a singleton.
+ */
+class ContactsRepository(
     private val resolver: ContentResolver
 ) {
     fun fetchContacts(): List<Contact> {
@@ -98,14 +102,5 @@ class ContactsRepository private constructor(
         }
         return null
     }
-
-    companion object {
-        @Volatile private var INSTANCE: ContactsRepository? = null
-        fun get(context: Context): ContactsRepository =
-            INSTANCE ?: synchronized(this) {
-                val repo = ContactsRepository(context.contentResolver)
-                INSTANCE = repo
-                repo
-            }
-    }
 }
+

@@ -10,7 +10,6 @@ import com.google.gson.reflect.TypeToken
 import com.purnendu.contactly.alarm.models.AlarmMetadata
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
@@ -20,12 +19,14 @@ import kotlinx.coroutines.withContext
 /**
  * Manages synchronization between AlarmManager and Room Database
  * Ensures database is the single source of truth for scheduled alarms
+ * 
+ * Dependencies are injected via Koin.
  */
-class AlarmSyncManager(private val context: Context) {
-
-    val database = AppDatabase.getDataBase(context)
-    val schedulesRepo = SchedulesRepository(database)
-    val contactsRepo = ContactsRepository.get(context)
+class AlarmSyncManager(
+    private val context: Context,
+    val schedulesRepo: SchedulesRepository,
+    val contactsRepo: ContactsRepository
+) {
     val alarmManager: AlarmManager? = context.getSystemService(AlarmManager::class.java)
     private val gson = Gson()
     private val TAG = "AlarmSyncManager"

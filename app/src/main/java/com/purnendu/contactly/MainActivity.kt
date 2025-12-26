@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -44,27 +43,28 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
+import org.koin.compose.viewmodel.koinViewModel
 
 
 class MainActivity : ComponentActivity() {
-    private val settingsViewModel: SettingsViewModel by viewModels()
-    private val mainActivityViewModel: MainActivityViewModel by viewModels()
-
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install the splash screen
         val splashScreen = installSplashScreen()
-
-        // Keep the splash screen visible until the app is ready
-        splashScreen.setKeepOnScreenCondition {
-            !mainActivityViewModel.isAppReady.value
-        }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
 
-
         setContent {
+            // Get ViewModels from Koin
+            val mainActivityViewModel: MainActivityViewModel = koinViewModel()
+            val settingsViewModel: SettingsViewModel = koinViewModel()
+            
+            // Keep the splash screen visible until the app is ready
+            val isAppReady by mainActivityViewModel.isAppReady.collectAsStateWithLifecycle()
+            splashScreen.setKeepOnScreenCondition { !isAppReady }
+            
             val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
             ContactlyTheme(appThemeMode = themeMode) { ContactlyApp() }
         }

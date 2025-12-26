@@ -12,7 +12,6 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import android.content.ContentValues
 import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
@@ -22,9 +21,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.util.Calendar
 
-class AliasAlarmReceiver : BroadcastReceiver() {
+/**
+ * BroadcastReceiver that handles alias (contact name change) alarms.
+ * 
+ * Uses Koin for dependency injection via KoinComponent interface.
+ */
+class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
+    
+    private val schedulesRepo: SchedulesRepository by inject()
+    private val alarmSyncManager: AlarmSyncManager by inject()
+    private val appPreferences: AppPreferences by inject()
+    
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
         val op = intent.getStringExtra(EXTRA_OPERATION) ?: return
@@ -44,8 +55,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
             try {
                 // Create a Clean up for the PendingIntent that triggered this alarm
                 // This ensures that for one-time alarms, the "Active" status clears immediately
-                val syncManager = AlarmSyncManager(context)
-                syncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
+                alarmSyncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
 
                 // Derive the name to apply based on operation
                 val isApply = op == OP_APPLY
@@ -54,7 +64,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
                     applyName(context, contactId, nameToApply)
 
                     val notificationsEnabled = try {
-                        AppPreferences.notificationsEnabledFlow(context).first()
+                        appPreferences.notificationsEnabledFlow.first()
                     } catch (e: Exception) {
                         Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
                         false // Default to disabled if read fails
@@ -80,8 +90,7 @@ class AliasAlarmReceiver : BroadcastReceiver() {
                     // For one-time schedules: delete from database (IO thread)
                     if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
                         try {
-                            val repo = SchedulesRepository(AppDatabase.getDataBase(context))
-                            repo.deleteById(scheduleId)
+                            schedulesRepo.deleteById(scheduleId)
                             Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
                         } catch (e: Exception) {
                             Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
