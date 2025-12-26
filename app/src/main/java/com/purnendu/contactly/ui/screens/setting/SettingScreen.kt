@@ -59,7 +59,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
@@ -91,23 +90,28 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
     val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
     } else {
-        remember { mutableStateOf<PermissionState?>(null) }
-    } as PermissionState
+        null
+    }
 
-    LaunchedEffect(key1 = notificationPermissionState.status, key2 = isNotificationSwitchTryToOn.value)
+    LaunchedEffect(key1 = notificationPermissionState?.status, key2 = isNotificationSwitchTryToOn.intValue)
     {
         if(isNotificationSwitchTryToOn.intValue==-1)
             return@LaunchedEffect
         //Checking permission status
-        when {
-            notificationPermissionState.status.isGranted -> {
-                showPermissionDialog.value = false
-                settingsViewModel.setNotificationsEnabled(true)
+        if (notificationPermissionState != null) {
+            when {
+                notificationPermissionState.status.isGranted -> {
+                    showPermissionDialog.value = false
+                    settingsViewModel.setNotificationsEnabled(true)
+                }
+
+                notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
+
+                !notificationPermissionState.status.isGranted && !notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
             }
-
-            notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
-
-            !notificationPermissionState.status.isGranted && !notificationPermissionState.status.shouldShowRationale -> { showPermissionDialog.value = true }
+        } else {
+            showPermissionDialog.value = false
+            settingsViewModel.setNotificationsEnabled(true)
         }
     }
 
@@ -262,7 +266,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= viewModel()) {
                                 // Check if we need to request permission (Android 13+)
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
                                     !NotificationHelper.hasNotificationPermission(context)) {
-                                    notificationPermissionState.launchPermissionRequest()
+                                    notificationPermissionState?.launchPermissionRequest()
                                 } else {
                                     settingsViewModel.setNotificationsEnabled(true)
                                 }
