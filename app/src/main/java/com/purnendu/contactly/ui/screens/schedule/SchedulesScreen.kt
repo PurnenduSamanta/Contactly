@@ -58,6 +58,14 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -92,6 +100,8 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.math.abs
+import com.purnendu.contactly.data.preferences.AppPreferences
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -109,7 +119,7 @@ fun SchedulesScreen(
     
     
     // View mode preference
-    val viewMode by com.purnendu.contactly.data.preferences.AppPreferences
+    val viewMode by AppPreferences
         .viewModeFlow(context)
         .collectAsState(initial = ViewMode.LIST)
 
@@ -291,22 +301,22 @@ fun SchedulesScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = Color.Transparent,
         floatingActionButton = {
-            androidx.compose.animation.AnimatedVisibility(
+            AnimatedVisibility(
                 visible = fabVisible && schedules.isNotEmpty(),
-                enter = androidx.compose.animation.slideInVertically(
+                enter = slideInVertically(
                     initialOffsetY = { it },
-                    animationSpec = androidx.compose.animation.core.spring(
-                        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
                     )
-                ) + androidx.compose.animation.fadeIn(
-                    animationSpec = androidx.compose.animation.core.tween(300)
+                ) + fadeIn(
+                    animationSpec = tween(300)
                 ),
-                exit = androidx.compose.animation.slideOutVertically(
+                exit = slideOutVertically(
                     targetOffsetY = { it },
-                    animationSpec = androidx.compose.animation.core.tween(300)
-                ) + androidx.compose.animation.fadeOut(
-                    animationSpec = androidx.compose.animation.core.tween(200)
+                    animationSpec = tween(300)
+                ) + fadeOut(
+                    animationSpec = tween(200)
                 )
             ) {
                 ExtendedFloatingActionButton(
@@ -596,7 +606,7 @@ fun SchedulesScreen(
                         Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
                     } else {
                         schedulesViewModel.addSchedule(contact,
-                            kotlin.math.abs(UUID.randomUUID().mostSignificantBits), temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
+                            abs(UUID.randomUUID().mostSignificantBits), temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
                         Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false

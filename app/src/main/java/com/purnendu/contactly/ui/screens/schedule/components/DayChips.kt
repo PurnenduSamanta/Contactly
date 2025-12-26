@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.utils.AppThemeMode
 
 /**
  * Display-only day chips component showing selected days
@@ -50,7 +51,7 @@ fun DayChips(
 @Preview(showBackground = true)
 @Composable
 fun DayChipsPreview() {
-    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
+    ContactlyTheme(appThemeMode = AppThemeMode.LIGHT) {
         DayChips(
             selectedDays = 42, // Monday, Wednesday, Friday
             modifier = Modifier.padding(16.dp)
@@ -61,7 +62,7 @@ fun DayChipsPreview() {
 @Preview(showBackground = true)
 @Composable
 fun DayChipsAllDaysPreview() {
-    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.LIGHT) {
+    ContactlyTheme(appThemeMode = AppThemeMode.LIGHT) {
         DayChips(
             selectedDays = 127, // All days
             modifier = Modifier.padding(16.dp)
@@ -72,7 +73,7 @@ fun DayChipsAllDaysPreview() {
 @Preview(showBackground = true)
 @Composable
 fun DayChipsWeekdaysPreview() {
-    ContactlyTheme(appThemeMode = com.purnendu.contactly.utils.AppThemeMode.DARK) {
+    ContactlyTheme(appThemeMode = AppThemeMode.DARK) {
         DayChips(
             selectedDays = 62, // Mon-Fri (weekdays)
             modifier = Modifier.padding(16.dp)

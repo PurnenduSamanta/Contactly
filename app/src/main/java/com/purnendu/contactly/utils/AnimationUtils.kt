@@ -1,7 +1,6 @@
 package com.purnendu.contactly.utils
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -10,7 +9,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 /**
  * Provides Material 3 Expressive animation utilities
@@ -88,7 +87,7 @@ fun Modifier.expressiveElevation(
     )
     graphicsLayer {
         shadowElevation = animatedElevation.toPx()
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp)
         clip = true
     }
 }
