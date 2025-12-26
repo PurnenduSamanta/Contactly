@@ -1,4 +1,4 @@
-package com.purnendu.contactly.alarm
+package com.purnendu.contactly.alarm.models
 
 /**
  * Metadata for a single scheduled alarm

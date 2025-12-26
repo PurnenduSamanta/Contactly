@@ -1,4 +1,4 @@
-package com.purnendu.contactly.data.preferences
+package com.purnendu.contactly.data.local.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore

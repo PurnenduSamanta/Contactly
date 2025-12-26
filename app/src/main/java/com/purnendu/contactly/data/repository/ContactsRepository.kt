@@ -1,4 +1,4 @@
-package com.purnendu.contactly.data
+package com.purnendu.contactly.data.repository
 
 import android.content.ContentResolver
 import android.content.Context

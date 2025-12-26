@@ -1,4 +1,4 @@
-package com.purnendu.contactly.data
+package com.purnendu.contactly.data.repository
 
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity

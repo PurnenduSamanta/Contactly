@@ -1,4 +1,4 @@
-package com.purnendu.contactly.alarm
+package com.purnendu.contactly.alarm.models
 
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 

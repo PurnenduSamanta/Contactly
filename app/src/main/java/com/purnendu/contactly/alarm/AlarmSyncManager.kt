@@ -7,8 +7,9 @@ import android.content.Intent
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.purnendu.contactly.data.ContactsRepository
-import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.alarm.models.AlarmMetadata
+import com.purnendu.contactly.data.repository.ContactsRepository
+import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils

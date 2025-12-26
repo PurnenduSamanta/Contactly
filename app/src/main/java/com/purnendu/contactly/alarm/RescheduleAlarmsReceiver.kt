@@ -6,8 +6,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.purnendu.contactly.data.ContactsRepository
-import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.repository.ContactsRepository
+import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils

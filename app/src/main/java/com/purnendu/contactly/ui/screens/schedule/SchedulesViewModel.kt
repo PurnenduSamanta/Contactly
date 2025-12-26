@@ -12,13 +12,13 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.data.ContactsRepository
-import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.repository.ContactsRepository
+import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import com.purnendu.contactly.alarm.AlarmMetadata
+import com.purnendu.contactly.alarm.models.AlarmMetadata
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils

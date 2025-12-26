@@ -11,9 +11,9 @@ import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
 import android.content.ContentValues
-import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
-import com.purnendu.contactly.data.preferences.AppPreferences
+import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import kotlinx.coroutines.CoroutineScope

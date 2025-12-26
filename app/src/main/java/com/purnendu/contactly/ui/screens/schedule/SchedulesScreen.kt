@@ -101,7 +101,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
-import com.purnendu.contactly.data.preferences.AppPreferences
+import com.purnendu.contactly.data.local.preferences.AppPreferences
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable

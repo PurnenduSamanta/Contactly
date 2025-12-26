@@ -3,13 +3,13 @@ package com.purnendu.contactly.ui.screens.setting
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.alarm.AlarmCheckResult
-import com.purnendu.contactly.alarm.AlarmStatusInfo
+import com.purnendu.contactly.alarm.models.AlarmCheckResult
+import com.purnendu.contactly.alarm.models.AlarmStatusInfo
 import com.purnendu.contactly.alarm.AlarmSyncManager
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import com.purnendu.contactly.data.SchedulesRepository
+import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.AppDatabase
-import com.purnendu.contactly.data.preferences.AppPreferences
+import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.Dispatchers
