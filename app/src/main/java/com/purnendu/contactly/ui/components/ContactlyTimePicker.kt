@@ -2,7 +2,9 @@ package com.purnendu.contactly.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,6 +59,7 @@ fun ContactlyTimePicker(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp)
             ) {
                 // Header with app branding
@@ -69,7 +72,8 @@ fun ContactlyTimePicker(
                         )
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
-                ) {
+                )
+                {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.app_name),
@@ -117,7 +121,8 @@ fun ContactlyTimePicker(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
-                ) {
+                )
+                {
                     TextButton(
                         onClick = onDismiss,
                         colors = ButtonDefaults.textButtonColors(
