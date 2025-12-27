@@ -33,7 +33,7 @@ import java.util.Calendar
 class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
     
     private val schedulesRepo: SchedulesRepository by inject()
-    private val alarmSyncManager: AlarmSyncManager by inject()
+    private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val appPreferences: AppPreferences by inject()
     
     @OptIn(DelicateCoroutinesApi::class)
@@ -55,7 +55,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             try {
                 // Create a Clean up for the PendingIntent that triggered this alarm
                 // This ensures that for one-time alarms, the "Active" status clears immediately
-                alarmSyncManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
+                contactlyAlarmManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
 
                 // Derive the name to apply based on operation
                 val isApply = op == OP_APPLY

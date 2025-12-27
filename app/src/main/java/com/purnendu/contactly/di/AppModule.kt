@@ -1,9 +1,7 @@
 package com.purnendu.contactly.di
 
 import com.purnendu.contactly.MainActivityViewModel
-import com.purnendu.contactly.alarm.AlarmScheduler
-import com.purnendu.contactly.alarm.AlarmSyncManager
-import com.purnendu.contactly.alarm.AndroidAlarmScheduler
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
@@ -30,7 +28,7 @@ import org.koin.dsl.module
  * Pattern: We use interfaces to abstract Android-specific implementations:
  * - AppPreferences → AppPreferencesImpl
  * - PermissionChecker → AndroidPermissionChecker
- * - AlarmScheduler → AndroidAlarmScheduler
+ * - ContactlyAlarmManager: Central manager for all alarm operations
  * 
  * This makes all ViewModels fully testable without Android mocks.
  */
@@ -50,12 +48,10 @@ val appModule = module {
     // ========== Abstractions ==========
     // These interfaces hide Android Context from ViewModels, improving testability
     single<PermissionChecker> { AndroidPermissionChecker(androidContext()) }
-    single<AlarmScheduler> { AndroidAlarmScheduler(androidContext()) }
     
     // ========== Managers ==========
-    // AlarmSyncManager needs context for AlarmManager access
-    // Using factory so each usage gets fresh context reference
-    factory { AlarmSyncManager(androidContext(), get(), get()) }
+    // ContactlyAlarmManager handles all alarm-related operations
+    single { ContactlyAlarmManager(androidContext(), get(), get()) }
     
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
@@ -63,3 +59,4 @@ val appModule = module {
     viewModel { SchedulesViewModel(get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
+

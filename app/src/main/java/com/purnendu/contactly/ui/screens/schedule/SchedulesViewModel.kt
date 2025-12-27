@@ -9,7 +9,7 @@ import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.alarm.AlarmScheduler
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import com.purnendu.contactly.utils.PermissionChecker
 import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  * 
  * All dependencies are injected via Koin using interfaces:
  * - PermissionChecker: Abstracts Android permission checks
- * - AlarmScheduler: Abstracts Android AlarmManager operations
+ * - ContactlyAlarmManager: Handles all alarm-related operations
  * - AppPreferences: Abstracts DataStore preferences
  * 
  * This design makes the ViewModel fully testable without needing Android mocks.
@@ -37,7 +37,7 @@ class SchedulesViewModel(
     private val permissionChecker: PermissionChecker,
     private val schedulesRepo: SchedulesRepository,
     private val contactsRepo: ContactsRepository,
-    private val alarmScheduler: AlarmScheduler,
+    private val contactlyAlarmManager: ContactlyAlarmManager,
     appPreferences: AppPreferences
 ) : ViewModel() {
 
@@ -108,7 +108,7 @@ class SchedulesViewModel(
     fun deleteSchedule(schedule: Schedule) {
         val id = schedule.id.toLongOrNull() ?: return
         viewModelScope.launch {
-            alarmScheduler.cancelScheduleAlarms(id)
+            contactlyAlarmManager.cancelScheduleAlarms(id)
             schedulesRepo.deleteById(id)
         }
     }
@@ -132,7 +132,7 @@ class SchedulesViewModel(
     ) {
         viewModelScope.launch {
             // First, cancel all existing alarms
-            alarmScheduler.cancelScheduleAlarms(scheduleId)
+            contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
             
             // Then schedule new alarms
             scheduleAlarms(
@@ -181,7 +181,7 @@ class SchedulesViewModel(
         scheduleType: ScheduleType,
         isUpdating: Boolean
     ) {
-        val result = alarmScheduler.scheduleAlarms(
+        val result = contactlyAlarmManager.scheduleAlarms(
             contact = contact,
             scheduleId = scheduleId,
             originalName = originalName,
@@ -202,7 +202,7 @@ class SchedulesViewModel(
                     endAtMillis = endAtMillis,
                     selectedDays = selectedDays,
                     scheduleType = scheduleType,
-                    alarmMetadataJson = alarmScheduler.toJson(result.alarmMetadata)
+                    alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
                 )
             } else {
                 addAlarmToDatabase(
@@ -213,7 +213,7 @@ class SchedulesViewModel(
                     endAtMillis = endAtMillis,
                     selectedDays = selectedDays,
                     scheduleType = scheduleType,
-                    alarmMetadataJson = alarmScheduler.toJson(result.alarmMetadata)
+                    alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
                 )
             }
         } else {

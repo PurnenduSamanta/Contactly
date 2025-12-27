@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.models.AlarmCheckResult
 import com.purnendu.contactly.alarm.models.AlarmStatusInfo
-import com.purnendu.contactly.alarm.AlarmSyncManager
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  */
 class SettingsViewModel(
     private val schedulesRepo: SchedulesRepository,
-    private val alarmSyncManager: AlarmSyncManager,
+    private val contactlyAlarmManager: ContactlyAlarmManager,
     private val appPreferences: AppPreferences
 ) : ViewModel() {
     
@@ -61,14 +61,14 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
                 val schedules = schedulesRepo.getAllEntities()
                 val statusList = schedules.map { schedule ->
-                    val metadata = alarmSyncManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
+                    val metadata = contactlyAlarmManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
                     val alarmResults = metadata.map { meta ->
                         val displayName = if (meta.operation == AliasAlarmReceiver.OP_APPLY) {
                             schedule.temporaryName
                         } else {
                             schedule.originalName
                         }
-                        val isSet = alarmSyncManager.isAlarmScheduled(
+                        val isSet = contactlyAlarmManager.isAlarmScheduled(
                             requestCode = meta.requestCode,
                             contactId = schedule.contactId,
                             originalName = schedule.originalName,

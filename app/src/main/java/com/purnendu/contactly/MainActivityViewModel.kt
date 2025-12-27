@@ -3,7 +3,7 @@ package com.purnendu.contactly
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.alarm.AlarmSyncManager
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  * Dependencies are injected via Koin.
  */
 class MainActivityViewModel(
-    private val alarmSyncManager: AlarmSyncManager
+    private val contactlyAlarmManager: ContactlyAlarmManager
 ) : ViewModel() {
 
     private val _isAppReady = MutableStateFlow(false)
@@ -42,7 +42,7 @@ class MainActivityViewModel(
      */
     private suspend fun syncAlarms() {
         try {
-            val result = alarmSyncManager.syncAllSchedules()
+            val result = contactlyAlarmManager.syncAllSchedules()
             
             Log.d("MainActivityViewModel", "Alarm sync completed: " +
                     "scheduled=${result.alarmsScheduled}, " +
