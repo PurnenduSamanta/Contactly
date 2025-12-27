@@ -8,6 +8,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.purnendu.contactly.alarm.models.AlarmMetadata
+import com.purnendu.contactly.alarm.models.SyncResult
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
@@ -357,12 +358,4 @@ class AlarmSyncManager(
         pendingIntent?.cancel()
         Log.d(TAG, "Cancelled specific alarm PendingIntent: reqCode=$reqCode, op=$operation")
     }
-
-    data class SyncResult(
-        val totalSchedules: Int,
-        val alarmsScheduled: Int,
-        val alarmsSkipped: Int,
-        val errors: Int,
-        val orphanedSchedulesRemoved: Int
-    )
 }

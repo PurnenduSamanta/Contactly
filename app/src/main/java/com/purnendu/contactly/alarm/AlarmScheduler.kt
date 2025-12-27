@@ -1,6 +1,7 @@
 package com.purnendu.contactly.alarm
 
 import com.purnendu.contactly.alarm.models.AlarmMetadata
+import com.purnendu.contactly.alarm.models.AlarmScheduleResult
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.utils.ScheduleType
 
@@ -41,10 +42,4 @@ interface AlarmScheduler {
     fun parseAlarmMetadata(json: String?): List<AlarmMetadata>
 }
 
-/**
- * Result of alarm scheduling operation.
- */
-data class AlarmScheduleResult(
-    val success: Boolean,
-    val alarmMetadata: List<AlarmMetadata>
-)
+
