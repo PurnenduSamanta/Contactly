@@ -307,13 +307,13 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
                 {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse("https://example.com/privacy")
+                        Uri.parse("https://www.termsfeed.com/live/02116554-2ff0-496d-9ab2-6444fd44ef29")
                     )
                     context.startActivity(intent)
                 }
             }
 
-            // Terms Row
+           /* // Terms Row
             item {
                 SettingsRow(
                     name = stringResource(id = R.string.row_terms),
@@ -326,7 +326,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
                     )
                     context.startActivity(intent)
                 }
-            }
+            }*/
 
 
             if(BuildConfig.DEBUG)
