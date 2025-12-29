@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.utils.AppThemeMode
@@ -24,33 +25,36 @@ interface AppPreferences {
     val themeFlow: Flow<AppThemeMode>
     val viewModeFlow: Flow<ViewMode>
     val notificationsEnabledFlow: Flow<Boolean>
-    
+    val lastSyncTimestampFlow: Flow<Long>
+
     suspend fun setTheme(mode: AppThemeMode)
     suspend fun setViewMode(mode: ViewMode)
     suspend fun setNotificationsEnabled(enabled: Boolean)
+    suspend fun updateLastSyncTimestamp()
 }
 
 /**
  * Android implementation of AppPreferences using DataStore.
- * 
+ *
  * This class is a singleton managed by Koin:
  * - Injects Context once during creation
  * - Provides reactive Flows for preference values
  * - All preferences are persisted using DataStore
- * 
+ *
  * For testing, create a fake implementation of AppPreferences interface.
  */
 class AppPreferencesImpl(private val context: Context) : AppPreferences {
-    
+
     // Preference Keys
     private companion object {
         val KEY_THEME = intPreferencesKey("theme_mode")
         val KEY_VIEW_MODE = intPreferencesKey("view_mode")
         val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val KEY_LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
     }
-    
+
     // ========== Theme Preferences ==========
-    
+
     override val themeFlow: Flow<AppThemeMode> = context.dataStore.data.map { prefs ->
         when (prefs[KEY_THEME] ?: 2) {
             0 -> AppThemeMode.LIGHT
@@ -58,7 +62,7 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
             else -> AppThemeMode.SYSTEM // Default
         }
     }
-    
+
     override suspend fun setTheme(mode: AppThemeMode) {
         context.dataStore.edit { prefs ->
             prefs[KEY_THEME] = when (mode) {
@@ -68,16 +72,16 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
             }
         }
     }
-    
+
     // ========== View Mode Preferences ==========
-    
+
     override val viewModeFlow: Flow<ViewMode> = context.dataStore.data.map { prefs ->
         when (prefs[KEY_VIEW_MODE] ?: 0) {
             1 -> ViewMode.GRID
             else -> ViewMode.LIST  // Default
         }
     }
-    
+
     override suspend fun setViewMode(mode: ViewMode) {
         context.dataStore.edit { prefs ->
             prefs[KEY_VIEW_MODE] = when (mode) {
@@ -86,16 +90,28 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
             }
         }
     }
-    
+
     // ========== Notification Preferences ==========
-    
+
     override val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_NOTIFICATIONS_ENABLED] ?: NotificationHelper.hasNotificationPermission(context)
     }
-    
+
     override suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEY_NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    // ========== Sync Timestamp Preferences ==========
+
+    override val lastSyncTimestampFlow: Flow<Long> = context.dataStore.data.map { prefs ->
+        prefs[KEY_LAST_SYNC_TIMESTAMP] ?: 0L
+    }
+
+    override suspend fun updateLastSyncTimestamp() {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_LAST_SYNC_TIMESTAMP] = System.currentTimeMillis()
         }
     }
 }
