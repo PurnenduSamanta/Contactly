@@ -361,14 +361,14 @@ class ContactlyAlarmManager(
                 } else {
                     // Check each alarm and reschedule if missing
                     storedMetadata.forEach { metadata ->
-                        // CRITICAL FIX: For ONE_TIME schedules, never reschedule ANY alarm (Apply or Revert) that is in the past.
-                        // This prevents "Ghost Alarms" where an executed alarm gets resurrected by sync because 
-                        // the DB deletion of the One-Time schedule hasn't finished yet.
-                        val isOneTime = schedule.scheduleType == 0
+                        // Skip any expired alarms - they have already been executed.
+                        // For ONE_TIME: alarm already fired and schedule will be deleted after REVERT.
+                        // For REPEAT: metadata is updated with next week's time after each execution,
+                        // so expired time means the alarm was already processed.
                         val isExpired = metadata.triggerTimeMillis < System.currentTimeMillis()
 
-                        if (isOneTime && isExpired) {
-                            Log.d(TAG, "Skipping expired One-Time alarm: op=${metadata.operation}, time=${metadata.triggerTimeMillis}")
+                        if (isExpired) {
+                            Log.d(TAG, "Skipping expired alarm: op=${metadata.operation}, time=${metadata.triggerTimeMillis}")
                             return@forEach
                         }
 

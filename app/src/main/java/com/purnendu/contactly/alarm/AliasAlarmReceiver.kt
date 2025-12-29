@@ -54,7 +54,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         CoroutineScope(Dispatchers.IO).launch{
             try {
                 // Create a Clean up for the PendingIntent that triggered this alarm
-                // This ensures that for one-time alarms, the "Active" status clears immediately
+                // This ensures that after alarm firing, the "Active" status clears immediately
                 contactlyAlarmManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
 
                 // Derive the name to apply based on operation
@@ -119,7 +119,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun rescheduleForNextWeek(context: Context, originalIntent: Intent, dayOfWeek: Int) {
+    private suspend fun rescheduleForNextWeek(context: Context, originalIntent: Intent, dayOfWeek: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         
         // Calculate next occurrence (same day, next week)
@@ -149,7 +149,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
 
         // Generate request code using centralized utility
         val contactId = originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L)
-        val op = originalIntent.getStringExtra(EXTRA_OPERATION)
+        val scheduleId = originalIntent.getLongExtra(EXTRA_SCHEDULE_ID, -1L)
+        val op = originalIntent.getStringExtra(EXTRA_OPERATION) ?: return
         val reqCode = if (op == OP_APPLY) {
             AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
         } else {
@@ -170,8 +171,74 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 pendingIntent
             )
             Log.d("AliasAlarmReceiver", "Rescheduled alarm for next week: day=$dayOfWeek, time=$nextTriggerTime")
+            
+            // Update the database with new metadata and nearest trigger times
+            updateScheduleMetadata(scheduleId, reqCode, op, nextTriggerTime)
+            
         } catch (e: SecurityException) {
             Log.e("AliasAlarmReceiver", "Failed to reschedule alarm", e)
+        }
+    }
+    
+    /**
+     * Updates the schedule's metadata in the database after rescheduling.
+     * 1. Updates the specific alarm's trigger time in metadata
+     * 2. Finds the nearest APPLY time and updates startAtMillis
+     * 3. Finds the nearest REVERT time and updates endAtMillis
+     */
+    private suspend fun updateScheduleMetadata(
+        scheduleId: Long,
+        requestCode: Int,
+        operation: String,
+        newTriggerTime: Long
+    ) {
+        try {
+            val schedule = schedulesRepo.getById(scheduleId) ?: run {
+                Log.w("AliasAlarmReceiver", "Schedule not found for update: $scheduleId")
+                return
+            }
+            
+            // Parse existing metadata
+            val existingMetadata = contactlyAlarmManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
+            if (existingMetadata.isEmpty()) {
+                Log.w("AliasAlarmReceiver", "No metadata found for schedule: $scheduleId")
+                return
+            }
+            
+            // Update the specific alarm's trigger time
+            val updatedMetadata = existingMetadata.map { metadata ->
+                if (metadata.requestCode == requestCode) {
+                    metadata.copy(triggerTimeMillis = newTriggerTime)
+                } else {
+                    metadata
+                }
+            }
+            
+            // Find the nearest (soonest) APPLY time among all metadata
+            val nearestApplyTime = updatedMetadata
+                .filter { it.operation == OP_APPLY }
+                .minByOrNull { it.triggerTimeMillis }
+                ?.triggerTimeMillis ?: schedule.startAtMillis
+            
+            // Find the nearest (soonest) REVERT time among all metadata
+            val nearestRevertTime = updatedMetadata
+                .filter { it.operation == OP_REVERT }
+                .minByOrNull { it.triggerTimeMillis }
+                ?.triggerTimeMillis ?: schedule.endAtMillis
+            
+            // Update the schedule with new metadata and nearest times
+            val updatedSchedule = schedule.copy(
+                scheduledAlarmsMetadata = contactlyAlarmManager.toJson(updatedMetadata),
+                startAtMillis = nearestApplyTime,
+                endAtMillis = nearestRevertTime
+            )
+            
+            schedulesRepo.update(updatedSchedule)
+            Log.d("AliasAlarmReceiver", "Updated schedule metadata: id=$scheduleId, " +
+                    "nearestApply=$nearestApplyTime, nearestRevert=$nearestRevertTime")
+            
+        } catch (e: Exception) {
+            Log.e("AliasAlarmReceiver", "Failed to update schedule metadata: $scheduleId", e)
         }
     }
 
