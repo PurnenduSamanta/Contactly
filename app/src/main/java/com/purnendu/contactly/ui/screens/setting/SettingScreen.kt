@@ -71,6 +71,7 @@ import com.purnendu.contactly.ui.theme.ContactlyTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -310,6 +311,32 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
                         Uri.parse("https://www.termsfeed.com/live/02116554-2ff0-496d-9ab2-6444fd44ef29")
                     )
                     context.startActivity(intent)
+                }
+            }
+
+            // Rate Us Row
+            item {
+                SettingsRow(
+                    name = stringResource(id = R.string.row_rate_us),
+                    value = null
+                )
+                {
+                    val packageName = context.packageName
+                    try {
+                        // Try to open Play Store app directly
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            "market://details?id=$packageName".toUri()
+                        )
+                        context.startActivity(intent)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        // Fallback to web browser if Play Store app is not available
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            "https://play.google.com/store/apps/details?id=$packageName".toUri()
+                        )
+                        context.startActivity(intent)
+                    }
                 }
             }
 
