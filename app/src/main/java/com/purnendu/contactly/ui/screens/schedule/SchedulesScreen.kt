@@ -91,6 +91,8 @@ import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.ui.components.ContactlyTimePicker
+import com.purnendu.contactly.ui.components.ConfirmationDialogState
+import com.purnendu.contactly.ui.components.getDialogProperties
 import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.DayUtils
@@ -134,6 +136,9 @@ fun SchedulesScreen(
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+    
+    // Generic confirmation dialog state - can handle various confirmation scenarios
+    var confirmationDialogState by remember { mutableStateOf<ConfirmationDialogState?>(null) }
     
     // FAB scroll behavior
     val listState = rememberLazyListState()
@@ -588,26 +593,71 @@ fun SchedulesScreen(
                     context.startActivity(i)
                     return@EditScheduleSheet
                 }
-                val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
+                
+                // Lambda to perform the actual save operation with given times
+                val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
+                    val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
                     val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
                     if (editingId != null) {
                         schedulesViewModel.updateSchedule(
                             editingId,
                             contact,
                             temporaryName,
-                            startMillis,
-                            endMillis,
+                            saveStartMillis,
+                            saveEndMillis,
                             selectedDaysBitmask,
                             scheduleType
                         )
-                        Toast.makeText(context,context.getString(R.string.ScheduleUpdated),Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.ScheduleUpdated), Toast.LENGTH_SHORT).show()
                     } else {
-                        schedulesViewModel.addSchedule(contact,
-                            abs(UUID.randomUUID().mostSignificantBits), temporaryName, startMillis, endMillis, selectedDaysBitmask,scheduleType)
-                        Toast.makeText(context,context.getString(R.string.toast_schedule_saved),Toast.LENGTH_SHORT).show()
+                        schedulesViewModel.addSchedule(
+                            contact,
+                            abs(UUID.randomUUID().mostSignificantBits),
+                            temporaryName,
+                            saveStartMillis,
+                            saveEndMillis,
+                            selectedDaysBitmask,
+                            scheduleType
+                        )
+                        Toast.makeText(context, context.getString(R.string.toast_schedule_saved), Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false
-                    showContactSheet=false
+                    showContactSheet = false
+                }
+                
+                // Check if start time is in the past (for ONE_TIME schedules or checking today's selected day)
+                val now = Calendar.getInstance()
+                val currentTimeOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+                val todayDayIndex = now.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday, 1 = Monday, etc.
+                
+                // Check if today is selected and start time is in the past
+                val isTodaySelected = selectedDays.contains(todayDayIndex)
+                val isStartTimeInPast = startTimeOfDay < currentTimeOfDay
+                val isOneTimeSchedule = scheduleType == ScheduleType.ONE_TIME
+                
+                if (isTodaySelected && isStartTimeInPast) {
+                    // Show confirmation dialog for past time
+                    confirmationDialogState = ConfirmationDialogState.PastTimeSchedule(
+                        onConfirm = {
+                            if (isOneTimeSchedule) {
+                                // For ONE_TIME schedules: Add 7 days to both start and end times
+                                // This ensures both times move to next week together
+                                val nextWeekStartMillis = startMillis + (7 * 24 * 60 * 60 * 1000L)
+                                val nextWeekEndMillis = endMillis + (7 * 24 * 60 * 60 * 1000L)
+                                performSaveWithTimes(nextWeekStartMillis, nextWeekEndMillis)
+                            } else {
+                                // For REPEAT schedules: Keep original times
+                                // calculateNextOccurrence in AlarmManager handles each day independently
+                                // Today's alarm will be scheduled for next week (same day next week)
+                                // Other days in this week will still be scheduled correctly
+                                performSaveWithTimes(startMillis, endMillis)
+                            }
+                        }
+                    )
+                } else {
+                    // Proceed directly with save using original times
+                    performSaveWithTimes(startMillis, endMillis)
+                }
             }
         )
     }
@@ -646,6 +696,31 @@ fun SchedulesScreen(
                 endTimeText = formatter.format(cal.time)
                 showEndTimePicker = false
             }
+        )
+    }
+    
+    // Generic Confirmation Dialog - handles various confirmation scenarios
+    confirmationDialogState?.let { state ->
+        val dialogProperties = state.getDialogProperties()
+        ContactlyDialog(
+            title = dialogProperties.title,
+            message = dialogProperties.message,
+            onConfirm = {
+                when (state) {
+                    is ConfirmationDialogState.PastTimeSchedule -> {
+                        state.onConfirm()
+                    }
+                    // Add more cases here as you add new ConfirmationDialogState types
+                }
+                confirmationDialogState = null
+            },
+            onDismiss = {
+                confirmationDialogState = null
+            },
+            isConfirmButtonAvailable = true,
+            isDismissButtonAvailable = true,
+            confirmButtonText = dialogProperties.confirmButtonText,
+            dismissButtonText = dialogProperties.dismissButtonText
         )
     }
 }

@@ -63,9 +63,8 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
 
                     // Schedule alarms for each selected day
                     daysList.forEach { dayOfWeek ->
-                        // Calculate next occurrence for this specific day
-                        val applyAt = DayUtils.calculateNextOccurrence(e.startAtMillis, dayOfWeek)
-                        val revertAt = DayUtils.calculateNextOccurrence(e.endAtMillis, dayOfWeek)
+                        // Calculate next occurrence for both times as a pair (ensures consistency)
+                        val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(e.startAtMillis, e.endAtMillis, dayOfWeek)
 
                         // Generate unique request codes using centralized utility
                         val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(e.contactId, dayOfWeek)

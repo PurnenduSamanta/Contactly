@@ -62,9 +62,8 @@ class ContactlyAlarmManager(
         val alarmMetadataList = mutableListOf<AlarmMetadata>()
 
         daysList.forEach { dayOfWeek ->
-            // Calculate next occurrence for this day
-            val applyAt = DayUtils.calculateNextOccurrence(startAtMillis, dayOfWeek)
-            val revertAt = DayUtils.calculateNextOccurrence(endAtMillis, dayOfWeek)
+            // Calculate next occurrence for both times as a pair (ensures consistency)
+            val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(startAtMillis, endAtMillis, dayOfWeek)
 
             // Generate unique request codes using centralized utility
             val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
@@ -241,8 +240,8 @@ class ContactlyAlarmManager(
         val metadata = mutableListOf<AlarmMetadata>()
 
         selectedDays.forEach { dayOfWeek ->
-            val applyAt = DayUtils.calculateNextOccurrence(schedule.startAtMillis, dayOfWeek)
-            val revertAt = DayUtils.calculateNextOccurrence(schedule.endAtMillis, dayOfWeek)
+            // Calculate next occurrence for both times as a pair (ensures consistency)
+            val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(schedule.startAtMillis, schedule.endAtMillis, dayOfWeek)
 
             // Use centralized utility for request code generation
             val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(schedule.contactId, dayOfWeek)

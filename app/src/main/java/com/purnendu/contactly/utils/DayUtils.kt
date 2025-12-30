@@ -35,41 +35,41 @@ object DayUtils {
     fun getFullDayNames(): List<String> {
         return listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
     }
-    
+
     /**
-     * Calculate next occurrence of a specific day of week
-     * @param timeMillis The time of day to schedule (hour:minute)
+     * Calculate next occurrence for a start/end time pair, ensuring they stay consistent.
+     * If the start time has passed for the target day, BOTH start and end times are moved
+     * to the following week. This prevents the scenario where start is next week but end is today.
+     * 
+     * @param startTimeMillis The start time (hour:minute)
+     * @param endTimeMillis The end time (hour:minute)  
      * @param dayOfWeek 0=Sunday, 1=Monday, ..., 6=Saturday
-     * @return Next occurrence timestamp in milliseconds
+     * @return Pair of (nextStartMillis, nextEndMillis) - both guaranteed to be on the same day
      */
-    fun calculateNextOccurrence(timeMillis: Long, dayOfWeek: Int): Long {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = timeMillis
+    fun calculateNextOccurrencePair(startTimeMillis: Long, endTimeMillis: Long, dayOfWeek: Int): Pair<Long, Long> {
+        val startCalendar = Calendar.getInstance().apply { timeInMillis = startTimeMillis }
+        val endCalendar = Calendar.getInstance().apply { timeInMillis = endTimeMillis }
         
-        val currentDay = calendar.get(Calendar.DAY_OF_WEEK) - 1 // Convert to 0=Sunday
+        val currentDay = startCalendar.get(Calendar.DAY_OF_WEEK) - 1 // Convert to 0=Sunday
         val targetDay = dayOfWeek
         
         var daysToAdd = (targetDay - currentDay + 7) % 7
         
-        // If it's the same day but the time has passed, schedule for next week
-        if (daysToAdd == 0 && calendar.timeInMillis < System.currentTimeMillis()) {
+        // Calculate what the start time would be after adding days
+        val projectedStartCalendar = Calendar.getInstance().apply {
+            timeInMillis = startTimeMillis
+            add(Calendar.DAY_OF_YEAR, daysToAdd)
+        }
+        
+        // If it's the same day (daysToAdd == 0) and START time has passed, move BOTH to next week
+        if (daysToAdd == 0 && projectedStartCalendar.timeInMillis < System.currentTimeMillis()) {
             daysToAdd = 7
         }
         
-        calendar.add(Calendar.DAY_OF_YEAR, daysToAdd)
-        return calendar.timeInMillis
-    }
-    
-    /**
-     * Format selected days as readable string (e.g., "Mon, Wed, Fri" or "Every day")
-     */
-    fun formatSelectedDays(bitmask: Int): String {
-        if (bitmask == 127) return "Every day"
+        // Apply the same daysToAdd to BOTH start and end times
+        startCalendar.add(Calendar.DAY_OF_YEAR, daysToAdd)
+        endCalendar.add(Calendar.DAY_OF_YEAR, daysToAdd)
         
-        val days = extractDaysFromBitmask(bitmask)
-        if (days.isEmpty()) return "No days selected"
-        
-        val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-        return days.joinToString(", ") { dayNames[it] }
+        return Pair(startCalendar.timeInMillis, endCalendar.timeInMillis)
     }
 }
