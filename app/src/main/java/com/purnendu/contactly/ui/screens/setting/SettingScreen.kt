@@ -75,7 +75,10 @@ import androidx.core.net.toUri
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
+fun SettingsScreen(
+    settingsViewModel: SettingsViewModel= koinViewModel(),
+    onNavigateToFeedback: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
@@ -338,6 +341,15 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel= koinViewModel()) {
                         context.startActivity(intent)
                     }
                 }
+            }
+
+            // Feedback Row
+            item {
+                SettingsRow(
+                    name = stringResource(id = R.string.row_feedback),
+                    value = null,
+                    onClick = onNavigateToFeedback
+                )
             }
 
            /* // Terms Row

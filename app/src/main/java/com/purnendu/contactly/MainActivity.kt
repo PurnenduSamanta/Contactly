@@ -43,6 +43,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
+import com.purnendu.contactly.ui.screens.feedback.FeedbackScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -74,16 +75,21 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun ContactlyApp() {
         val navController = rememberNavController()
-        val items = listOf(
+        val bottomNavigationScreens = listOf(
             Screen.Schedules,
             Screen.Settings,
+        )
+        val allScreens = listOf(
+            Screen.Schedules,
+            Screen.Settings,
+            Screen.Feedback,
         )
         
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
         
         // Determine current screen for top bar title
-        val currentScreen = items.find { screen ->
+        val currentScreen = allScreens.find { screen ->
             currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName } == true
         } ?: Screen.Schedules
 
@@ -95,6 +101,7 @@ class MainActivity : ComponentActivity() {
                             text = when (currentScreen) {
                                 Screen.Schedules -> stringResource(id = R.string.title_schedules)
                                 Screen.Settings ->  stringResource(id = R.string.title_settings)
+                                Screen.Feedback ->  stringResource(id = R.string.title_feedback)
                             },
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -119,7 +126,7 @@ class MainActivity : ComponentActivity() {
                         windowInsets = WindowInsets.navigationBars,
                         containerColor = MaterialTheme.colorScheme.surface
                     ) {
-                        items.forEach { screen ->
+                        bottomNavigationScreens.forEach { screen ->
                             val isSelected = currentDestination?.hierarchy?.any { 
                                 it.route == screen::class.qualifiedName 
                             } == true
@@ -167,7 +174,18 @@ class MainActivity : ComponentActivity() {
                     ) 
                 }
                 composable<Screen.Settings> { 
-                    SettingsScreen() 
+                    SettingsScreen(
+                        onNavigateToFeedback = {
+                            navController.navigate(Screen.Feedback)
+                        }
+                    ) 
+                }
+                composable<Screen.Feedback> {
+                    FeedbackScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }
