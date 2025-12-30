@@ -116,45 +116,48 @@ class MainActivity : ComponentActivity() {
                 )
             },
             bottomBar = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surfaceVariant
-                    )
+                // Hide bottom navigation bar on Feedback screen
+                if (currentScreen != Screen.Feedback) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        )
 
-                    NavigationBar(
-                        windowInsets = WindowInsets.navigationBars,
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ) {
-                        bottomNavigationScreens.forEach { screen ->
-                            val isSelected = currentDestination?.hierarchy?.any { 
-                                it.route == screen::class.qualifiedName 
-                            } == true
-                            NavigationBarItem(
-                                colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
-                                icon = {
-                                    Icon(
-                                        if (isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
-                                        contentDescription = screen.title
-                                    )
-                                },
-                                label = {
-                                    Text(
-                                        screen.title!!,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                selected = isSelected,
-                                onClick = {
-                                    navController.navigate(screen) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                        NavigationBar(
+                            windowInsets = WindowInsets.navigationBars,
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ) {
+                            bottomNavigationScreens.forEach { screen ->
+                                val isSelected = currentDestination?.hierarchy?.any { 
+                                    it.route == screen::class.qualifiedName 
+                                } == true
+                                NavigationBarItem(
+                                    colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
+                                    icon = {
+                                        Icon(
+                                            if (isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
+                                            contentDescription = screen.title
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            screen.title!!,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    selected = isSelected,
+                                    onClick = {
+                                        navController.navigate(screen) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
