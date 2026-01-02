@@ -23,16 +23,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import java.text.SimpleDateFormat
@@ -133,16 +134,29 @@ private fun ListScheduleItem(
                             // Scheduled time display
                             if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                                val startTime = formatter.format(Date(schedule.startAtMillis))
-                                val endTime = formatter.format(Date(schedule.endAtMillis))
+                                val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                val startTime = timeFormatter.format(Date(schedule.startAtMillis))
+                                val endTime = timeFormatter.format(Date(schedule.endAtMillis))
 
-                                Text(
-                                    text = "$startTime - $endTime",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                                val startDate = dateFormatter.format(Date(schedule.startAtMillis))
+                                val endDate = dateFormatter.format(Date(schedule.endAtMillis))
+                                if(startDate !=null && endDate!=null)
+                                {
+                                    if(startDate == endDate)
+                                    {
+                                        Text(
+                                            text = "$startDate ($startTime - $endTime)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+
+
+
+
                             }
                         }
 
@@ -359,13 +373,22 @@ private fun GridScheduleItem(
                     val startTime = formatter.format(Date(schedule.startAtMillis))
                     val endTime = formatter.format(Date(schedule.endAtMillis))
 
-                    Text(
-                        text = "$startTime - $endTime",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 11.sp
-                    )
+                    val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                    val startDate = dateFormatter.format(Date(schedule.startAtMillis))
+                    val endDate = dateFormatter.format(Date(schedule.endAtMillis))
+                    if(startDate !=null && endDate!=null)
+                    {
+                        if(startDate == endDate)
+                        {
+                            Text(
+                                text = "$startDate\n$startTime - $endTime",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(6.dp))
                 }
 
@@ -415,7 +438,7 @@ private fun GridScheduleItem(
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .size(28.dp)
-                ) {
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = "View Contact Details",
@@ -437,7 +460,13 @@ fun ScheduleItemPreview() {
                 schedule = Schedule(
                     id = "1",
                     name = "Ethan Carter",
-                    originalName = "Ethan"
+                    originalName = "Ethan",
+                    avatarResId = null,
+                    contactId = 0L,
+                    selectedDays = 127,
+                    startAtMillis = 0L,
+                    endAtMillis = 0L,
+                    scheduleType = ScheduleType.ONE_TIME
                 ),
                 viewMode = ViewMode.LIST,
                 onEditClick = {},
@@ -446,18 +475,23 @@ fun ScheduleItemPreview() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text("Grid View:")
-             ScheduleItem(
+            ScheduleItem(
                 schedule = Schedule(
                     id = "1",
                     name = "Ethan Carter",
-                    originalName = "Ethan"
+                    originalName = "Ethan",
+                    avatarResId = null,
+                    contactId = 0L,
+                    selectedDays = 127,
+                    startAtMillis = 0L,
+                    endAtMillis = 0L,
+                    scheduleType = ScheduleType.ONE_TIME
                 ),
                 viewMode = ViewMode.GRID,
                 onEditClick = {},
                 onDeleteClick = {},
-                 onContactDetailsClick = {}
+                onContactDetailsClick = {}
             )
         }
     }
 }
-
