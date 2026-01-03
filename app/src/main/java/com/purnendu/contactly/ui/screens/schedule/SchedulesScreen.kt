@@ -575,7 +575,7 @@ fun SchedulesScreen(
                 // Schedules must be within a single 24-hour day
                 if(endTimeOfDay < startTimeOfDay)
                 {
-                    schedulesViewModel.showError("End time must be after start time. For overnight schedules, please create separate schedules for each day.")
+                    schedulesViewModel.showError("End time must be after start time")
 
                     return@EditScheduleSheet
                 }
@@ -627,7 +627,7 @@ fun SchedulesScreen(
                     showContactSheet = false
                 }
                 
-                // Check if start time is in the past (for ONE_TIME schedules or checking today's selected day)
+                // Check if start time is in the past (for today's selected day)
                 val now = Calendar.getInstance()
                 val currentTimeOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
                 val todayDayIndex = now.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday, 1 = Monday, etc.
@@ -635,25 +635,16 @@ fun SchedulesScreen(
                 // Check if today is selected and start time is in the past
                 val isTodaySelected = selectedDays.contains(todayDayIndex)
                 val isStartTimeInPast = startTimeOfDay < currentTimeOfDay
-                val isOneTimeSchedule = scheduleType == ScheduleType.ONE_TIME
                 
                 if (isTodaySelected && isStartTimeInPast) {
                     // Show confirmation dialog for past time
+                    // Note: calculateNextOccurrencePair automatically handles past times
+                    // by scheduling to next week, so we just need to inform the user
                     confirmationDialogState = ConfirmationDialogState.PastTimeSchedule(
                         onConfirm = {
-                            if (isOneTimeSchedule) {
-                                // For ONE_TIME schedules: Add 7 days to both start and end times
-                                // This ensures both times move to next week together
-                                val nextWeekStartMillis = startMillis + (7 * 24 * 60 * 60 * 1000L)
-                                val nextWeekEndMillis = endMillis + (7 * 24 * 60 * 60 * 1000L)
-                                performSaveWithTimes(nextWeekStartMillis, nextWeekEndMillis)
-                            } else {
-                                // For REPEAT schedules: Keep original times
-                                // calculateNextOccurrence in AlarmManager handles each day independently
-                                // Today's alarm will be scheduled for next week (same day next week)
-                                // Other days in this week will still be scheduled correctly
-                                performSaveWithTimes(startMillis, endMillis)
-                            }
+                            // Both ONE_TIME and REPEAT use same logic now
+                            // calculateNextOccurrencePair handles past time automatically
+                            performSaveWithTimes(startMillis, endMillis)
                         }
                     )
                 } else {

@@ -41,23 +41,51 @@ object DayUtils {
      * If the start time has passed for the target day, BOTH start and end times are moved
      * to the following week. This prevents the scenario where start is next week but end is today.
      * 
-     * @param startTimeMillis The start time (hour:minute)
-     * @param endTimeMillis The end time (hour:minute)  
+     * IMPORTANT: This function always uses TODAY's date as the base for calculations.
+     * Only the hour:minute from the input times are used - the date portion is ignored.
+     * This ensures correct behavior when updating schedules with stored future dates.
+     * 
+     * @param startTimeMillis The start time (only hour:minute are used, date is ignored)
+     * @param endTimeMillis The end time (only hour:minute are used, date is ignored)
      * @param dayOfWeek 0=Sunday, 1=Monday, ..., 6=Saturday
      * @return Pair of (nextStartMillis, nextEndMillis) - both guaranteed to be on the same day
      */
     fun calculateNextOccurrencePair(startTimeMillis: Long, endTimeMillis: Long, dayOfWeek: Int): Pair<Long, Long> {
-        val startCalendar = Calendar.getInstance().apply { timeInMillis = startTimeMillis }
-        val endCalendar = Calendar.getInstance().apply { timeInMillis = endTimeMillis }
+        // Extract only hour:minute from input times
+        val inputStartCal = Calendar.getInstance().apply { timeInMillis = startTimeMillis }
+        val inputEndCal = Calendar.getInstance().apply { timeInMillis = endTimeMillis }
         
-        val currentDay = startCalendar.get(Calendar.DAY_OF_WEEK) - 1 // Convert to 0=Sunday
+        val startHour = inputStartCal.get(Calendar.HOUR_OF_DAY)
+        val startMinute = inputStartCal.get(Calendar.MINUTE)
+        val endHour = inputEndCal.get(Calendar.HOUR_OF_DAY)
+        val endMinute = inputEndCal.get(Calendar.MINUTE)
+        
+        // Create calendars based on TODAY's date with the extracted times
+        val startCalendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, startHour)
+            set(Calendar.MINUTE, startMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val endCalendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, endHour)
+            set(Calendar.MINUTE, endMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        
+        // Use TODAY's day for the calculation
+        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1 // Convert to 0=Sunday
         val targetDay = dayOfWeek
         
         var daysToAdd = (targetDay - currentDay + 7) % 7
         
         // Calculate what the start time would be after adding days
         val projectedStartCalendar = Calendar.getInstance().apply {
-            timeInMillis = startTimeMillis
+            set(Calendar.HOUR_OF_DAY, startHour)
+            set(Calendar.MINUTE, startMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
             add(Calendar.DAY_OF_YEAR, daysToAdd)
         }
         
