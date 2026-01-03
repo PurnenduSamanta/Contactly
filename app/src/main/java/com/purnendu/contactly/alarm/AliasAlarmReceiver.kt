@@ -102,6 +102,9 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                     if (scheduleType == 1 && dayOfWeek >= 0) {
                         rescheduleForNextWeek(context, intent, dayOfWeek)
                     }
+                    
+                    // Notify UI to refresh active status
+                    AlarmEventBus.notifyAlarmFired(scheduleId, op)
             }
             catch (e: Throwable) {
                 Log.e("AliasAlarmReceiver", "Error processing alarm", e)

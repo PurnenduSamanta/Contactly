@@ -12,5 +12,6 @@ data class Schedule(
     val selectedDays: Int,
     val startAtMillis: Long,
     val endAtMillis: Long,
-    val scheduleType: ScheduleType
+    val scheduleType: ScheduleType,
+    val isCurrentlyActive: Boolean = false  // True when between APPLY and REVERT operations
 )

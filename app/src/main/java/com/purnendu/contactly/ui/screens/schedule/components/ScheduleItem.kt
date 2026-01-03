@@ -131,32 +131,38 @@ private fun ListScheduleItem(
                                 fontWeight = FontWeight.SemiBold
                             )
 
-                            // Scheduled time display
+                            // Scheduled time display or Active status
                             if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                                val startTime = timeFormatter.format(Date(schedule.startAtMillis))
-                                val endTime = timeFormatter.format(Date(schedule.endAtMillis))
+                                
+                                if (schedule.isCurrentlyActive) {
+                                    // Show "Active" when schedule is currently running
+                                    Text(
+                                        text = "● Active",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    // Show date and time
+                                    val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                    val startTime = timeFormatter.format(Date(schedule.startAtMillis))
+                                    val endTime = timeFormatter.format(Date(schedule.endAtMillis))
 
-                                val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                                val startDate = dateFormatter.format(Date(schedule.startAtMillis))
-                                val endDate = dateFormatter.format(Date(schedule.endAtMillis))
-                                if(startDate !=null && endDate!=null)
-                                {
-                                    if(startDate == endDate)
-                                    {
-                                        Text(
-                                            text = "$startDate ($startTime - $endTime)",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Medium
-                                        )
+                                    val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                                    val startDate = dateFormatter.format(Date(schedule.startAtMillis))
+                                    val endDate = dateFormatter.format(Date(schedule.endAtMillis))
+                                    if (startDate != null && endDate != null) {
+                                        if (startDate == endDate) {
+                                            Text(
+                                                text = "$startDate ($startTime - $endTime)",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
                                     }
                                 }
-
-
-
-
                             }
                         }
 
@@ -367,26 +373,35 @@ private fun GridScheduleItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Time
+                // Time or Active status
                 if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
-                    val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                    val startTime = formatter.format(Date(schedule.startAtMillis))
-                    val endTime = formatter.format(Date(schedule.endAtMillis))
+                    if (schedule.isCurrentlyActive) {
+                        // Show "Active" when schedule is currently running
+                        Text(
+                            text = "● Active",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
+                        val startTime = formatter.format(Date(schedule.startAtMillis))
+                        val endTime = formatter.format(Date(schedule.endAtMillis))
 
-                    val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                    val startDate = dateFormatter.format(Date(schedule.startAtMillis))
-                    val endDate = dateFormatter.format(Date(schedule.endAtMillis))
-                    if(startDate !=null && endDate!=null)
-                    {
-                        if(startDate == endDate)
-                        {
-                            Text(
-                                text = "$startDate\n$startTime - $endTime",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center
-                            )
+                        val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                        val startDate = dateFormatter.format(Date(schedule.startAtMillis))
+                        val endDate = dateFormatter.format(Date(schedule.endAtMillis))
+                        if (startDate != null && endDate != null) {
+                            if (startDate == endDate) {
+                                Text(
+                                    text = "$startDate\n$startTime - $endTime",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(6.dp))

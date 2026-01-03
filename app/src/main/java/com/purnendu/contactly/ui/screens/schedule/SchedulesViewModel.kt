@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.AliasAlarmReceiver.Companion.OP_APPLY
 import com.purnendu.contactly.alarm.AliasAlarmReceiver.Companion.OP_REVERT
+import com.purnendu.contactly.alarm.AlarmEventBus
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -49,7 +51,24 @@ class SchedulesViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    val schedules: StateFlow<List<Schedule>> = schedulesRepo.getSchedules().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Refresh trigger - emits when an alarm fires to re-check active status
+    private val _refreshTrigger = MutableStateFlow(0L)
+    
+    // Combine database flow with refresh trigger to update active status when alarm fires
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val schedules: StateFlow<List<Schedule>> = _refreshTrigger
+        .flatMapLatest { schedulesRepo.getSchedules() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
+    // Listen to alarm events and trigger refresh
+    init {
+        viewModelScope.launch {
+            AlarmEventBus.alarmFired.collect { event ->
+                // Trigger refresh when any alarm fires
+                _refreshTrigger.value = System.currentTimeMillis()
+            }
+        }
+    }
 
     // View mode preference from DataStore
     val viewMode: StateFlow<ViewMode> = appPreferences.viewModeFlow
@@ -263,8 +282,6 @@ class SchedulesViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
-
-            println("Updating db")
             val updated = current.copy(
                 originalName = originalName,
                 temporaryName = temporaryName,
