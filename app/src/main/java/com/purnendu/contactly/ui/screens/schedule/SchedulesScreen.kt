@@ -239,8 +239,8 @@ fun SchedulesScreen(
     val snackBarHostState = remember { SnackbarHostState() }
 
 
-
     // Shared callbacks for Schedule Items
+
     val onEditClick: (Schedule) -> Unit = { sched ->
         val cid = sched.contactId
         if (cid != null) {
@@ -498,6 +498,8 @@ fun SchedulesScreen(
                 endTimeText = ""
                 startMillis = 0L
                 endMillis = 0L
+                scheduleType = ScheduleType.ONE_TIME
+                selectedDays = setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)
                 showEditSheet = true
                 schedulesViewModel.clearError()
             }
@@ -597,10 +599,10 @@ fun SchedulesScreen(
                 // Lambda to perform the actual save operation with given times
                 val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
                     val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
-                    val editingId = schedules.firstOrNull { it.name == temporaryName && it.contactId == contact.id }?.id?.toLongOrNull()
-                    if (editingId != null) {
+                    val scheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
+                    if (scheduleId != null) {
                         schedulesViewModel.updateSchedule(
-                            editingId,
+                            scheduleId,
                             contact,
                             temporaryName,
                             saveStartMillis,

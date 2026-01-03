@@ -3,6 +3,8 @@ package com.purnendu.contactly.ui.screens.schedule
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.purnendu.contactly.alarm.AliasAlarmReceiver.Companion.OP_APPLY
+import com.purnendu.contactly.alarm.AliasAlarmReceiver.Companion.OP_REVERT
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.room.ScheduleEntity
@@ -191,15 +193,16 @@ class SchedulesViewModel(
             selectedDays = selectedDays,
             scheduleType = scheduleType
         )
-
         if (result.success) {
+            val nearestStartAtMillis = result.alarmMetadata.filter{ it.operation == OP_APPLY }.minByOrNull {it.triggerTimeMillis }?.triggerTimeMillis ?: startAtMillis
+            val nearestEndAtMillis   = result.alarmMetadata.filter{ it.operation == OP_REVERT }.minByOrNull {it.triggerTimeMillis }?.triggerTimeMillis ?: endAtMillis
             if (isUpdating) {
                 updateAlarmToDatabase(
                     scheduleId = scheduleId,
                     originalName = originalName,
                     temporaryName = temporaryName,
-                    startAtMillis = startAtMillis,
-                    endAtMillis = endAtMillis,
+                    startAtMillis = nearestStartAtMillis,
+                    endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
                     scheduleType = scheduleType,
                     alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
@@ -209,8 +212,8 @@ class SchedulesViewModel(
                     scheduleId = scheduleId,
                     contact = contact,
                     temporaryName = temporaryName,
-                    startAtMillis = startAtMillis,
-                    endAtMillis = endAtMillis,
+                    startAtMillis = nearestStartAtMillis,
+                    endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
                     scheduleType = scheduleType,
                     alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
@@ -260,7 +263,8 @@ class SchedulesViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
-            
+
+            println("Updating db")
             val updated = current.copy(
                 originalName = originalName,
                 temporaryName = temporaryName,

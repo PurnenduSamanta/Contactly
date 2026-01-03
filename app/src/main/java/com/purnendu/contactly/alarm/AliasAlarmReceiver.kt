@@ -173,7 +173,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             Log.d("AliasAlarmReceiver", "Rescheduled alarm for next week: day=$dayOfWeek, time=$nextTriggerTime")
             
             // Update the database with new metadata and nearest trigger times
-            updateScheduleMetadata(scheduleId, reqCode, op, nextTriggerTime)
+            updateSchedule(scheduleId, reqCode, op, nextTriggerTime)
             
         } catch (e: SecurityException) {
             Log.e("AliasAlarmReceiver", "Failed to reschedule alarm", e)
@@ -186,7 +186,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
      * 2. Finds the nearest APPLY time and updates startAtMillis
      * 3. Finds the nearest REVERT time and updates endAtMillis
      */
-    private suspend fun updateScheduleMetadata(
+    private suspend fun updateSchedule(
         scheduleId: Long,
         requestCode: Int,
         operation: String,
