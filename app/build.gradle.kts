@@ -86,4 +86,9 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
+
+    //InAppYoutube
+    //InAppUpdate
+    implementation (libs.app.update)
+    implementation (libs.app.update.ktx)
 }
