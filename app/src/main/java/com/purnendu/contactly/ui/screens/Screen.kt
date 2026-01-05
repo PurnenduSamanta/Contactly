@@ -17,4 +17,6 @@ sealed class Screen(val route: String, @Contextual val selectedIcon: ImageVector
     data object Settings : Screen("settings", Icons.Default.Settings, Icons.Outlined.Settings, "Settings")
     @Serializable
     data object Feedback : Screen("feedback", null, null, "Feedback")
+    @Serializable
+    data object PrivacyPolicy : Screen("privacy_policy", null, null, "Privacy Policy")
 }

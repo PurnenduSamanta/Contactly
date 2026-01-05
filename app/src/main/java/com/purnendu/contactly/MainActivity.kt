@@ -44,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.feedback.FeedbackScreen
+import com.purnendu.contactly.ui.screens.privacypolicy.PrivacyPolicyScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -83,6 +84,7 @@ class MainActivity : ComponentActivity() {
             Screen.Schedules,
             Screen.Settings,
             Screen.Feedback,
+            Screen.PrivacyPolicy,
         )
         
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -102,6 +104,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Schedules -> stringResource(id = R.string.title_schedules)
                                 Screen.Settings ->  stringResource(id = R.string.title_settings)
                                 Screen.Feedback ->  stringResource(id = R.string.title_feedback)
+                                Screen.PrivacyPolicy -> stringResource(id = R.string.row_privacy_policy)
                             },
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -116,8 +119,8 @@ class MainActivity : ComponentActivity() {
                 )
             },
             bottomBar = {
-                // Hide bottom navigation bar on Feedback screen
-                if (currentScreen != Screen.Feedback) {
+                // Hide bottom navigation bar on Feedback and PrivacyPolicy screens
+                if (currentScreen != Screen.Feedback && currentScreen != Screen.PrivacyPolicy) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         HorizontalDivider(
                             modifier = Modifier.fillMaxWidth(),
@@ -180,11 +183,21 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(
                         onNavigateToFeedback = {
                             navController.navigate(Screen.Feedback)
+                        },
+                        onNavigateToPrivacyPolicy = {
+                            navController.navigate(Screen.PrivacyPolicy)
                         }
                     ) 
                 }
                 composable<Screen.Feedback> {
                     FeedbackScreen(
+                        onBackClick = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+                composable<Screen.PrivacyPolicy> {
+                    PrivacyPolicyScreen(
                         onBackClick = {
                             navController.popBackStack()
                         }

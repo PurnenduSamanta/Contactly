@@ -77,7 +77,8 @@ import androidx.core.net.toUri
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel= koinViewModel(),
-    onNavigateToFeedback: () -> Unit = {}
+    onNavigateToFeedback: () -> Unit = {},
+    onNavigateToPrivacyPolicy: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -306,15 +307,9 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     name = stringResource(id = R.string.row_privacy_policy),
-                    value = null
+                    value = null,
+                    onClick = onNavigateToPrivacyPolicy
                 )
-                {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://www.termsfeed.com/live/02116554-2ff0-496d-9ab2-6444fd44ef29")
-                    )
-                    context.startActivity(intent)
-                }
             }
 
             // Rate Us Row
