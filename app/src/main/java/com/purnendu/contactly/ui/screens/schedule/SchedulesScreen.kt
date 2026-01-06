@@ -100,7 +100,6 @@ import com.purnendu.contactly.utils.AppThemeMode
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
@@ -126,8 +125,6 @@ fun SchedulesScreen(
     var showEditSheet by remember { mutableStateOf(false) }
     var selectedContact by remember { mutableStateOf<Contact?>(null) }
     var temporaryName by remember { mutableStateOf("") }
-    var startTimeText by remember { mutableStateOf("") }
-    var endTimeText by remember { mutableStateOf("") }
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
     var scheduleType by remember { mutableStateOf(ScheduleType.ONE_TIME) }
@@ -255,8 +252,8 @@ fun SchedulesScreen(
                         startMillis = entity?.startAtMillis ?: 0L
                         endMillis = entity?.endAtMillis ?: 0L
                         selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                        startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(Date(startMillis)) else ""
-                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(Date(endMillis)) else ""
+                       /* startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(Date(startMillis)) else ""
+                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(Date(endMillis)) else ""*/
                         scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
                         showEditSheet = true
                     }
@@ -494,8 +491,6 @@ fun SchedulesScreen(
                 selectedContact = contact
                 showContactSheet = false
                 temporaryName = ""
-                startTimeText = ""
-                endTimeText = ""
                 startMillis = 0L
                 endMillis = 0L
                 scheduleType = ScheduleType.ONE_TIME
@@ -544,14 +539,14 @@ fun SchedulesScreen(
                     return@EditScheduleSheet
                 }
 
-                if(startTimeText.isEmpty())
+                if(startMillis==0L)
                 {
                     schedulesViewModel.showError("Start time can not be empty")
 
                     return@EditScheduleSheet
                 }
 
-                if(endTimeText.isEmpty())
+                if(endMillis==0L)
                 {
                     schedulesViewModel.showError("End time can not be empty")
 
@@ -667,8 +662,6 @@ fun SchedulesScreen(
                     set(Calendar.MILLISECOND, 0)
                 }
                 startMillis = cal.timeInMillis
-                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                startTimeText = formatter.format(cal.time)
                 showStartTimePicker = false
             }
         )
@@ -685,8 +678,6 @@ fun SchedulesScreen(
                     set(Calendar.MILLISECOND, 0)
                 }
                 endMillis = cal.timeInMillis
-                val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                endTimeText = formatter.format(cal.time)
                 showEndTimePicker = false
             }
         )
