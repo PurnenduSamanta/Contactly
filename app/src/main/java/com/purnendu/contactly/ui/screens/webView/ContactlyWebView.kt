@@ -1,9 +1,10 @@
-package com.purnendu.contactly.ui.components
+package com.purnendu.contactly.ui.screens.webView
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
@@ -27,10 +28,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
+
+
+private const val FEEDBACK_FORM_URL = "https://forms.gle/RorurgiCh4Jgh6C56"
+private const val PRIVACY_POLICY_URL = "https://www.termsfeed.com/live/02116554-2ff0-496d-9ab2-6444fd44ef29"
+
+@Composable
+fun FeedbackScreen()
+{
+    ContactlyWebView(url = FEEDBACK_FORM_URL)
+}
+
+@Composable
+fun PrivacyPolicyScreen()
+{
+    ContactlyWebView(url = PRIVACY_POLICY_URL)
+}
+
+
+
 /**
  * Shared WebView component for displaying web content within the app.
  * Used by FeedbackScreen and PrivacyPolicyScreen.
- * 
+ *
  * @param url The URL to load in the WebView
  * @param modifier Modifier for the component
  * @param injectCss Optional CSS to inject after page loads (removes margins/padding by default)
@@ -39,7 +59,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun ContactlyWebView(
     url: String,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     injectCss: String = "document.body.style.margin='0'; document.body.style.padding='0';"
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -58,19 +78,19 @@ fun ContactlyWebView(
         if (isLoading) {
             LinearProgressIndicator(
                 progress = { loadingProgress / 100f },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.Companion.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
 
         Box(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
             AndroidView(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.Companion.fillMaxSize(),
                 factory = { context ->
                     WebView(context).apply {
                         layoutParams = ViewGroup.LayoutParams(
@@ -89,7 +109,7 @@ fun ContactlyWebView(
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(
                                 view: WebView?,
-                                request: android.webkit.WebResourceRequest?
+                                request: WebResourceRequest?
                             ): Boolean {
                                 return false // Load all URLs in this WebView
                             }
@@ -132,11 +152,11 @@ fun ContactlyWebView(
             // Show loading indicator in center while page loads initially
             if (isLoading && loadingProgress < 10) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.Companion.fillMaxSize(),
+                    contentAlignment = Alignment.Companion.Center
                 ) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.Companion.size(48.dp),
                         color = MaterialTheme.colorScheme.primary
                     )
                 }

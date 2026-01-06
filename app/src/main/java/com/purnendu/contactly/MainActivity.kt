@@ -52,8 +52,8 @@ import com.google.android.play.core.ktx.isFlexibleUpdateAllowed
 import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
-import com.purnendu.contactly.ui.screens.feedback.FeedbackScreen
-import com.purnendu.contactly.ui.screens.privacypolicy.PrivacyPolicyScreen
+import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
+import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -215,18 +215,10 @@ class MainActivity : ComponentActivity() {
                     ) 
                 }
                 composable<Screen.Feedback> {
-                    FeedbackScreen(
-                        onBackClick = {
-                            navController.popBackStack()
-                        }
-                    )
+                    FeedbackScreen()
                 }
                 composable<Screen.PrivacyPolicy> {
-                    PrivacyPolicyScreen(
-                        onBackClick = {
-                            navController.popBackStack()
-                        }
-                    )
+                    PrivacyPolicyScreen()
                 }
             }
         }
