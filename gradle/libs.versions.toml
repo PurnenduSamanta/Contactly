@@ -19,6 +19,10 @@ navigationCompose = "2.9.6"
 splashScreen = "1.2.0"
 koin-bom = "4.1.1"
 appUpdate = "2.1.0"
+# Firebase
+firebaseBom = "33.8.0"
+googleServices = "4.4.2"
+firebaseCrashlyticsPlugin = "3.0.3"
 
 [libraries]
 koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin-bom" }
@@ -53,6 +57,10 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
 app-update = { module = "com.google.android.play:app-update", version.ref = "appUpdate" }
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -60,3 +68,5 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
