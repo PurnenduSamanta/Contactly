@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071257595150",
+    "project_id": "contactly-acb74",
+    "storage_bucket": "contactly-acb74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071257595150:android:f6cf6e327c77b58920bb5f",
+        "android_client_info": {
+          "package_name": "com.purnendu.contactly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD949IGix_Bw0C5VWSydzWFmYqhkB3PVwg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -50,6 +50,8 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.isFlexibleUpdateAllowed
 import com.google.android.play.core.ktx.isImmediateUpdateAllowed
+import com.google.firebase.Firebase
+import com.google.firebase.crashlytics.crashlytics
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
@@ -73,6 +75,9 @@ class MainActivity : ComponentActivity() {
         }
     
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        Firebase.crashlytics.isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG
+
         // Install the splash screen
         val splashScreen = installSplashScreen()
 
