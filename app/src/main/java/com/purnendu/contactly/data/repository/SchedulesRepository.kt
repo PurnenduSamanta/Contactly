@@ -41,6 +41,10 @@ class SchedulesRepository(private val database: AppDatabase) {
      * Check if a schedule is currently active (between APPLY and REVERT operations).
      * A schedule is active when an APPLY alarm has fired but the corresponding REVERT hasn't.
      * 
+     * For ONE_TIME schedules: APPLY time stays in the past after firing.
+     * For REPEAT schedules: APPLY time is rescheduled to next week after firing,
+     * so APPLY > REVERT indicates the active state (APPLY is next week, REVERT is today).
+     * 
      * @param metadataJson JSON string of AlarmMetadata list
      * @param currentTime Current time in milliseconds
      * @return True if the schedule is currently active
@@ -60,9 +64,13 @@ class SchedulesRepository(private val database: AppDatabase) {
             // REVERT requestCode = APPLY requestCode + 1 (based on AlarmRequestCodeUtils scheme)
             applyAlarms.any { apply ->
                 val correspondingRevert = revertAlarms.find { it.requestCode == apply.requestCode + 1 }
-                if (correspondingRevert != null) {
-                    // APPLY has fired (past) AND REVERT hasn't fired yet (future)
-                    apply.triggerTimeMillis <= currentTime && correspondingRevert.triggerTimeMillis > currentTime
+                if (correspondingRevert != null && correspondingRevert.triggerTimeMillis > currentTime) {
+                    // REVERT hasn't fired yet
+                    // Schedule is ACTIVE if:
+                    // 1. APPLY has already fired (past) - for ONE_TIME schedules
+                    // 2. OR APPLY is AFTER REVERT (rescheduled to next week) - for REPEAT schedules
+                    apply.triggerTimeMillis <= currentTime || 
+                        apply.triggerTimeMillis > correspondingRevert.triggerTimeMillis
                 } else {
                     false
                 }
@@ -80,7 +88,7 @@ class SchedulesRepository(private val database: AppDatabase) {
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int ,  // Default to all days
+        selectedDays: Int ,
         scheduledAlarmsMetadata: String? = null,
         scheduleType: ScheduleType
     ): Long {
