@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.purnendu.contactly.ui.screens.setting.components.ArtisticFooter
 import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
@@ -457,6 +458,13 @@ fun SettingsScreen(
                         showAlarmsDialog = true
                     }
             }
+        }
+        
+        // Artistic Footer - "Designed & developed from a true story"
+        item {
+            ArtisticFooter(
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
     
