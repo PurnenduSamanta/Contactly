@@ -31,6 +31,9 @@ interface AppPreferences {
     suspend fun setViewMode(mode: ViewMode)
     suspend fun setNotificationsEnabled(enabled: Boolean)
     suspend fun updateLastSyncTimestamp()
+    
+    val biometricEnabledFlow: Flow<Boolean>
+    suspend fun setBiometricEnabled(enabled: Boolean)
 }
 
 /**
@@ -51,6 +54,7 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
         val KEY_VIEW_MODE = intPreferencesKey("view_mode")
         val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val KEY_LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
+        val KEY_BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
     }
 
     // ========== Theme Preferences ==========
@@ -112,6 +116,18 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
     override suspend fun updateLastSyncTimestamp() {
         context.dataStore.edit { prefs ->
             prefs[KEY_LAST_SYNC_TIMESTAMP] = System.currentTimeMillis()
+        }
+    }
+
+    // ========== Biometric Preferences ==========
+
+    override val biometricEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_BIOMETRIC_ENABLED] ?: false
+    }
+
+    override suspend fun setBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_BIOMETRIC_ENABLED] = enabled
         }
     }
 }
