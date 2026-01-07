@@ -60,6 +60,7 @@ import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
 import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
+import com.purnendu.contactly.utils.BiometricHelper
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -102,13 +103,17 @@ class MainActivity : FragmentActivity() {
             val isAppReady by mainActivityViewModel.isAppReady.collectAsStateWithLifecycle()
             val biometricEnabled by settingsViewModel.biometricEnabled.collectAsStateWithLifecycle()
             var isBiometricCheckPassed by remember { mutableStateOf(false) }
+            var hasAttemptedAuth by remember { mutableStateOf(false) }
             
-            LaunchedEffect(isAppReady) {
-                if (isAppReady) {
-                    if (biometricEnabled) {
-                        val success = com.purnendu.contactly.utils.BiometricHelper.authenticate(
+            // Wait for both isAppReady AND biometricEnabled to be loaded (non-null)
+            LaunchedEffect(isAppReady, biometricEnabled) {
+                // Only proceed when app is ready AND preference has loaded (not null)
+                if (isAppReady && biometricEnabled != null && !hasAttemptedAuth) {
+                    hasAttemptedAuth = true
+                    if (biometricEnabled == true) {
+                        val success = BiometricHelper.authenticate(
                             activity = this@MainActivity,
-                            title = getString(R.string.app_name),
+                            title = "Unlock the ${getString(R.string.app_name)} app",
                             subtitle = getString(R.string.desc_biometric_auth)
                         )
                         if (success) {
@@ -122,7 +127,8 @@ class MainActivity : FragmentActivity() {
                 }
             }
             
-            splashScreen.setKeepOnScreenCondition { !isAppReady || !isBiometricCheckPassed }
+            // Keep splash until app is ready AND biometric preference is loaded AND auth is passed
+            splashScreen.setKeepOnScreenCondition { !isAppReady || biometricEnabled == null || !isBiometricCheckPassed }
             
             if (isBiometricCheckPassed) {
                 val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()

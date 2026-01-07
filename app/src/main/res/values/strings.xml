@@ -47,7 +47,7 @@
     <string name="duplicate_contact_alert">You can not schedule duplicate contact</string>
     <string name="section_privacy_security">Privacy &amp; Security</string>
     <string name="row_biometric_auth">Biometric app lock</string>
-    <string name="desc_biometric_auth">Require biometric authentication to open app</string>
+    <string name="desc_biometric_auth">Require authentication to open app</string>
     <string name="dialog_biometric_unavailable_title">Biometric Unavailable</string>
     <string name="dialog_biometric_unavailable_message">Biometric authentication is not set up on this device. Please enable it in your phone settings to use this feature.</string>
     <string name="ok">Ok</string>

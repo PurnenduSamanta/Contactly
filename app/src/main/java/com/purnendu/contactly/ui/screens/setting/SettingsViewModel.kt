@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -55,8 +56,9 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) { appPreferences.setNotificationsEnabled(enabled) }
     }
     
-    val biometricEnabled: StateFlow<Boolean> = appPreferences.biometricEnabledFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val biometricEnabled: StateFlow<Boolean?> = appPreferences.biometricEnabledFlow
+        .map<Boolean, Boolean?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
         
     fun setBiometricEnabled(enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) { appPreferences.setBiometricEnabled(enabled) }

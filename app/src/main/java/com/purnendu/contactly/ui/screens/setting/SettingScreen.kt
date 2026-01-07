@@ -337,7 +337,7 @@ fun SettingsScreen(
                         )
                     }
                     Switch(
-                        checked = biometricEnabled,
+                        checked = biometricEnabled == true,
                         onCheckedChange = { enabled ->
                             if (enabled) {
                                 if (com.purnendu.contactly.utils.BiometricHelper.isBiometricAvailable(context)) {
