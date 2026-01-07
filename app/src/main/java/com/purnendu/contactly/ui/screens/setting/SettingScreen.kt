@@ -284,6 +284,76 @@ fun SettingsScreen(
                 }
             }
 
+            // Privacy & Security Section
+            item {
+                Text(
+                    stringResource(id = R.string.section_privacy_security),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        top = 28.dp,
+                        bottom = 10.dp
+                    )
+                )
+            }
+
+            // Biometric Auth Row
+            item {
+                val biometricEnabled by settingsViewModel.biometricEnabled.collectAsStateWithLifecycle()
+                var showBiometricError by remember { mutableStateOf(false) }
+
+                if (showBiometricError) {
+                    ContactlyDialog(
+                        title = stringResource(R.string.dialog_biometric_unavailable_title),
+                        message = stringResource(R.string.dialog_biometric_unavailable_message),
+                        onConfirm = { showBiometricError = false },
+                        onDismiss = { showBiometricError = false },
+                        isConfirmButtonAvailable = true,
+                        isDismissButtonAvailable = false,
+                        confirmButtonText = stringResource(R.string.ok),
+                        dismissButtonText = ""
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.row_biometric_auth),
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            stringResource(R.string.desc_biometric_auth),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                    }
+                    Switch(
+                        checked = biometricEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                if (com.purnendu.contactly.utils.BiometricHelper.isBiometricAvailable(context)) {
+                                    settingsViewModel.setBiometricEnabled(true)
+                                } else {
+                                    showBiometricError = true
+                                    settingsViewModel.setBiometricEnabled(false)
+                                }
+                            } else {
+                                settingsViewModel.setBiometricEnabled(false)
+                            }
+                        }
+                    )
+                }
+            }
+
             item {
                 Text(
                     stringResource(id = R.string.section_about),

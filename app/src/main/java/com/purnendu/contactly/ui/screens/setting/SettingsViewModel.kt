@@ -55,6 +55,13 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) { appPreferences.setNotificationsEnabled(enabled) }
     }
     
+    val biometricEnabled: StateFlow<Boolean> = appPreferences.biometricEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        
+    fun setBiometricEnabled(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) { appPreferences.setBiometricEnabled(enabled) }
+    }
+    
     fun loadAlarmStatus(isInDebugMode: Boolean) {
         if(!isInDebugMode)
             return

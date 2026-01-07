@@ -1,7 +1,7 @@
 package com.purnendu.contactly
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,7 +15,11 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
@@ -59,7 +63,7 @@ import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     private lateinit var appUpdateManager: AppUpdateManager
     private val updateType = AppUpdateType.IMMEDIATE
@@ -94,11 +98,36 @@ class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = koinViewModel()
             
             // Keep the splash screen visible until the app is ready
+            // Keep the splash screen visible until the app is ready and auth is done
             val isAppReady by mainActivityViewModel.isAppReady.collectAsStateWithLifecycle()
-            splashScreen.setKeepOnScreenCondition { !isAppReady }
+            val biometricEnabled by settingsViewModel.biometricEnabled.collectAsStateWithLifecycle()
+            var isBiometricCheckPassed by remember { mutableStateOf(false) }
             
-            val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
-            ContactlyTheme(appThemeMode = themeMode) { ContactlyApp() }
+            LaunchedEffect(isAppReady) {
+                if (isAppReady) {
+                    if (biometricEnabled) {
+                        val success = com.purnendu.contactly.utils.BiometricHelper.authenticate(
+                            activity = this@MainActivity,
+                            title = getString(R.string.app_name),
+                            subtitle = getString(R.string.desc_biometric_auth)
+                        )
+                        if (success) {
+                            isBiometricCheckPassed = true
+                        } else {
+                            finish()
+                        }
+                    } else {
+                        isBiometricCheckPassed = true
+                    }
+                }
+            }
+            
+            splashScreen.setKeepOnScreenCondition { !isAppReady || !isBiometricCheckPassed }
+            
+            if (isBiometricCheckPassed) {
+                val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
+                ContactlyTheme(appThemeMode = themeMode) { ContactlyApp() }
+            }
         }
     }
 
