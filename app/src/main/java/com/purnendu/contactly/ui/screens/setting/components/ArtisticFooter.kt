@@ -258,7 +258,7 @@ fun ArtisticFooter(
 /**
  * Particle data class for floating animation
  */
-private data class Particle(
+internal data class Particle(
     val x: Float,
     val y: Float,
     val velocityX: Float,
@@ -295,14 +295,14 @@ private data class Particle(
     }
 }
 
-private enum class ParticleType {
+internal enum class ParticleType {
     CIRCLE, STAR, HEART_MINI
 }
 
 /**
  * Draw a single particle
  */
-private fun DrawScope.drawParticle(
+internal fun DrawScope.drawParticle(
     particle: Particle,
     centerX: Float,
     centerY: Float
@@ -343,7 +343,7 @@ private fun DrawScope.drawParticle(
 /**
  * Draw sparkles around the heart
  */
-private fun DrawScope.drawSparkles(
+internal fun DrawScope.drawSparkles(
     centerX: Float,
     centerY: Float,
     rotation: Float,
@@ -369,7 +369,7 @@ private fun DrawScope.drawSparkles(
 /**
  * Draw a 4-pointed star
  */
-private fun DrawScope.drawStar(
+internal fun DrawScope.drawStar(
     cx: Float,
     cy: Float,
     size: Float,
@@ -394,7 +394,7 @@ private fun DrawScope.drawStar(
 /**
  * Draw a mini heart particle
  */
-private fun DrawScope.drawMiniHeart(
+internal fun DrawScope.drawMiniHeart(
     cx: Float,
     cy: Float,
     size: Float,
@@ -422,7 +422,7 @@ private fun DrawScope.drawMiniHeart(
 /**
  * Draw the main heart shape with gradient
  */
-private fun DrawScope.drawHeart(
+internal fun DrawScope.drawHeart(
     centerX: Float,
     centerY: Float,
     scale: Float,
@@ -485,7 +485,7 @@ private fun DrawScope.drawHeart(
 /**
  * Draw shine/highlight on the heart
  */
-private fun DrawScope.drawHeartShine(
+internal fun DrawScope.drawHeartShine(
     centerX: Float,
     centerY: Float,
     scale: Float
