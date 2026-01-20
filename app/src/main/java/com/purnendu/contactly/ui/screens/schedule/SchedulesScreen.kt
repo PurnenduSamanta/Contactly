@@ -7,6 +7,9 @@ import android.net.Uri
 import android.provider.Settings
 import android.provider.ContactsContract
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,12 +100,14 @@ import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.DayUtils
 import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.utils.ImageStorageManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -125,6 +130,7 @@ fun SchedulesScreen(
     var showEditSheet by remember { mutableStateOf(false) }
     var selectedContact by remember { mutableStateOf<Contact?>(null) }
     var temporaryName by remember { mutableStateOf("") }
+    var temporaryImage by remember { mutableStateOf<String?>(null) }
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
     var scheduleType by remember { mutableStateOf(ScheduleType.ONE_TIME) }
@@ -133,6 +139,13 @@ fun SchedulesScreen(
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+
+    // Image picker launcher for temporary image
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        temporaryImage = uri?.toString()
+    }
     
     // Generic confirmation dialog state - can handle various confirmation scenarios
     var confirmationDialogState by remember { mutableStateOf<ConfirmationDialogState?>(null) }
@@ -195,7 +208,7 @@ fun SchedulesScreen(
                 message = getString(R.string.dialog_contacts_message),
                 onConfirm = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                        data = "package:${context.packageName}".toUri()
                     }
                     startActivity(intent)
                     showPermissionDialog.value =false
@@ -252,8 +265,7 @@ fun SchedulesScreen(
                         startMillis = entity?.startAtMillis ?: 0L
                         endMillis = entity?.endAtMillis ?: 0L
                         selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                       /* startTimeText = if (startMillis > 0) SimpleDateFormat("HH:mm").format(Date(startMillis)) else ""
-                        endTimeText = if (endMillis > 0) SimpleDateFormat("HH:mm").format(Date(endMillis)) else ""*/
+                        temporaryImage = entity?.temporaryImage
                         scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
                         showEditSheet = true
                     }
@@ -491,6 +503,7 @@ fun SchedulesScreen(
                 selectedContact = contact
                 showContactSheet = false
                 temporaryName = ""
+                temporaryImage = null  // Reset temp image for new schedule
                 startMillis = 0L
                 endMillis = 0L
                 scheduleType = ScheduleType.ONE_TIME
@@ -510,11 +523,14 @@ fun SchedulesScreen(
             onErrorCardDismiss = { schedulesViewModel.clearError() },
             contact = contact,
             temporaryName = temporaryName,
+            temporaryImageUri = temporaryImage,
             startTime = if(startMillis==0L) "" else formatter.format(startMillis),
             endTime = if(endMillis==0L) "" else formatter.format(endMillis),
             selectedDays = selectedDays,
             scheduleType = scheduleType,
             onTemporaryNameChange = { temporaryName = it },
+            onTemporaryImageClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            onTemporaryImageRemove = { temporaryImage = null },
             onDaysChanged = { selectedDays = it },
             onScheduleTypeChange = { newType ->
                 scheduleType = newType
@@ -526,9 +542,10 @@ fun SchedulesScreen(
             onCancel = {
                 showEditSheet = false
                 showContactSheet = false
-                selectedContact=null
+                selectedContact = null
+                temporaryImage = null  // Clear temp image on cancel
                 schedulesViewModel.clearError()
-                       },
+            },
             onSave = {
                 val contact = selectedContact ?: return@EditScheduleSheet
 
@@ -594,32 +611,30 @@ fun SchedulesScreen(
                 // Lambda to perform the actual save operation with given times
                 val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
                     val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
-                    val scheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
-                    if (scheduleId != null) {
-                        schedulesViewModel.updateSchedule(
-                            scheduleId,
-                            contact,
-                            temporaryName,
-                            saveStartMillis,
-                            saveEndMillis,
-                            selectedDaysBitmask,
-                            scheduleType
-                        )
+                    val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
+                    
+                    // Generate scheduleId for new schedules (needed for image file naming)
+                    val scheduleIdToUse = existingScheduleId ?: abs(UUID.randomUUID().mostSignificantBits)
+
+                    schedulesViewModel.addSchedule(
+                        contact = contact,
+                        scheduleId = existingScheduleId ?: scheduleIdToUse,
+                        temporaryName = temporaryName,
+                        tempImage = temporaryImage,
+                        startAtMillis = saveStartMillis,
+                        endAtMillis = saveEndMillis,
+                        selectedDays = selectedDaysBitmask,
+                        scheduleType = scheduleType,
+                        isEditing = existingScheduleId != null
+                    )
+                    if (existingScheduleId != null) {
                         Toast.makeText(context, context.getString(R.string.ScheduleUpdated), Toast.LENGTH_SHORT).show()
                     } else {
-                        schedulesViewModel.addSchedule(
-                            contact,
-                            abs(UUID.randomUUID().mostSignificantBits),
-                            temporaryName,
-                            saveStartMillis,
-                            saveEndMillis,
-                            selectedDaysBitmask,
-                            scheduleType
-                        )
                         Toast.makeText(context, context.getString(R.string.toast_schedule_saved), Toast.LENGTH_SHORT).show()
                     }
                     showEditSheet = false
                     showContactSheet = false
+                    temporaryImage = null  // Clear temp image after save
                 }
                 
                 // Check if start time is in the past (for today's selected day)

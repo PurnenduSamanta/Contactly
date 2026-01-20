@@ -44,6 +44,8 @@ class ContactlyAlarmManager(
         scheduleId: Long,
         originalName: String,
         temporaryName: String,
+        tempImage: String?,
+        originalImage:String?,
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
@@ -93,6 +95,8 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
                 putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
+                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
+                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
@@ -103,6 +107,8 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
                 putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
+                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
+                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
@@ -155,6 +161,8 @@ class ContactlyAlarmManager(
         contactId: Long,
         originalName: String,
         temporaryName: String,
+        tempImage: String?,
+        originalImage:String?,
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
@@ -165,6 +173,8 @@ class ContactlyAlarmManager(
             contactId = contactId,
             originalName = originalName,
             temporaryName = temporaryName,
+            tempImage = tempImage,
+            originalImage = originalImage,
             operation = operation,
             dayOfWeek = dayOfWeek,
             scheduleId = scheduleId,
@@ -192,6 +202,8 @@ class ContactlyAlarmManager(
         contactId: Long,
         originalName: String,
         temporaryName: String,
+        tempImage: String?,
+        originalImage: String?,
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
@@ -203,6 +215,8 @@ class ContactlyAlarmManager(
             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
             putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
+            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
+            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, scheduleType)
@@ -280,6 +294,8 @@ class ContactlyAlarmManager(
             contactId = schedule.contactId,
             originalName = schedule.originalName,
             temporaryName = schedule.temporaryName,
+            originalImage = schedule.originalImage,
+            tempImage = schedule.temporaryImage,
             operation = metadata.operation,
             dayOfWeek = metadata.dayOfWeek,
             scheduleId = schedule.scheduleId,
@@ -376,6 +392,8 @@ class ContactlyAlarmManager(
                             contactId = schedule.contactId,
                             originalName = schedule.originalName,
                             temporaryName = schedule.temporaryName,
+                            tempImage = schedule.temporaryImage,
+                            originalImage = schedule.originalImage,
                             operation = metadata.operation,
                             dayOfWeek = metadata.dayOfWeek,
                             scheduleId = schedule.scheduleId,
@@ -426,6 +444,8 @@ class ContactlyAlarmManager(
                     putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, existingSchedule.contactId)
                     putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, existingSchedule.originalName)
                     putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, existingSchedule.temporaryName)
+                    putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, existingSchedule.originalImage)
+                    putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, existingSchedule.temporaryImage)
                     putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                     putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
                     putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, existingSchedule.scheduleType)
