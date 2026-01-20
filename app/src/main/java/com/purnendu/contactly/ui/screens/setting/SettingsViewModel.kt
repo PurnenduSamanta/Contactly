@@ -82,6 +82,8 @@ class SettingsViewModel(
                             contactId = schedule.contactId,
                             originalName = schedule.originalName,
                             temporaryName = schedule.temporaryName,
+                            tempImage = schedule.temporaryImage,
+                            originalImage = schedule.originalImage,
                             operation = meta.operation,
                             dayOfWeek = meta.dayOfWeek,
                             scheduleId = schedule.scheduleId,

@@ -32,7 +32,8 @@ class SchedulesRepository(private val database: AppDatabase) {
                 startAtMillis = e.startAtMillis,
                 endAtMillis = e.endAtMillis,
                 scheduleType = if (e.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT,
-                isCurrentlyActive = isActive
+                isCurrentlyActive = isActive,
+                temporaryImageUri = e.temporaryImage
             )
         }
     }
@@ -88,9 +89,11 @@ class SchedulesRepository(private val database: AppDatabase) {
         temporaryName: String,
         startAtMillis: Long,
         endAtMillis: Long,
-        selectedDays: Int ,
+        selectedDays: Int,
         scheduledAlarmsMetadata: String? = null,
-        scheduleType: ScheduleType
+        scheduleType: ScheduleType,
+        tempImage: String? = null,
+        originalImage: String? = null,
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
@@ -103,7 +106,9 @@ class SchedulesRepository(private val database: AppDatabase) {
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduledAlarmsMetadata = scheduledAlarmsMetadata,
-                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1
+                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
+                temporaryImage = tempImage,
+                originalImage = originalImage,
             )
         )
     }

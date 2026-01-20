@@ -10,6 +10,7 @@ import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.ui.screens.schedule.SchedulesViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import com.purnendu.contactly.utils.AndroidPermissionChecker
+import com.purnendu.contactly.utils.ImageStorageManager
 import com.purnendu.contactly.utils.PermissionChecker
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -52,11 +53,12 @@ val appModule = module {
     // ========== Managers ==========
     // ContactlyAlarmManager handles all alarm-related operations
     single { ContactlyAlarmManager(androidContext(), get(), get()) }
+    single { ImageStorageManager(androidContext()) }
     
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
     viewModel { MainActivityViewModel(get(), get()) }
-    viewModel { SchedulesViewModel(get(), get(), get(), get(), get()) }
+    viewModel { SchedulesViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
 

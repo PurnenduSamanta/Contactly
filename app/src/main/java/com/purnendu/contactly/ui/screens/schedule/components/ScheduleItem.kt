@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
+import com.purnendu.contactly.ui.components.SlidingImageCarousel
+import com.purnendu.contactly.ui.components.SlidingImageCarouselRect
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.AppThemeMode
@@ -166,39 +168,15 @@ private fun ListScheduleItem(
                             }
                         }
 
-                        // Avatar
-                        Box(
+                        // Avatar - Use carousel if temp image exists, otherwise original
+                        SlidingImageCarouselRect(
+                            originalImageUri = avatarUri,
+                            temporaryImageUri = schedule.temporaryImageUri,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(15.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            when {
-                                schedule.avatarResId != null -> {
-                                    Image(
-                                        painter = painterResource(id = schedule.avatarResId),
-                                        contentDescription = "Avatar for ${schedule.name}",
-                                        modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f, true),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                                !avatarUri.isNullOrBlank() -> {
-                                    AsyncImage(
-                                        model = avatarUri,
-                                        contentDescription = "Avatar for ${schedule.name}",
-                                        modifier = Modifier.width(110.dp).aspectRatio(ratio = 1.6f, true),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                                else -> {
-                                    Image(
-                                        modifier = Modifier.size(width = 119.dp, height = 58.dp),
-                                        painter = painterResource(id = R.drawable.avatar_placeholder),
-                                        contentDescription = "Avatar placeholder",
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            }
-                        }
+                                .width(110.dp)
+                                .aspectRatio(ratio = 1.6f, true),
+                            autoSlideIntervalMs = 3000L
+                        )
                     }
 
                     // Selected days display
@@ -315,41 +293,14 @@ private fun GridScheduleItem(
                     .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    when {
-                        schedule.avatarResId != null -> {
-                            Image(
-                                painter = painterResource(id = schedule.avatarResId),
-                                contentDescription = "Avatar for ${schedule.name}",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        !avatarUri.isNullOrBlank() -> {
-                            AsyncImage(
-                                model = avatarUri,
-                                contentDescription = "Avatar for ${schedule.name}",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                        else -> {
-                            Icon(
-                                painter = painterResource(id = R.drawable.avatar_placeholder),
-                                contentDescription = "Avatar placeholder",
-                                modifier = Modifier.size(50.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+                // Avatar - Use carousel for both original and temp images
+                SlidingImageCarousel(
+                    originalImageUri = avatarUri,
+                    temporaryImageUri = schedule.temporaryImageUri,
+                    modifier = Modifier,
+                    imageSize = Modifier.size(80.dp),
+                    autoSlideIntervalMs = 3000L
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 

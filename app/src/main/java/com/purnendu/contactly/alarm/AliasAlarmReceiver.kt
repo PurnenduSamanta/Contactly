@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,6 +12,7 @@ import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
 import android.content.ContentValues
+import android.net.Uri
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.notification.NotificationHelper
@@ -42,6 +44,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         val contactId = intent.getLongExtra(EXTRA_CONTACT_ID, -1L)
         val originalName = intent.getStringExtra(EXTRA_ORIGINAL_NAME) ?: return
         val temporaryName = intent.getStringExtra(EXTRA_TEMPORARY_NAME) ?: return
+        val tempImage = intent.getStringExtra(EXTRA_TEMPORARY_IMAGE)
+        val originalImage = intent.getStringExtra(EXTRA_ORIGINAL_IMAGE)
         val scheduleId = intent.getLongExtra(EXTRA_SCHEDULE_ID, -1L)
         val dayOfWeek = intent.getIntExtra(EXTRA_DAY_OF_WEEK, -1)
         val scheduleType = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
@@ -61,50 +65,57 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 val isApply = op == OP_APPLY
                 val nameToApply = if (isApply) temporaryName else originalName
 
-                    applyName(context, contactId, nameToApply)
+                //apply operation on the contact
+                applyContact(
+                    context= context,
+                    contactId= contactId,
+                    name= nameToApply,
+                    filePath = if(isApply) tempImage else originalImage
+                )
 
-                    val notificationsEnabled = try {
-                        appPreferences.notificationsEnabledFlow.first()
-                    } catch (e: Exception) {
-                        Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
-                        false // Default to disabled if read fails
-                    }
+              /*  val notificationsEnabled = try {
+                    appPreferences.notificationsEnabledFlow.first()
+                } catch (e: Exception) {
+                    Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
+                    false // Default to disabled if read fails
+                }
 
-                    // Show notification on Main thread (best practice for system APIs)
-                    if (notificationsEnabled) {
-                        withContext(Dispatchers.Main) {
-                            try {
-                                NotificationHelper.showAlarmNotification(
-                                    context = context,
-                                    originalName = originalName,
-                                    temporaryName = temporaryName,
-                                    isApply = isApply,
-                                    scheduleType = scheduleType
-                                )
-                            } catch (e: Exception) {
-                                Log.e("AliasAlarmReceiver", "Failed to show notification", e)
-                            }
-                        }
-                    }
-
-                    // For one-time schedules: delete from database (IO thread)
-                    if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
+                // Show notification on Main thread (best practice for system APIs)
+                if (notificationsEnabled) {
+                    withContext(Dispatchers.Main) {
                         try {
-                            schedulesRepo.deleteById(scheduleId)
-                            Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
+                            NotificationHelper.showAlarmNotification(
+                                context = context,
+                                originalName = originalName,
+                                temporaryName = temporaryName,
+                                isApply = isApply,
+                                scheduleType = scheduleType,
+                                contactImage = if(isApply) tempImage else originalImage
+                            )
                         } catch (e: Exception) {
-                            Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
+                            Log.e("AliasAlarmReceiver", "Failed to show notification", e)
                         }
                     }
+                }*/
 
-
-                    // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
-                    if (scheduleType == 1 && dayOfWeek >= 0) {
-                        rescheduleForNextWeek(context, intent, dayOfWeek)
+                // For one-time schedules: delete from database (IO thread)
+                if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
+                    try {
+                        schedulesRepo.deleteById(scheduleId)
+                        Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
+                    } catch (e: Exception) {
+                        Log.e("AliasAlarmReceiver", "Failed to delete one-time schedule: $scheduleId", e)
                     }
-                    
-                    // Notify UI to refresh active status
-                    AlarmEventBus.notifyAlarmFired(scheduleId, op)
+                }
+
+
+                // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
+                if (scheduleType == 1 && dayOfWeek >= 0) {
+                    rescheduleForNextWeek(context, intent, dayOfWeek)
+                }
+                
+                // Notify UI to refresh active status
+                AlarmEventBus.notifyAlarmFired(scheduleId, op)
             }
             catch (e: Throwable) {
                 Log.e("AliasAlarmReceiver", "Error processing alarm", e)
@@ -145,6 +156,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             putExtra(EXTRA_CONTACT_ID, originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L))
             putExtra(EXTRA_ORIGINAL_NAME, originalIntent.getStringExtra(EXTRA_ORIGINAL_NAME))
             putExtra(EXTRA_TEMPORARY_NAME, originalIntent.getStringExtra(EXTRA_TEMPORARY_NAME))
+            putExtra(EXTRA_ORIGINAL_IMAGE, originalIntent.getStringExtra(EXTRA_ORIGINAL_IMAGE))
+            putExtra(EXTRA_TEMPORARY_IMAGE, originalIntent.getStringExtra(EXTRA_TEMPORARY_IMAGE))
             putExtra(EXTRA_SCHEDULE_ID, originalIntent.getLongExtra(EXTRA_SCHEDULE_ID, -1L))
             putExtra(EXTRA_DAY_OF_WEEK, dayOfWeek)
             putExtra(EXTRA_SCHEDULE_TYPE, originalIntent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0)) // Default to ONE-TIME
@@ -245,42 +258,114 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         }
     }
 
-    private fun applyName(context: Context, contactId: Long, name: String) {
+    private fun applyContact(
+        context: Context,
+        contactId: Long,
+        name: String,
+        filePath:String? // <-- pass null if no image change
+    ) {
         val resolver = context.contentResolver
+
+        // 1️⃣ Get RAW_CONTACT_ID
         val rawId = resolver.query(
             ContactsContract.RawContacts.CONTENT_URI,
             arrayOf(ContactsContract.RawContacts._ID),
-            ContactsContract.RawContacts.CONTACT_ID + "=?",
+            "${ContactsContract.RawContacts.CONTACT_ID}=?",
             arrayOf(contactId.toString()),
             null
         )?.use { c ->
             if (c.moveToFirst()) c.getLong(0) else null
-        }
+        } ?: return
 
-        val values = ContentValues().apply {
+        // 2️⃣ Update or insert name
+        val nameValues = ContentValues().apply {
             put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
             put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
         }
 
-        val updated = resolver.update(
+        val nameUpdated = resolver.update(
             ContactsContract.Data.CONTENT_URI,
-            values,
-            ContactsContract.Data.CONTACT_ID + "=? AND " +
-                ContactsContract.Data.MIMETYPE + "=?",
+            nameValues,
+            "${ContactsContract.Data.CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
             arrayOf(
                 contactId.toString(),
                 ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
             )
         )
 
-        if (updated == 0 && rawId != null) {
-            val insertValues = ContentValues().apply {
+        if (nameUpdated == 0) {
+            val insertName = ContentValues().apply {
                 put(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                put(ContactsContract.Data.MIMETYPE,
+                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                 put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
                 put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
             }
-            resolver.insert(ContactsContract.Data.CONTENT_URI, insertValues)
+            resolver.insert(ContactsContract.Data.CONTENT_URI, insertName)
+        }
+
+        // 3️⃣ Update photo
+        if(filePath==null)
+            return
+
+        try {
+            // Read bytes from internal storage file
+            val file = java.io.File(filePath)
+            if (!file.exists()) {
+                Log.e("AliasAlarmReceiver", "Image file does not exist: $filePath")
+                return
+            }
+
+            val photoBytes = file.readBytes()
+
+            if (photoBytes.isEmpty()) {
+                Log.e("AliasAlarmReceiver", "Image file is empty: $filePath")
+                return
+            }
+
+
+            val photoUri = Uri.withAppendedPath(
+                ContentUris.withAppendedId(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    contactId
+                ),
+                ContactsContract.RawContacts.DisplayPhoto.CONTENT_DIRECTORY
+            )
+
+            resolver.openOutputStream(photoUri, "w")?.use { stream ->
+                stream.write(photoBytes)
+                stream.flush()
+            }
+
+
+            /*val photoValues = ContentValues().apply {
+                put(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+            }
+
+            val photoUpdated = resolver.update(
+                ContactsContract.Data.CONTENT_URI,
+                photoValues,
+                "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
+                arrayOf(
+                    rawId.toString(),
+                    ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                )
+            )
+
+            // 4️⃣ Insert photo if not exists
+            if (photoUpdated == 0) {
+                val insertPhoto = ContentValues().apply {
+                    put(ContactsContract.Data.RAW_CONTACT_ID, rawId)
+                    put(ContactsContract.Data.MIMETYPE,
+                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                    put(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+                    put(ContactsContract.CommonDataKinds.Photo.IS_SUPER_PRIMARY, 1)
+                }
+                resolver.insert(ContactsContract.Data.CONTENT_URI, insertPhoto)
+            }*/
+            Log.d("AliasAlarmReceiver", "Read ${photoBytes.size} bytes from file: $filePath")
+        }catch (e: SecurityException) {
+            Log.e("AliasAlarmReceiver", "SecurityException applying photo - check WRITE_CONTACTS permission", e)
         }
     }
 
@@ -292,6 +377,9 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         const val EXTRA_CONTACT_ID = "contactId"
         const val EXTRA_ORIGINAL_NAME = "originalName"
         const val EXTRA_TEMPORARY_NAME = "temporaryName"
+        const val EXTRA_TEMPORARY_IMAGE = "temporaryImage"
+
+        const val EXTRA_ORIGINAL_IMAGE = "originalImage"
         const val EXTRA_SCHEDULE_ID = "scheduleId"
         const val EXTRA_DAY_OF_WEEK = "dayOfWeek"
         const val EXTRA_SCHEDULE_TYPE = "scheduleType"

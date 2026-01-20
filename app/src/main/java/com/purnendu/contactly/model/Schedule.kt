@@ -13,5 +13,6 @@ data class Schedule(
     val startAtMillis: Long,
     val endAtMillis: Long,
     val scheduleType: ScheduleType,
-    val isCurrentlyActive: Boolean = false  // True when between APPLY and REVERT operations
+    val isCurrentlyActive: Boolean = false,  // True when between APPLY and REVERT operations
+    val temporaryImageUri: String? = null  // Optional URI for temporary contact image
 )

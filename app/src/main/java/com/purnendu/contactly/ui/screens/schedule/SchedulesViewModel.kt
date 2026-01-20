@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Schedules screen.
@@ -37,11 +38,16 @@ import kotlinx.coroutines.launch
  * 
  * This design makes the ViewModel fully testable without needing Android mocks.
  */
+import com.purnendu.contactly.utils.ImageStorageManager
+
+// ...
+
 class SchedulesViewModel(
     private val permissionChecker: PermissionChecker,
     private val schedulesRepo: SchedulesRepository,
     private val contactsRepo: ContactsRepository,
     private val contactlyAlarmManager: ContactlyAlarmManager,
+    private val imageStorageManager: ImageStorageManager,
     appPreferences: AppPreferences
 ) : ViewModel() {
 
@@ -103,37 +109,6 @@ class SchedulesViewModel(
             }
         }
     }
-
-    fun addSchedule(
-        contact: Contact,
-        scheduleId: Long,
-        temporaryName: String,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
-        scheduleType: ScheduleType
-    ) {
-        scheduleAlarms(
-            contact = contact,
-            scheduleId = scheduleId,
-            originalName = contact.name,
-            temporaryName = temporaryName,
-            startAtMillis = startAtMillis,
-            endAtMillis = endAtMillis,
-            selectedDays = selectedDays,
-            scheduleType = scheduleType,
-            isUpdating = false
-        )
-    }
-
-    fun deleteSchedule(schedule: Schedule) {
-        val id = schedule.id.toLongOrNull() ?: return
-        viewModelScope.launch {
-            contactlyAlarmManager.cancelScheduleAlarms(id)
-            schedulesRepo.deleteById(id)
-        }
-    }
-
     suspend fun loadScheduleEntity(id: Long): ScheduleEntity? = schedulesRepo.getById(id)
 
     fun contactForId(id: Long): Contact? = try {
@@ -141,35 +116,6 @@ class SchedulesViewModel(
     } catch (e: SecurityException) {
         null // Return null if contacts permission is not granted
     }
-
-    fun updateSchedule(
-        scheduleId: Long,
-        contact: Contact,
-        temporaryName: String,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
-        scheduleType: ScheduleType
-    ) {
-        viewModelScope.launch {
-            // First, cancel all existing alarms
-            contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
-            
-            // Then schedule new alarms
-            scheduleAlarms(
-                scheduleId = scheduleId,
-                contact = contact,
-                originalName = contact.name,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                scheduleType = scheduleType,
-                isUpdating = true
-            )
-        }
-    }
-
     fun checkCriticalPermissions() {
         val hasContactPermissions = permissionChecker.hasContactsPermission()
         _showContactPermissionDialog.value = !hasContactPermissions
@@ -191,11 +137,66 @@ class SchedulesViewModel(
         return permissionChecker.canScheduleExactAlarms()
     }
 
+    fun addSchedule(
+        contact: Contact,
+        scheduleId: Long,
+        temporaryName: String,
+        tempImage: String? ,
+        startAtMillis: Long,
+        endAtMillis: Long,
+        selectedDays: Int,
+        scheduleType: ScheduleType,
+        isEditing: Boolean
+    ) {
+        viewModelScope.launch {
+            if(isEditing)
+            {
+                // First, cancel all existing alarms
+                contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
+            }
+
+            // Save temporary image to internal storage (if URI provided)
+            val tempImagePath: String? = tempImage?.let { uriString -> imageStorageManager.saveTemporaryImage(scheduleId, uriString) }
+
+            // Save original contact's photo to internal storage
+            val originalImagePath: String? = contact.id?.let { contactId -> if(tempImage!=null) imageStorageManager.saveOriginalImage( scheduleId, contactId) else null}
+
+
+            // Then schedule new alarms
+            scheduleAlarms(
+                contact = contact,
+                scheduleId = scheduleId,
+                originalName = contact.name,
+                temporaryName = temporaryName,
+                tempImage = tempImagePath,
+                originalImage = originalImagePath,
+                startAtMillis = startAtMillis,
+                endAtMillis = endAtMillis,
+                selectedDays = selectedDays,
+                scheduleType = scheduleType,
+                isUpdating = isEditing
+            )
+        }
+    }
+    fun deleteSchedule(schedule: Schedule) {
+        val id = schedule.id.toLongOrNull() ?: return
+        viewModelScope.launch {
+            contactlyAlarmManager.cancelScheduleAlarms(id)
+            schedulesRepo.deleteById(id)
+            // Clean up stored images
+            withContext(Dispatchers.IO) {
+                imageStorageManager.deleteImagesForSchedule( id)
+            }
+        }
+    }
+
     private fun scheduleAlarms(
         contact: Contact,
         scheduleId: Long,
         originalName: String,
         temporaryName: String,
+        tempImage: String?,
+        originalImage: String?,
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
@@ -207,6 +208,8 @@ class SchedulesViewModel(
             scheduleId = scheduleId,
             originalName = originalName,
             temporaryName = temporaryName,
+            tempImage = tempImage,
+            originalImage = originalImage,
             startAtMillis = startAtMillis,
             endAtMillis = endAtMillis,
             selectedDays = selectedDays,
@@ -220,6 +223,8 @@ class SchedulesViewModel(
                     scheduleId = scheduleId,
                     originalName = originalName,
                     temporaryName = temporaryName,
+                    tempImage = tempImage,
+                    originalImage = originalImage,
                     startAtMillis = nearestStartAtMillis,
                     endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
@@ -231,6 +236,8 @@ class SchedulesViewModel(
                     scheduleId = scheduleId,
                     contact = contact,
                     temporaryName = temporaryName,
+                    tempImage = tempImage,
+                    originalImage = originalImage,
                     startAtMillis = nearestStartAtMillis,
                     endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
@@ -247,6 +254,8 @@ class SchedulesViewModel(
         scheduleId: Long,
         contact: Contact,
         temporaryName: String,
+        tempImage: String?,
+        originalImage: String?,
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
@@ -254,6 +263,7 @@ class SchedulesViewModel(
         alarmMetadataJson: String
     ) {
         val id = contact.id ?: return
+        // Get original image URI from contact for restoration during REVERT
         viewModelScope.launch(Dispatchers.IO) {
             schedulesRepo.create(
                 scheduleId = scheduleId,
@@ -265,7 +275,9 @@ class SchedulesViewModel(
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduledAlarmsMetadata = alarmMetadataJson,
-                scheduleType = scheduleType
+                scheduleType = scheduleType,
+                tempImage = tempImage,
+                originalImage = originalImage
             )
         }
     }
@@ -274,6 +286,8 @@ class SchedulesViewModel(
         scheduleId: Long,
         originalName: String,
         temporaryName: String,
+        tempImage: String?,
+        originalImage: String?,
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
@@ -285,11 +299,13 @@ class SchedulesViewModel(
             val updated = current.copy(
                 originalName = originalName,
                 temporaryName = temporaryName,
+                temporaryImage = tempImage,
+                originalImage = originalImage,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
-                scheduledAlarmsMetadata = alarmMetadataJson
+                scheduledAlarmsMetadata = alarmMetadataJson,
             )
             schedulesRepo.update(updated)
         }

@@ -5,12 +5,17 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.purnendu.contactly.R
 import kotlin.random.Random
+import androidx.core.net.toUri
 
 /**
  * Helper class to show fun notifications when alarms trigger
@@ -99,7 +104,8 @@ object NotificationHelper {
         originalName: String,
         temporaryName: String,
         isApply: Boolean, // true = APPLY (change name), false = REVERT (restore name)
-        scheduleType: Int // 0 = ONE_TIME, 1 = REPEAT
+        scheduleType: Int, // 0 = ONE_TIME, 1 = REPEAT
+        contactImage: String?
     ) {
         if (!hasNotificationPermission(context)) return
         
@@ -116,8 +122,7 @@ object NotificationHelper {
         // Build notification content
         val scheduleTypeText = if (scheduleType == 0) "One-Time" else "Repeat"
         val actionText = if (isApply) "changed to" else "restored to"
-        
-        val title = funnyMessage
+
         val content = if (isApply) {
             "\"$originalName\" → \"$temporaryName\" 📝 ($scheduleTypeText)"
         } else {
@@ -139,15 +144,24 @@ object NotificationHelper {
             append("Schedule: $scheduleTypeText")
         }
         
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        // Try to load contact image for large icon
+        val largeIcon = loadContactImage(context, contactImage)
+        
+        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
-            .setContentTitle(title)
+            .setContentTitle(funnyMessage)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(expandedText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true) // Dismissible
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .build()
+        
+        // Add large icon if available
+        if (largeIcon != null) {
+            notificationBuilder.setLargeIcon(largeIcon)
+        }
+        
+        val notification = notificationBuilder.build()
         
         // Generate unique notification ID based on timestamp
         val notificationId = System.currentTimeMillis().toInt()
@@ -157,5 +171,44 @@ object NotificationHelper {
         } catch (e: SecurityException) {
             // Permission not granted, silently fail
         }
+    }
+    
+    /**
+     * Load contact image from URI as Bitmap for notification large icon
+     */
+    private fun loadContactImage(context: Context, contactImage: String?): Bitmap? {
+        if (contactImage.isNullOrBlank()) return null
+        
+        return try {
+            val uri = contactImage.toUri()
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                // Decode with sampling to get a smaller image for notification
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                // First pass: get dimensions
+                BitmapFactory.decodeStream(inputStream, null, options)
+            }
+            
+            // Second pass: decode actual bitmap
+            context.contentResolver.openInputStream(contactImage.toUri())?.use { inputStream ->
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = calculateInSampleSize(128, 128) // Target 128x128 for notification
+                }
+                BitmapFactory.decodeStream(inputStream, null, options)
+            }
+        } catch (e: Exception) {
+            Log.e("NotificationHelper", "Failed to load contact image: $contactImage", e)
+            null
+        }
+    }
+    
+    /**
+     * Calculate sample size for bitmap decoding
+     */
+    private fun calculateInSampleSize(targetWidth: Int, targetHeight: Int): Int {
+        // For notification icons, we want a reasonable size
+        // This is a simple calculation; the actual image dimensions aren't known here
+        return 2 // Sample by factor of 2
     }
 }

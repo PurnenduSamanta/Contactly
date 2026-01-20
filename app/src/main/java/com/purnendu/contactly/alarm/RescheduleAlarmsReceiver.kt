@@ -77,6 +77,8 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
                             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
                             putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
+                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, e.temporaryImage)
+                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
@@ -108,6 +110,8 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                             putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
                             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
                             putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
+                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, e.temporaryImage)
+                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
