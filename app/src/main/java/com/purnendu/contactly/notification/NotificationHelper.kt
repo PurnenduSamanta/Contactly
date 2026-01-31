@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -15,17 +14,16 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.purnendu.contactly.R
 import kotlin.random.Random
-import androidx.core.net.toUri
 
 /**
  * Helper class to show fun notifications when alarms trigger
  */
 object NotificationHelper {
-    
+
     private const val CHANNEL_ID = "contactly_alarm_notifications"
     private const val CHANNEL_NAME = "Schedule Notifications"
     private const val CHANNEL_DESCRIPTION = "Notifications when contact names are changed"
-    
+
     // Funny messages for APPLY (name change)
     private val applyMessages = listOf(
         "🎭 Identity swap activated!",
@@ -44,7 +42,7 @@ object NotificationHelper {
         "🦹 Superhero mode: ENGAGED",
         "🎭 Plot twist incoming!"
     )
-    
+
     // Funny messages for REVERT (name restore)
     private val revertMessages = listOf(
         "🎭 Back to reality!",
@@ -63,7 +61,7 @@ object NotificationHelper {
         "🦹 Superhero needs rest!",
         "🎭 Plot twist resolved!"
     )
-    
+
     /**
      * Create the notification channel (required for Android O+)
      */
@@ -75,12 +73,13 @@ object NotificationHelper {
                 enableVibration(true)
                 setShowBadge(true)
             }
-            
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
+
     /**
      * Check if notification permission is granted (Android 13+)
      */
@@ -94,7 +93,7 @@ object NotificationHelper {
             true // Permission not needed for older Android versions
         }
     }
-    
+
     /**
      * Show a fun notification when an alarm triggers
      * Note: Caller should check if notifications are enabled before calling this
@@ -108,17 +107,17 @@ object NotificationHelper {
         contactImage: String?
     ) {
         if (!hasNotificationPermission(context)) return
-        
+
         // Create channel if not exists
         createNotificationChannel(context)
-        
+
         // Select random funny message
         val funnyMessage = if (isApply) {
             applyMessages[Random.nextInt(applyMessages.size)]
         } else {
             revertMessages[Random.nextInt(revertMessages.size)]
         }
-        
+
         // Build notification content
         val scheduleTypeText = if (scheduleType == 0) "One-Time" else "Repeat"
         val actionText = if (isApply) "changed to" else "restored to"
@@ -128,7 +127,7 @@ object NotificationHelper {
         } else {
             "\"$temporaryName\" → \"$originalName\" 📝 ($scheduleTypeText)"
         }
-        
+
         val expandedText = buildString {
             append("Contact name $actionText: ")
             if (isApply) {
@@ -143,10 +142,10 @@ object NotificationHelper {
             appendLine()
             append("Schedule: $scheduleTypeText")
         }
-        
+
         // Try to load contact image for large icon
-        val largeIcon = loadContactImage(context, contactImage)
-        
+        val largeIcon = loadContactImage(contactImage)
+
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(funnyMessage)
@@ -155,60 +154,48 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true) // Dismissible
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-        
+
         // Add large icon if available
         if (largeIcon != null) {
             notificationBuilder.setLargeIcon(largeIcon)
         }
-        
+
         val notification = notificationBuilder.build()
-        
+
         // Generate unique notification ID based on timestamp
         val notificationId = System.currentTimeMillis().toInt()
-        
+
         try {
             NotificationManagerCompat.from(context).notify(notificationId, notification)
         } catch (e: SecurityException) {
             // Permission not granted, silently fail
         }
     }
-    
+
     /**
-     * Load contact image from URI as Bitmap for notification large icon
+     * Load contact image from file path as Bitmap for notification large icon
      */
-    private fun loadContactImage(context: Context, contactImage: String?): Bitmap? {
+    private fun loadContactImage(contactImage: String?): Bitmap? {
         if (contactImage.isNullOrBlank()) return null
-        
+
         return try {
-            val uri = contactImage.toUri()
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                // Decode with sampling to get a smaller image for notification
-                val options = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                }
-                // First pass: get dimensions
-                BitmapFactory.decodeStream(inputStream, null, options)
+            val file = java.io.File(contactImage)
+            if (!file.exists()) {
+                Log.w("NotificationHelper", "Image file does not exist: $contactImage")
+                return null
             }
-            
-            // Second pass: decode actual bitmap
-            context.contentResolver.openInputStream(contactImage.toUri())?.use { inputStream ->
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = calculateInSampleSize(128, 128) // Target 128x128 for notification
-                }
+
+            // Decode bitmap with sampling for notification
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 2 // Sample by factor of 2 to reduce memory usage
+            }
+
+            file.inputStream().use { inputStream ->
                 BitmapFactory.decodeStream(inputStream, null, options)
             }
         } catch (e: Exception) {
             Log.e("NotificationHelper", "Failed to load contact image: $contactImage", e)
             null
         }
-    }
-    
-    /**
-     * Calculate sample size for bitmap decoding
-     */
-    private fun calculateInSampleSize(targetWidth: Int, targetHeight: Int): Int {
-        // For notification icons, we want a reasonable size
-        // This is a simple calculation; the actual image dimensions aren't known here
-        return 2 // Sample by factor of 2
     }
 }
