@@ -153,6 +153,9 @@ class SchedulesViewModel(
             {
                 // First, cancel all existing alarms
                 contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
+                
+                // Delete old images to avoid unnecessary storage
+                imageStorageManager.deleteImagesForSchedule(scheduleId)
             }
 
             // Save temporary image to internal storage (if URI provided)

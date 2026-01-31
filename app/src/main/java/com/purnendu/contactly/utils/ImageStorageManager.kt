@@ -99,28 +99,7 @@ class ImageStorageManager(private val context: Context,) {
             null
         }
     }
-    
-    /**
-     * Read image bytes from internal storage file
-     * @return Byte array of the image, or null if file doesn't exist or failed
-     */
-    fun readImageBytes(filePath: String): ByteArray? {
-        return try {
-            val file = File(filePath)
-            if (!file.exists()) {
-                Log.e(TAG, "Image file does not exist: $filePath")
-                return null
-            }
-            
-            val bytes = file.readBytes()
-            Log.d(TAG, "Read image from: $filePath, size: ${bytes.size}")
-            bytes
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to read image from: $filePath", e)
-            null
-        }
-    }
-    
+
     /**
      * Delete images for a schedule (cleanup when schedule is deleted)
      */

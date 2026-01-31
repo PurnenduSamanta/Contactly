@@ -37,6 +37,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
     private val schedulesRepo: SchedulesRepository by inject()
     private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val appPreferences: AppPreferences by inject()
+    private val imageStorageManager: com.purnendu.contactly.utils.ImageStorageManager by inject()
     
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
@@ -73,7 +74,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                     filePath = if(isApply) tempImage else originalImage
                 )
 
-              /*  val notificationsEnabled = try {
+                val notificationsEnabled = try {
                     appPreferences.notificationsEnabledFlow.first()
                 } catch (e: Exception) {
                     Log.e("AliasAlarmReceiver", "Failed to read notification preference", e)
@@ -96,11 +97,16 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                             Log.e("AliasAlarmReceiver", "Failed to show notification", e)
                         }
                     }
-                }*/
+                }
 
                 // For one-time schedules: delete from database (IO thread)
                 if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
                     try {
+                        // Delete associated images first
+                        imageStorageManager.deleteImagesForSchedule(scheduleId)
+                        Log.d("AliasAlarmReceiver", "Deleted images for one-time schedule: $scheduleId")
+                        
+                        // Then delete from database
                         schedulesRepo.deleteById(scheduleId)
                         Log.d("AliasAlarmReceiver", "Deleted one-time schedule: $scheduleId")
                     } catch (e: Exception) {
@@ -327,7 +333,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             val photoUri = Uri.withAppendedPath(
                 ContentUris.withAppendedId(
                     ContactsContract.RawContacts.CONTENT_URI,
-                    contactId
+                    rawId
                 ),
                 ContactsContract.RawContacts.DisplayPhoto.CONTENT_DIRECTORY
             )
@@ -337,32 +343,6 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 stream.flush()
             }
 
-
-            /*val photoValues = ContentValues().apply {
-                put(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
-            }
-
-            val photoUpdated = resolver.update(
-                ContactsContract.Data.CONTENT_URI,
-                photoValues,
-                "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
-                arrayOf(
-                    rawId.toString(),
-                    ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                )
-            )
-
-            // 4️⃣ Insert photo if not exists
-            if (photoUpdated == 0) {
-                val insertPhoto = ContentValues().apply {
-                    put(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                    put(ContactsContract.Data.MIMETYPE,
-                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-                    put(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
-                    put(ContactsContract.CommonDataKinds.Photo.IS_SUPER_PRIMARY, 1)
-                }
-                resolver.insert(ContactsContract.Data.CONTENT_URI, insertPhoto)
-            }*/
             Log.d("AliasAlarmReceiver", "Read ${photoBytes.size} bytes from file: $filePath")
         }catch (e: SecurityException) {
             Log.e("AliasAlarmReceiver", "SecurityException applying photo - check WRITE_CONTACTS permission", e)
