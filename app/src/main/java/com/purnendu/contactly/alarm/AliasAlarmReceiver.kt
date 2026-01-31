@@ -62,6 +62,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 // This ensures that after alarm firing, the "Active" status clears immediately
                 contactlyAlarmManager.cancelSpecificAlarm(contactId, dayOfWeek, op)
 
+
                 // Derive the name to apply based on operation
                 val isApply = op == OP_APPLY
                 val nameToApply = if (isApply) temporaryName else originalName
@@ -71,7 +72,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                     context= context,
                     contactId= contactId,
                     name= nameToApply,
-                    filePath = if(isApply) tempImage else originalImage
+                    filePath = if(isApply) tempImage else originalImage,
+                    shouldRemovePhoto = !isApply && originalImage == null // Remove photo when reverting and no original image
                 )
 
                 val notificationsEnabled = try {
@@ -268,7 +270,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         context: Context,
         contactId: Long,
         name: String,
-        filePath:String? // <-- pass null if no image change
+        filePath: String?, // File path to new image, or null
+        shouldRemovePhoto: Boolean = false // If true and filePath is null, explicitly remove the photo
     ) {
         val resolver = context.contentResolver
 
@@ -310,10 +313,30 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             resolver.insert(ContactsContract.Data.CONTENT_URI, insertName)
         }
 
-        // 3️⃣ Update photo
-        if(filePath==null)
-            return
+        // 3️⃣ Handle photo
+        if (filePath == null) {
+            // If shouldRemovePhoto is true, explicitly remove the photo
+            if (shouldRemovePhoto) {
+                try {
+                    // Delete the photo data row - the proper Android way
+                    val rowsDeleted = resolver.delete(
+                        ContactsContract.Data.CONTENT_URI,
+                        "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
+                        arrayOf(
+                            rawId.toString(),
+                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                        )
+                    )
 
+                    Log.d("AliasAlarmReceiver", "Removed photo for contact: $contactId (rows deleted: $rowsDeleted)")
+                } catch (e: Exception) {
+                    Log.e("AliasAlarmReceiver", "Failed to remove photo", e)
+                }
+            }
+            return
+        }
+
+        // 4️⃣ Apply photo from file
         try {
             // Read bytes from internal storage file
             val file = java.io.File(filePath)
