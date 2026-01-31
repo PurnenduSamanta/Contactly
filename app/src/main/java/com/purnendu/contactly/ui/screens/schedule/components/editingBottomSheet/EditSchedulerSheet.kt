@@ -1,9 +1,22 @@
 package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
-import android.net.Uri
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -185,11 +198,7 @@ fun EditScheduleSheet(
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
-                Text(
-                    text = "Add a custom image during the scheduled period",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
+
                 Spacer(Modifier.height(8.dp))
 
                 TemporaryImagePicker(
@@ -308,92 +317,176 @@ private fun TemporaryImagePicker(
     )
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                if (hasImage) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                }
+            )
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
         // Image container with add/preview
         Box(
             modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(
-                    width = if (hasImage) 3.dp else 2.dp,
+                .size(80.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(
                     brush = if (hasImage) borderGradient else Brush.linearGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.outline,
-                            MaterialTheme.colorScheme.outline
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.surfaceVariant
                         )
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                    )
                 )
-                .clickable { onPickImage() }
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .padding(3.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .clickable(
+                    onClick = onPickImage,
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                )
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
-            if (hasImage) {
-                AsyncImage(
-                    model = imageUri,
-                    contentDescription = "Temporary image preview",
-                    modifier = Modifier
-                        .size(66.dp)
-                        .clip(RoundedCornerShape(14.dp)),
-                    contentScale = ContentScale.Crop,
-                    error = painterResource(id = R.drawable.avatar_placeholder)
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add temporary image",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
-                )
+            AnimatedContent(
+                targetState = hasImage,
+                transitionSpec = {
+                    fadeIn(
+                        animationSpec = tween(300)
+                    ) + scaleIn(
+                        initialScale = 0.8f,
+                        animationSpec = spring(
+                            dampingRatio = DampingRatioMediumBouncy
+                        )
+                    ) togetherWith fadeOut(
+                        animationSpec = tween(200)
+                    ) + scaleOut(targetScale = 0.8f)
+                },
+                label = "image_animation"
+            ) { hasImg ->
+                if (hasImg) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Temporary image preview",
+                        modifier = Modifier
+                            .size(74.dp)
+                            .clip(RoundedCornerShape(17.dp)),
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.avatar_placeholder)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(74.dp)
+                            .clip(RoundedCornerShape(17.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add temporary image",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(16.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
-            if (hasImage) {
-                Text(
-                    text = "Image selected",
-                    color = Color(0xFF7C4DFF),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = "Tap to change",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            } else {
-                Text(
-                    text = "Tap to select image",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = "From gallery",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    fontSize = 12.sp
-                )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            AnimatedContent(
+                targetState = hasImage,
+                transitionSpec = {
+                    fadeIn() + slideInVertically { -it / 2 } togetherWith
+                            fadeOut() + slideOutVertically { it / 2 }
+                },
+                label = "text_animation"
+            ) { hasImg ->
+                Column {
+                    if (hasImg) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF7C4DFF))
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Image Selected",
+                                color = Color(0xFF7C4DFF),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                letterSpacing = 0.2.sp
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Tap to change or remove",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            letterSpacing = 0.1.sp
+                        )
+                    } else {
+                        Text(
+                            text = "Add Temporary Image",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp,
+                            letterSpacing = 0.2.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Choose from gallery",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            letterSpacing = 0.1.sp
+                        )
+                    }
+                }
             }
         }
 
         // Remove button (only show if image is selected)
-        if (hasImage) {
+        AnimatedVisibility(
+            visible = hasImage,
+            enter = fadeIn() + scaleIn(
+                animationSpec = spring(
+                    dampingRatio = DampingRatioMediumBouncy
+                )
+            ),
+            exit = fadeOut() + scaleOut()
+        ) {
             IconButton(
                 onClick = onRemoveImage,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.errorContainer,
+                                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Remove temporary image",
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
