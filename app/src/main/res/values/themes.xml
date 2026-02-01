@@ -2,7 +2,6 @@
 <resources>
 
     <style name="Theme.Contactly" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.Contactly.Splash" parent="Theme.SplashScreen">

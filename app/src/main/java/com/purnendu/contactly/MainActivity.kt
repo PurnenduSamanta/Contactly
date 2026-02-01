@@ -36,9 +36,11 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.purnendu.contactly.ui.screens.Screen
@@ -133,7 +135,24 @@ class MainActivity : FragmentActivity() {
             
             if (isBiometricCheckPassed) {
                 val themeMode by settingsViewModel.theme.collectAsStateWithLifecycle()
-                ContactlyTheme(appThemeMode = themeMode) { ContactlyApp() }
+                ContactlyTheme(appThemeMode = themeMode) {
+                    // Determine if current theme is dark based on the resolved theme mode
+                    val isDarkTheme = when (themeMode) {
+                        com.purnendu.contactly.utils.AppThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+                        com.purnendu.contactly.utils.AppThemeMode.DARK -> true
+                        com.purnendu.contactly.utils.AppThemeMode.LIGHT -> false
+                    }
+                    
+                    // Update status bar appearance: use dark icons in light mode, light icons in dark mode
+                    val useDarkIcons = !isDarkTheme
+                    SideEffect {
+                        WindowCompat.getInsetsController(window, window.decorView).apply {
+                            isAppearanceLightStatusBars = useDarkIcons
+                            isAppearanceLightNavigationBars = useDarkIcons
+                        }
+                    }
+                    ContactlyApp()
+                }
             }
         }
     }
