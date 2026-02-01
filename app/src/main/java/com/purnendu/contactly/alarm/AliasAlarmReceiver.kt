@@ -352,7 +352,22 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 return
             }
 
+            // First, delete existing photo to ensure clean update
+            try {
+                val rowsDeleted = resolver.delete(
+                    ContactsContract.Data.CONTENT_URI,
+                    "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
+                    arrayOf(
+                        rawId.toString(),
+                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                    )
+                )
+                Log.d("AliasAlarmReceiver", "Deleted old photo entries: $rowsDeleted")
+            } catch (e: Exception) {
+                Log.w("AliasAlarmReceiver", "Could not delete old photo (may not exist): ${e.message}")
+            }
 
+            // Now write the new photo
             val photoUri = Uri.withAppendedPath(
                 ContentUris.withAppendedId(
                     ContactsContract.RawContacts.CONTENT_URI,
@@ -366,7 +381,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 stream.flush()
             }
 
-            Log.d("AliasAlarmReceiver", "Read ${photoBytes.size} bytes from file: $filePath")
+            Log.d("AliasAlarmReceiver", "Successfully wrote ${photoBytes.size} bytes from file: $filePath")
         }catch (e: SecurityException) {
             Log.e("AliasAlarmReceiver", "SecurityException applying photo - check WRITE_CONTACTS permission", e)
         }
