@@ -418,21 +418,44 @@ fun SettingsScreen(
                 )
             }
 
-           /* // Terms Row
+            // Share App Row
             item {
                 SettingsRow(
-                    name = stringResource(id = R.string.row_terms),
+                    name = "Share App",
                     value = null
-                )
-                {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://example.com/terms")
-                    )
-                    context.startActivity(intent)
+                ) {
+                    val packageName = context.packageName
+                    try {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(
+                                Intent.EXTRA_SUBJECT,
+                                "Check out Contactly!"
+                            )
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Hey! I'm using Contactly to temporarily change contact names. It's really fun! 🎭\n\n" +
+                                "Download it here: https://play.google.com/store/apps/details?id=$packageName"
+                            )
+                        }
+                        context.startActivity(
+                            Intent.createChooser(shareIntent, "Share Contactly via")
+                        )
+                    } catch (e: Exception) {
+                        // Fallback: Open Play Store if share fails
+                        try {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                "https://play.google.com/store/apps/details?id=$packageName".toUri()
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            // Silently fail if both attempts fail
+                            e.printStackTrace()
+                        }
+                    }
                 }
-            }*/
-
+            }
 
             if(BuildConfig.DEBUG)
             {
