@@ -61,6 +61,7 @@ import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
 import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
 import com.purnendu.contactly.utils.BiometricHelper
+import com.purnendu.contactly.utils.isNetworkAvailable
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -247,9 +248,11 @@ class MainActivity : FragmentActivity() {
                 composable<Screen.Settings> { 
                     SettingsScreen(
                         onNavigateToFeedback = {
+                            if(isNetworkAvailable(context = this@MainActivity))
                             navController.navigate(Screen.Feedback)
                         },
                         onNavigateToPrivacyPolicy = {
+                            if(isNetworkAvailable(context = this@MainActivity))
                             navController.navigate(Screen.PrivacyPolicy)
                         }
                     ) 
