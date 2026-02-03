@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,6 +80,7 @@ fun EditScheduleSheet(
     selectedDays: Set<Int> = setOf(0, 1, 2, 3, 4, 5, 6),  // Default: all days
     scheduleType: ScheduleType = ScheduleType.ONE_TIME,
     error: String?,
+    isSaving: Boolean,
     onErrorCardDismiss: () -> Unit,
     onTemporaryNameChange: (String) -> Unit,
     onTemporaryImageClick: () -> Unit,  // NEW: Callback to open image picker
@@ -288,10 +291,17 @@ fun EditScheduleSheet(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            stringResource(id = R.string.action_save),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        if(isSaving)
+                        {
+                            CircularProgressIndicator()
+                        }
+                        else
+                        {
+                            Text(
+                                stringResource(id = R.string.action_save),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
                 }
 
@@ -315,6 +325,8 @@ private fun TemporaryImagePicker(
     val borderGradient = Brush.linearGradient(
         colors = listOf(Color(0xFF7C4DFF), Color(0xFFB388FF)) // Purple gradient for temp image
     )
+
+    val mutableInteractionSource = remember { MutableInteractionSource() }
 
     Row(
         modifier = Modifier
@@ -349,7 +361,7 @@ private fun TemporaryImagePicker(
                 .clickable(
                     onClick = onPickImage,
                     indication = null,
-                    interactionSource = MutableInteractionSource()
+                    interactionSource = mutableInteractionSource
                 )
                 .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
@@ -500,6 +512,7 @@ fun EditScheduleSheetPreview() {
     EditScheduleSheet(
         contact = Contact("Purnendu", "9614472290", null),
         error = null,
+        isSaving = false,
         onErrorCardDismiss = {},
         temporaryName = "Joy",
         temporaryImageUri = null,

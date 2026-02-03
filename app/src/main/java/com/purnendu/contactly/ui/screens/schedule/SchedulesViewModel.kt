@@ -148,7 +148,7 @@ class SchedulesViewModel(
         scheduleType: ScheduleType,
         isEditing: Boolean
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if(isEditing)
             {
                 // First, cancel all existing alarms

@@ -100,7 +100,6 @@ import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.DayUtils
 import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.ImageStorageManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -108,6 +107,7 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
+import com.purnendu.contactly.utils.validateDeviceTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -126,6 +126,7 @@ fun SchedulesScreen(
     // View mode preference from ViewModel
     val viewMode by schedulesViewModel.viewMode.collectAsStateWithLifecycle()
 
+    var isSaving by remember { mutableStateOf(false) }
     var showContactSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
     var selectedContact by remember { mutableStateOf<Contact?>(null) }
@@ -528,6 +529,7 @@ fun SchedulesScreen(
             endTime = if(endMillis==0L) "" else formatter.format(endMillis),
             selectedDays = selectedDays,
             scheduleType = scheduleType,
+            isSaving = isSaving,
             onTemporaryNameChange = { temporaryName = it },
             onTemporaryImageClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             onTemporaryImageRemove = { temporaryImage = null },
@@ -547,120 +549,138 @@ fun SchedulesScreen(
                 schedulesViewModel.clearError()
             },
             onSave = {
-                val contact = selectedContact ?: return@EditScheduleSheet
+                coroutineScope.launch {
 
-                if(temporaryName.isEmpty() || temporaryName.isBlank())
-                {
-                    schedulesViewModel.showError("Temporary name can not be empty")
+                    isSaving = true
 
-                    return@EditScheduleSheet
-                }
-
-                if(startMillis==0L)
-                {
-                    schedulesViewModel.showError("Start time can not be empty")
-
-                    return@EditScheduleSheet
-                }
-
-                if(endMillis==0L)
-                {
-                    schedulesViewModel.showError("End time can not be empty")
-
-                    return@EditScheduleSheet
-                }
-
-                // Extract time-of-day only (ignore date) for comparison
-                val startCal = Calendar.getInstance().apply { timeInMillis = startMillis }
-                val endCal = Calendar.getInstance().apply { timeInMillis = endMillis }
-                val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
-                val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
-
-                if(startTimeOfDay == endTimeOfDay)
-                {
-                    schedulesViewModel.showError("End time and start time can not be same")
-
-                    return@EditScheduleSheet
-                }
-
-                // End time must be greater than start time (no crossing midnight allowed)
-                // Schedules must be within a single 24-hour day
-                if(endTimeOfDay < startTimeOfDay)
-                {
-                    schedulesViewModel.showError("End time must be after start time")
-
-                    return@EditScheduleSheet
-                }
-
-                if(selectedDays.isEmpty())
-                {
-                    schedulesViewModel.showError("Select at least one day")
-
-                    return@EditScheduleSheet
-                }
-
-                val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
-                if (!exactOk)
-                {
-                    Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
-                    val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    context.startActivity(i)
-                    return@EditScheduleSheet
-                }
-                
-                // Lambda to perform the actual save operation with given times
-                val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
-                    val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
-                    val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
-                    
-                    // Generate scheduleId for new schedules (needed for image file naming)
-                    val scheduleIdToUse = existingScheduleId ?: abs(UUID.randomUUID().mostSignificantBits)
-
-                    schedulesViewModel.addSchedule(
-                        contact = contact,
-                        scheduleId = existingScheduleId ?: scheduleIdToUse,
-                        temporaryName = temporaryName,
-                        tempImage = temporaryImage,
-                        startAtMillis = saveStartMillis,
-                        endAtMillis = saveEndMillis,
-                        selectedDays = selectedDaysBitmask,
-                        scheduleType = scheduleType,
-                        isEditing = existingScheduleId != null
-                    )
-                    if (existingScheduleId != null) {
-                        Toast.makeText(context, context.getString(R.string.ScheduleUpdated), Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, context.getString(R.string.toast_schedule_saved), Toast.LENGTH_SHORT).show()
+                    if(!validateDeviceTime(context).isValid)
+                    {
+                        schedulesViewModel.showError(validateDeviceTime(context).errorMessage.toString())
+                        isSaving=false
+                        return@launch
                     }
-                    showEditSheet = false
-                    showContactSheet = false
-                    temporaryImage = null  // Clear temp image after save
-                }
-                
-                // Check if start time is in the past (for today's selected day)
-                val now = Calendar.getInstance()
-                val currentTimeOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-                val todayDayIndex = now.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday, 1 = Monday, etc.
-                
-                // Check if today is selected and start time is in the past
-                val isTodaySelected = selectedDays.contains(todayDayIndex)
-                val isStartTimeInPast = startTimeOfDay < currentTimeOfDay
-                
-                if (isTodaySelected && isStartTimeInPast) {
-                    // Show confirmation dialog for past time
-                    // Note: calculateNextOccurrencePair automatically handles past times
-                    // by scheduling to next week, so we just need to inform the user
-                    confirmationDialogState = ConfirmationDialogState.PastTimeSchedule(
-                        onConfirm = {
-                            // Both ONE_TIME and REPEAT use same logic now
-                            // calculateNextOccurrencePair handles past time automatically
-                            performSaveWithTimes(startMillis, endMillis)
+
+                    val contact = selectedContact ?: return@launch
+
+                    if(temporaryName.isEmpty() || temporaryName.isBlank())
+                    {
+                        schedulesViewModel.showError("Temporary name can not be empty")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    if(startMillis==0L)
+                    {
+                        schedulesViewModel.showError("Start time can not be empty")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    if(endMillis==0L)
+                    {
+                        schedulesViewModel.showError("End time can not be empty")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    // Extract time-of-day only (ignore date) for comparison
+                    val startCal = Calendar.getInstance().apply { timeInMillis = startMillis }
+                    val endCal = Calendar.getInstance().apply { timeInMillis = endMillis }
+                    val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
+                    val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
+
+                    if(startTimeOfDay == endTimeOfDay)
+                    {
+                        schedulesViewModel.showError("End time and start time can not be same")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    // End time must be greater than start time (no crossing midnight allowed)
+                    // Schedules must be within a single 24-hour day
+                    if(endTimeOfDay < startTimeOfDay)
+                    {
+                        schedulesViewModel.showError("End time must be after start time")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    if(selectedDays.isEmpty())
+                    {
+                        schedulesViewModel.showError("Select at least one day")
+                        isSaving=false
+                        return@launch
+                    }
+
+                    val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
+                    if (!exactOk)
+                    {
+                        Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
+                        val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        context.startActivity(i)
+                        isSaving=false
+                        return@launch
+                    }
+
+                    // Lambda to perform the actual save operation with given times
+                    val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
+                        val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
+                        val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
+
+                        // Generate scheduleId for new schedules (needed for image file naming)
+                        val scheduleIdToUse = existingScheduleId ?: abs(UUID.randomUUID().mostSignificantBits)
+
+                        schedulesViewModel.addSchedule(
+                            contact = contact,
+                            scheduleId = existingScheduleId ?: scheduleIdToUse,
+                            temporaryName = temporaryName,
+                            tempImage = temporaryImage,
+                            startAtMillis = saveStartMillis,
+                            endAtMillis = saveEndMillis,
+                            selectedDays = selectedDaysBitmask,
+                            scheduleType = scheduleType,
+                            isEditing = existingScheduleId != null
+                        )
+                        if (existingScheduleId != null) {
+                            Toast.makeText(context, context.getString(R.string.ScheduleUpdated), Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, context.getString(R.string.toast_schedule_saved), Toast.LENGTH_SHORT).show()
                         }
-                    )
-                } else {
-                    // Proceed directly with save using original times
-                    performSaveWithTimes(startMillis, endMillis)
+                        isSaving=false
+                        showEditSheet = false
+                        showContactSheet = false
+                        temporaryImage = null  // Clear temp image after save
+                    }
+
+                    // Check if start time is in the past (for today's selected day)
+                    val now = Calendar.getInstance()
+                    val currentTimeOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+                    val todayDayIndex = now.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday, 1 = Monday, etc.
+
+                    // Check if today is selected and start time is in the past
+                    val isTodaySelected = selectedDays.contains(todayDayIndex)
+                    val isStartTimeInPast = startTimeOfDay < currentTimeOfDay
+
+                    if (isTodaySelected && isStartTimeInPast) {
+                        // Show confirmation dialog for past time
+                        // Note: calculateNextOccurrencePair automatically handles past times
+                        // by scheduling to next week, so we just need to inform the user
+                        confirmationDialogState = ConfirmationDialogState.PastTimeSchedule(
+                            onConfirm = {
+                                // Both ONE_TIME and REPEAT use same logic now
+                                // calculateNextOccurrencePair handles past time automatically
+                                performSaveWithTimes(startMillis, endMillis)
+                            }
+                        )
+                    } else {
+                        // Proceed directly with save using original times
+                        performSaveWithTimes(startMillis, endMillis)
+                    }
+
+
                 }
+
+
             }
         )
     }
