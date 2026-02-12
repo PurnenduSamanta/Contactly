@@ -1,13 +1,13 @@
 package com.purnendu.contactly.networking
 
-import com.purnendu.contactly.networking.model.WorldTimeApiResponse
+import com.purnendu.contactly.networking.model.TimeApiResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 
-private const val WORLD_TIME_API_URL = "https://worldtimeapi.org/api/ip"
+private const val TIME_API_BASE_URL = "https://timeapi.io/api/time/current/zone"
 
 object ApiInterface {
-    suspend fun fetchCurrentTime(): WorldTimeApiResponse {
-        return KtorClient.client.get(WORLD_TIME_API_URL).body()
+    suspend fun fetchCurrentTime(timeZone: String): TimeApiResponse {
+        return KtorClient.client.get("$TIME_API_BASE_URL?timeZone=$timeZone").body()
     }
 }

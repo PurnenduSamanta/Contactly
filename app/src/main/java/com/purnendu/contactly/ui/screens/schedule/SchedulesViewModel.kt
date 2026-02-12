@@ -116,6 +116,7 @@ class SchedulesViewModel(
     } catch (e: SecurityException) {
         null // Return null if contacts permission is not granted
     }
+
     fun checkCriticalPermissions() {
         val hasContactPermissions = permissionChecker.hasContactsPermission()
         _showContactPermissionDialog.value = !hasContactPermissions
@@ -169,7 +170,7 @@ class SchedulesViewModel(
             scheduleAlarms(
                 contact = contact,
                 scheduleId = scheduleId,
-                originalName = contact.name,
+                originalName = contact.name.orEmpty(),
                 temporaryName = temporaryName,
                 tempImage = tempImagePath,
                 originalImage = originalImagePath,
@@ -272,7 +273,7 @@ class SchedulesViewModel(
                 scheduleId = scheduleId,
                 contactId = id,
                 contactLookupKey = contact.lookupKey,
-                originalName = contact.name,
+                originalName = contact.name.orEmpty(),
                 temporaryName = temporaryName,
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,

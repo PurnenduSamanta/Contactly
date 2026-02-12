@@ -16,7 +16,6 @@ class ContactsRepository(
         val contacts = mutableListOf<Contact>()
         val projection = arrayOf(
             ContactsContract.Contacts._ID,
-            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
             ContactsContract.Contacts.LOOKUP_KEY,
             ContactsContract.Contacts.PHOTO_URI
         )
@@ -26,22 +25,50 @@ class ContactsRepository(
             projection,
             null,
             null,
-            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " COLLATE NOCASE ASC"
+            null
         )?.use { cursor ->
             val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-            val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
             val lookupIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.LOOKUP_KEY)
             val photoIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_URI)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idIndex)
-                val name = cursor.getString(nameIndex) ?: ""
                 val lookup = cursor.getString(lookupIndex)
                 val photo = cursor.getString(photoIndex)
-                val phone = firstPhoneFor(id)
+                
+                // Query first phone number
+                val phone: String? = resolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?",
+                    arrayOf(id.toString()),
+                    null
+                )?.use { phoneCursor ->
+                    if (phoneCursor.moveToFirst()) {
+                        phoneCursor.getString(
+                            phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                        )
+                    } else null
+                }
+                
+                // Query structured name (returns null if no actual name exists)
+                val structuredName: String? = resolver.query(
+                    ContactsContract.Data.CONTENT_URI,
+                    arrayOf(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME),
+                    "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                    arrayOf(id.toString(), ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE),
+                    null
+                )?.use { nameCursor ->
+                    if (nameCursor.moveToFirst()) {
+                        nameCursor.getString(
+                            nameCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME)
+                        )?.takeIf { it.isNotBlank() }
+                    } else null
+                }
+                
                 contacts.add(
                     Contact(
-                        name = name,
+                        name = structuredName,
                         phone = phone ?: "",
                         image = photo,
                         id = id,
@@ -50,13 +77,14 @@ class ContactsRepository(
                 )
             }
         }
-        return contacts
+        
+        // Sort by name (nulls last), then by phone
+        return contacts.sortedWith(compareBy(nullsLast()) { it.name?.lowercase() })
     }
 
     fun fetchContactById(contactId: Long): Contact? {
         val projection = arrayOf(
             ContactsContract.Contacts._ID,
-            ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
             ContactsContract.Contacts.LOOKUP_KEY,
             ContactsContract.Contacts.PHOTO_URI
         )
@@ -67,40 +95,58 @@ class ContactsRepository(
             arrayOf(contactId.toString()),
             null
         )?.use { cursor ->
-            val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-            val nameIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
-            val lookupIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.LOOKUP_KEY)
-            val photoIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_URI)
             if (cursor.moveToFirst()) {
+                val idIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
+                val lookupIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.LOOKUP_KEY)
+                val photoIndex = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.PHOTO_URI)
+
                 val id = cursor.getLong(idIndex)
-                val name = cursor.getString(nameIndex) ?: ""
                 val lookup = cursor.getString(lookupIndex)
                 val photo = cursor.getString(photoIndex)
-                val phone = firstPhoneFor(id)
-                return Contact(name = name, phone = phone ?: "", image = photo, id = id, lookupKey = lookup)
-            }
-        }
-        return null
-    }
+                
+                // Query first phone number inline
+                val phone: String? = resolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?",
+                    arrayOf(id.toString()),
+                    null
+                )?.use { phoneCursor ->
+                    if (phoneCursor.moveToFirst()) {
+                        phoneCursor.getString(
+                            phoneCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                        )
+                    } else null
+                }
 
-    private fun firstPhoneFor(contactId: Long): String? {
-        val projection = arrayOf(
-            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-            ContactsContract.CommonDataKinds.Phone.NUMBER
-        )
-        resolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            projection,
-            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?",
-            arrayOf(contactId.toString()),
-            null
-        )?.use { cursor ->
-            val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            if (cursor.moveToFirst()) {
-                return cursor.getString(numberIndex)
+                // Query structured name from Data table (returns null if no actual name exists)
+                val structuredName: String? = resolver.query(
+                    ContactsContract.Data.CONTENT_URI,
+                    arrayOf(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME),
+                    "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                    arrayOf(id.toString(), ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE),
+                    null
+                )?.use { nameCursor ->
+                    if (nameCursor.moveToFirst()) {
+                        nameCursor.getString(
+                            nameCursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME)
+                        )?.takeIf { it.isNotBlank() }
+                    } else null
+                }
+
+                // Return Contact with name as null if no actual name exists
+                // This allows caller to differentiate between:
+                // - null Contact: contact doesn't exist
+                // - Contact with null name: contact exists but has no name
+                return Contact(
+                    name = structuredName,
+                    phone = phone ?: "",
+                    image = photo,
+                    id = id,
+                    lookupKey = lookup
+                )
             }
         }
         return null
     }
 }
-

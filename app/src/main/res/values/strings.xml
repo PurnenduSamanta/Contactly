@@ -52,4 +52,5 @@
     <string name="dialog_biometric_unavailable_message">Biometric authentication is not set up on this device. Please enable it in your phone settings to use this feature.</string>
     <string name="ok">Ok</string>
     <string name="ScheduleUpdated">Schedule updated</string>
+    <string name="action_instant_switch">Instant Switch</string>
 </resources>

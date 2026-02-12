@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -25,6 +28,28 @@ class MainActivityViewModel(
 
     private val _isAppReady = MutableStateFlow(false)
     val isAppReady: StateFlow<Boolean> = _isAppReady
+
+    // Event flow for triggering add schedule action (center FAB click)
+    private val _addScheduleEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val addScheduleEvent: SharedFlow<Unit> = _addScheduleEvent.asSharedFlow()
+
+    // Track whether schedules exist (for hiding center FAB when empty)
+    private val _hasSchedules = MutableStateFlow(false)
+    val hasSchedules: StateFlow<Boolean> = _hasSchedules
+
+    /**
+     * Trigger the add schedule flow (called when center FAB is clicked)
+     */
+    fun triggerAddSchedule() {
+        _addScheduleEvent.tryEmit(Unit)
+    }
+
+    /**
+     * Update whether schedules exist
+     */
+    fun setHasSchedules(hasSchedules: Boolean) {
+        _hasSchedules.value = hasSchedules
+    }
 
     init {
         viewModelScope.launch(Dispatchers.IO) {

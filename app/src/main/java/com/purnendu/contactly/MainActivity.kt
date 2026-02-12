@@ -5,15 +5,18 @@ import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,22 +25,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.result.ActivityResult
 
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.view.WindowCompat
@@ -58,6 +58,8 @@ import com.google.android.play.core.ktx.isFlexibleUpdateAllowed
 import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.google.firebase.Firebase
 import com.google.firebase.crashlytics.crashlytics
+
+import com.purnendu.contactly.ui.components.BottomNavigationWithCutout
 import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
@@ -161,10 +163,14 @@ class MainActivity : FragmentActivity() {
     @Composable
     fun ContactlyApp() {
         val navController = rememberNavController()
-        val bottomNavigationScreens = listOf(
+        val mainActivityViewModel: MainActivityViewModel = koinViewModel()
+        
+        // Define bottom nav screens (only screens with icons will be shown)
+        val bottomNavScreens = listOf(
             Screen.Schedules,
-            Screen.Settings,
+            Screen.Settings
         )
+        
         val allScreens = listOf(
             Screen.Schedules,
             Screen.Settings,
@@ -179,6 +185,12 @@ class MainActivity : FragmentActivity() {
         val currentScreen = allScreens.find { screen ->
             currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName } == true
         } ?: Screen.Schedules
+        
+        // Get current route for nav highlighting
+        val currentRoute = currentDestination?.route
+        
+        // Track whether schedules exist (for conditional FAB display)
+        val hasSchedules by mainActivityViewModel.hasSchedules.collectAsStateWithLifecycle()
 
         Scaffold(
             topBar = {
@@ -206,48 +218,44 @@ class MainActivity : FragmentActivity() {
             bottomBar = {
                 // Hide bottom navigation bar on Feedback and PrivacyPolicy screens
                 if (currentScreen != Screen.Feedback && currentScreen != Screen.PrivacyPolicy) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        HorizontalDivider(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        )
-
-                        NavigationBar(
-                            windowInsets = WindowInsets.navigationBars,
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ) {
-                            bottomNavigationScreens.forEach { screen ->
-                                val isSelected = currentDestination?.hierarchy?.any { 
-                                    it.route == screen::class.qualifiedName 
-                                } == true
-                                NavigationBarItem(
-                                    colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent),
-                                    icon = {
-                                        Icon(
-                                            if (isSelected) screen.selectedIcon!! else screen.notSelectedIcon!!,
-                                            contentDescription = screen.title
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            screen.title!!,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    selected = isSelected,
-                                    onClick = {
-                                        navController.navigate(screen) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                )
+                    BottomNavigationWithCutout(
+                        screens = bottomNavScreens,
+                        currentRoute = currentRoute,
+                        onItemClick = { screen ->
+                            navController.navigate(screen) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                        }
-                    }
+                        },
+                        fabContent = {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(id = R.string.action_add_schedule),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        },
+                        fabOnClick = {
+                            // Navigate to Home if not already there, then trigger add schedule
+                            if (currentScreen != Screen.Schedules) {
+                                navController.navigate(Screen.Schedules) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                            // Trigger the add schedule event
+                            mainActivityViewModel.triggerAddSchedule()
+                        },
+                        showFab = hasSchedules,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        fabContainerColor = MaterialTheme.colorScheme.primary,
+                        fabContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -261,7 +269,8 @@ class MainActivity : FragmentActivity() {
                 composable<Screen.Schedules> { 
                     SchedulesScreen(
                         navController = navController,
-                        contentPadding = PaddingValues() // No extra padding needed
+                        contentPadding = PaddingValues(), // No extra padding needed
+                        mainActivityViewModel = mainActivityViewModel
                     ) 
                 }
                 composable<Screen.Settings> { 
@@ -285,6 +294,7 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+
 
     private fun checkForAppUpdate() {
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->

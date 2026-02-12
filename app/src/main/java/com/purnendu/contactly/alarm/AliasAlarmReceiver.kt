@@ -286,10 +286,14 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
             if (c.moveToFirst()) c.getLong(0) else null
         } ?: return
 
-        // 2️⃣ Update or insert name
+        // 2️⃣ Update or insert name (clear all component fields to prevent duplication)
         val nameValues = ContentValues().apply {
             put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
             put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
+            put(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, "")
+            put(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, "")
+            put(ContactsContract.CommonDataKinds.StructuredName.PREFIX, "")
+            put(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, "")
         }
 
         val nameUpdated = resolver.update(
@@ -309,6 +313,10 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                     ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                 put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
                 put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
+                put(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, "")
+                put(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, "")
+                put(ContactsContract.CommonDataKinds.StructuredName.PREFIX, "")
+                put(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, "")
             }
             resolver.insert(ContactsContract.Data.CONTENT_URI, insertName)
         }
