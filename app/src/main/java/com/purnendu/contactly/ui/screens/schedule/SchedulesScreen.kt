@@ -37,7 +37,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -70,6 +69,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -107,6 +108,7 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
+import com.purnendu.contactly.MainActivityViewModel
 import com.purnendu.contactly.utils.validateDeviceTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -115,7 +117,8 @@ fun SchedulesScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     navController: NavController? = null,
-    schedulesViewModel: SchedulesViewModel = koinViewModel()
+    schedulesViewModel: SchedulesViewModel = koinViewModel(),
+    mainActivityViewModel: MainActivityViewModel? = null
 ) {
     val context = LocalContext.current
     val schedules by schedulesViewModel.schedules.collectAsStateWithLifecycle()
@@ -125,6 +128,11 @@ fun SchedulesScreen(
     
     // View mode preference from ViewModel
     val viewMode by schedulesViewModel.viewMode.collectAsStateWithLifecycle()
+
+    // Notify MainActivityViewModel when schedules list changes
+    LaunchedEffect(schedules) {
+        mainActivityViewModel?.setHasSchedules(schedules.isNotEmpty())
+    }
 
     var isSaving by remember { mutableStateOf(false) }
     var showContactSheet by remember { mutableStateOf(false) }
@@ -224,6 +232,15 @@ fun SchedulesScreen(
                 confirmButtonText = getString(R.string.action_settings),
                 dismissButtonText = getString(R.string.action_exit)
             )
+        }
+    }
+
+    // Listen for add schedule events from center FAB in bottom nav
+    mainActivityViewModel?.let { viewModel ->
+        LaunchedEffect(Unit) {
+            viewModel.addScheduleEvent.collect {
+                showContactSheet = true
+            }
         }
     }
 
@@ -331,29 +348,24 @@ fun SchedulesScreen(
                     animationSpec = tween(200)
                 )
             ) {
-                ExtendedFloatingActionButton(
+                FloatingActionButton(
                     onClick = {
-                        showContactSheet = true
+                        // TODO: Implement instant switch functionality
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-                {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(id = R.string.action_add_schedule)
-                        )
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Text(
-                            "Add Schedule",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                    }
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp
+                    ),
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_instant_switch),
+                        contentDescription = stringResource(id = R.string.action_instant_switch),
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         },
@@ -516,8 +528,7 @@ fun SchedulesScreen(
     }
 
     if (showEditSheet) {
-
-        val contact = selectedContact ?: Contact("", "", null)
+        val contact = schedulesViewModel.contactForId(selectedContact?.id ?: 0L) ?: return
         val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
         EditScheduleSheet(
             error = errorMessage.value,
@@ -550,17 +561,14 @@ fun SchedulesScreen(
             },
             onSave = {
                 coroutineScope.launch {
-
                     isSaving = true
 
-                    if(!validateDeviceTime(context).isValid)
-                    {
-                        schedulesViewModel.showError(validateDeviceTime(context).errorMessage.toString())
-                        isSaving=false
+                    // Check if contact has an actual name (not just phone/email)
+                    if (contact.name == null) {
+                        schedulesViewModel.showError("This contact doesn't have a name saved. Please add a name to the contact first.")
+                        isSaving = false
                         return@launch
                     }
-
-                    val contact = selectedContact ?: return@launch
 
                     if(temporaryName.isEmpty() || temporaryName.isBlank())
                     {
@@ -618,6 +626,13 @@ fun SchedulesScreen(
                         Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
                         val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                         context.startActivity(i)
+                        isSaving=false
+                        return@launch
+                    }
+
+                    if(!validateDeviceTime(context).isValid)
+                    {
+                        schedulesViewModel.showError(validateDeviceTime(context).errorMessage.toString())
                         isSaving=false
                         return@launch
                     }

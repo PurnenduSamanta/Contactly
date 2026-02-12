@@ -1,29 +1,18 @@
 package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.ui.screens.schedule.components.DayChip
-import com.purnendu.contactly.ui.theme.ChipBorder
-import com.purnendu.contactly.ui.theme.ChipSelectedBorder
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.DayUtils
@@ -33,17 +22,19 @@ import com.purnendu.contactly.utils.DayUtils
  * @param selectedDays Set of selected day indices (0=Sunday, 1=Monday, ..., 6=Saturday)
  * @param onDaysChanged Callback when days selection changes
  * @param singleSelection If true, only one day can be selected at a time
+ * @param enabled If false, the picker is disabled and non-interactive
  */
 @Composable
 fun DayPickerWheel(
     selectedDays: Set<Int>,
     onDaysChanged: (Set<Int>) -> Unit,
     modifier: Modifier = Modifier,
-    singleSelection: Boolean = false
+    singleSelection: Boolean,
+    enabled: Boolean
 ) {
     val dayLabels = DayUtils.getShortDayNames()
     
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().alpha(if (enabled) 1f else 0.5f)) {
         // Days row
         Row(
             modifier = Modifier
@@ -57,18 +48,20 @@ fun DayPickerWheel(
                     label = dayLabel,
                     isSelected = isSelected,
                     onClick = {
-                        val newSelection = if (singleSelection) {
-                            // Single selection mode: replace with new day
-                            setOf(index)
-                        } else {
-                            // Multiple selection mode: toggle
-                            if (isSelected) {
-                                selectedDays - index
+                        if (enabled) {
+                            val newSelection = if (singleSelection) {
+                                // Single selection mode: replace with new day
+                                setOf(index)
                             } else {
-                                selectedDays + index
+                                // Multiple selection mode: toggle
+                                if (isSelected) {
+                                    selectedDays - index
+                                } else {
+                                    selectedDays + index
+                                }
                             }
+                            onDaysChanged(newSelection)
                         }
-                        onDaysChanged(newSelection)
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -94,11 +87,11 @@ fun DayPickerWheel(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                        .clickable {
+                        .then(if (enabled) Modifier.clickable {
                             onDaysChanged(
                                 if (allSelected) emptySet() else setOf(0, 1, 2, 3, 4, 5, 6)
                             )
-                        }
+                        } else Modifier)
                         .padding(8.dp)
                 )
             }
@@ -117,7 +110,9 @@ fun DayPickerWheelPreview() {
         ) {
             DayPickerWheel(
                 selectedDays = setOf(0, 2, 4, 6), // Sun, Tue, Thu, Sat
-                onDaysChanged = {}
+                onDaysChanged = {},
+                singleSelection = false,
+                enabled = true
             )
         }
     }
@@ -135,7 +130,9 @@ fun DayPickerWheelAllSelectedPreview() {
         ) {
             DayPickerWheel(
                 selectedDays = setOf(0, 1, 2, 3, 4, 5, 6), // All days
-                onDaysChanged = {}
+                onDaysChanged = {},
+                singleSelection = false,
+                enabled = true
             )
         }
     }

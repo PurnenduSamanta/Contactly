@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,17 +30,20 @@ import com.purnendu.contactly.utils.expressiveScale
 fun ScheduleTypeToggle(
     selectedType: ScheduleType,
     onTypeChange: (ScheduleType) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.5f),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         ScheduleTypeChip(
             text = "One-time",
             icon = Icons.Outlined.CalendarMonth,
             selected = selectedType == ScheduleType.ONE_TIME,
-            onClick = { onTypeChange(ScheduleType.ONE_TIME) },
+            onClick = { if (enabled) onTypeChange(ScheduleType.ONE_TIME) },
             modifier = Modifier.weight(1f)
         )
         
@@ -47,7 +51,7 @@ fun ScheduleTypeToggle(
             text = "Repeat",
             icon = Icons.Outlined.Repeat,
             selected = selectedType == ScheduleType.REPEAT,
-            onClick = { onTypeChange(ScheduleType.REPEAT) },
+            onClick = { if (enabled) onTypeChange(ScheduleType.REPEAT) },
             modifier = Modifier.weight(1f)
         )
     }

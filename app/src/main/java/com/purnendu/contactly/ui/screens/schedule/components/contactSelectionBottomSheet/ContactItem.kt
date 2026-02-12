@@ -38,7 +38,7 @@ fun ContactItem(
     ) {
         AsyncImage(
             model = contact.image,
-            contentDescription = contact.name,
+            contentDescription = contact.name ?: "Contact",
             placeholder = painterResource(R.drawable.avatar_ethan),
             error = painterResource(R.drawable.avatar_ethan),
             modifier = Modifier
@@ -51,7 +51,7 @@ fun ContactItem(
 
         Column {
             Text(
-                text = contact.name,
+                text = contact.name ?: contact.phone,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
             )

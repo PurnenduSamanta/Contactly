@@ -4,6 +4,8 @@ import android.content.Context
 import com.purnendu.contactly.networking.ApiInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Calendar
+import java.util.TimeZone
 import kotlin.math.abs
 
 private const val MAX_ALLOWED_DRIFT_MINUTES = 2L
@@ -25,7 +27,8 @@ suspend fun validateDeviceTime(
     }
 
     val response = try {
-        withContext(Dispatchers.IO){ ApiInterface.fetchCurrentTime()}
+        val deviceTimeZone = TimeZone.getDefault().id
+        withContext(Dispatchers.IO){ ApiInterface.fetchCurrentTime(deviceTimeZone)}
     } catch (e: Exception) {
         return TimeValidationResult(
             isValid = false,
@@ -34,7 +37,19 @@ suspend fun validateDeviceTime(
     }
 
     val deviceMillis = System.currentTimeMillis()
-    val networkMillis = response.unixtime * 1000L
+    
+    // Calculate network time in milliseconds from the response fields
+    val networkCalendar = Calendar.getInstance(TimeZone.getTimeZone(response.timeZone)).apply {
+        set(Calendar.YEAR, response.year)
+        set(Calendar.MONTH, response.month - 1) // Calendar months are 0-indexed
+        set(Calendar.DAY_OF_MONTH, response.day)
+        set(Calendar.HOUR_OF_DAY, response.hour)
+        set(Calendar.MINUTE, response.minute)
+        set(Calendar.SECOND, response.seconds)
+        set(Calendar.MILLISECOND, response.milliSeconds)
+    }
+    val networkMillis = networkCalendar.timeInMillis
+    
     val driftMinutes = abs(deviceMillis - networkMillis) / 60_000L
 
     val isTimeValid = driftMinutes <= maxAllowedDriftMinutes
@@ -47,3 +62,4 @@ suspend fun validateDeviceTime(
 
     return TimeValidationResult(isValid = true)
 }
+

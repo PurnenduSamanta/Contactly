@@ -2,9 +2,7 @@ package com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -22,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -122,11 +121,14 @@ fun EditScheduleSheet(
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 )
                 {
-                    IconButton(onClick = onCancel) {
+                    IconButton(
+                        onClick = onCancel,
+                        enabled = !isSaving
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cd_back),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isSaving) 0.5f else 1f)
                         )
                     }
 
@@ -145,7 +147,7 @@ fun EditScheduleSheet(
 
                     Column {
                         Text(
-                            contact.name,
+                            contact.name ?: contact.phone,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -189,7 +191,8 @@ fun EditScheduleSheet(
                         .fillMaxWidth()
                         .height(55.dp),
                     shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = !isSaving
                 )
                 Spacer(Modifier.height(16.dp))
             }
@@ -206,8 +209,9 @@ fun EditScheduleSheet(
 
                 TemporaryImagePicker(
                     imageUri = temporaryImageUri,
-                    onPickImage = onTemporaryImageClick,
-                    onRemoveImage = onTemporaryImageRemove
+                    onPickImage = if (isSaving) { {} } else onTemporaryImageClick,
+                    onRemoveImage = if (isSaving) { {} } else onTemporaryImageRemove,
+                    enabled = !isSaving
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -218,7 +222,8 @@ fun EditScheduleSheet(
                 LabeledTimeInput(
                     label = stringResource(id = R.string.label_start_time),
                     value = startTime,
-                    onClick = onStartTimeClick
+                    onClick = if (isSaving) { {} } else onStartTimeClick,
+                    enabled = !isSaving
                 )
                 Spacer(Modifier.height(16.dp))
             }
@@ -228,7 +233,8 @@ fun EditScheduleSheet(
                 LabeledTimeInput(
                     label = stringResource(id = R.string.label_end_time),
                     value = endTime,
-                    onClick = onEndTimeClick
+                    onClick = if (isSaving) { {} } else onEndTimeClick,
+                    enabled = !isSaving
                 )
                 Spacer(Modifier.height(20.dp))
             }
@@ -243,7 +249,8 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(8.dp))
                 ScheduleTypeToggle(
                     selectedType = scheduleType,
-                    onTypeChange = onScheduleTypeChange
+                    onTypeChange = if (isSaving) { {} } else onScheduleTypeChange,
+                    enabled = !isSaving
                 )
                 Spacer(Modifier.height(20.dp))
             }
@@ -262,8 +269,9 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(8.dp))
                 DayPickerWheel(
                     selectedDays = selectedDays,
-                    onDaysChanged = onDaysChanged,
-                    singleSelection = scheduleType == ScheduleType.ONE_TIME
+                    onDaysChanged = if (isSaving) { {} } else onDaysChanged,
+                    singleSelection = scheduleType == ScheduleType.ONE_TIME,
+                    enabled = !isSaving
                 )
                 Spacer(Modifier.height(24.dp))
 
@@ -277,11 +285,12 @@ fun EditScheduleSheet(
                         onClick = onCancel,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isSaving
                     ) {
                         Text(
                             stringResource(id = R.string.action_cancel),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isSaving) 0.5f else 1f)
                         )
                     }
 
@@ -289,11 +298,12 @@ fun EditScheduleSheet(
                         onClick = onSave,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !isSaving
                     ) {
                         if(isSaving)
                         {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.secondaryFixed)
                         }
                         else
                         {
@@ -318,7 +328,8 @@ fun EditScheduleSheet(
 private fun TemporaryImagePicker(
     imageUri: String?,
     onPickImage: () -> Unit,
-    onRemoveImage: () -> Unit
+    onRemoveImage: () -> Unit,
+    enabled: Boolean = true
 ) {
     val hasImage = !imageUri.isNullOrBlank()
 
@@ -331,6 +342,7 @@ private fun TemporaryImagePicker(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.5f)
             .clip(RoundedCornerShape(20.dp))
             .background(
                 if (hasImage) {
