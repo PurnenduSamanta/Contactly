@@ -223,6 +223,7 @@ private fun ListScheduleItem(
 
             Button(
                 onClick = { onEditClick(schedule) },
+                enabled = !schedule.isCurrentlyActive,
                 modifier = Modifier
                     .height(40.dp)
                     .expressiveScale(if (isPressed) 0.95f else 1f),
@@ -235,7 +236,6 @@ private fun ListScheduleItem(
                 Text(
                     stringResource(id = R.string.action_edit),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -373,12 +373,16 @@ private fun GridScheduleItem(
 
                     IconButton(
                         onClick = { onEditClick(schedule) },
+                        enabled = !schedule.isCurrentlyActive,
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = if (schedule.isCurrentlyActive)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            else
+                                MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
