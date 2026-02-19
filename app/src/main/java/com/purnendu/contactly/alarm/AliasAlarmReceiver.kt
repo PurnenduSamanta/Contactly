@@ -4,15 +4,12 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.provider.ContactsContract
 import android.util.Log
 import androidx.core.content.ContextCompat
-import android.content.ContentValues
-import android.net.Uri
+import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.notification.NotificationHelper
@@ -35,6 +32,7 @@ import java.util.Calendar
 class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
     
     private val schedulesRepo: SchedulesRepository by inject()
+    private val contactsRepo: ContactsRepository by inject()
     private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val appPreferences: AppPreferences by inject()
     private val imageStorageManager: com.purnendu.contactly.utils.ImageStorageManager by inject()
@@ -68,8 +66,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 val nameToApply = if (isApply) temporaryName else originalName
 
                 //apply operation on the contact
-                applyContact(
-                    context= context,
+                contactsRepo.applyContact(
                     contactId= contactId,
                     name= nameToApply,
                     filePath = if(isApply) tempImage else originalImage,
@@ -266,134 +263,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         }
     }
 
-    private fun applyContact(
-        context: Context,
-        contactId: Long,
-        name: String,
-        filePath: String?, // File path to new image, or null
-        shouldRemovePhoto: Boolean = false // If true and filePath is null, explicitly remove the photo
-    ) {
-        val resolver = context.contentResolver
 
-        // 1️⃣ Get RAW_CONTACT_ID
-        val rawId = resolver.query(
-            ContactsContract.RawContacts.CONTENT_URI,
-            arrayOf(ContactsContract.RawContacts._ID),
-            "${ContactsContract.RawContacts.CONTACT_ID}=?",
-            arrayOf(contactId.toString()),
-            null
-        )?.use { c ->
-            if (c.moveToFirst()) c.getLong(0) else null
-        } ?: return
-
-        // 2️⃣ Update or insert name (clear all component fields to prevent duplication)
-        val nameValues = ContentValues().apply {
-            put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-            put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
-            put(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, "")
-            put(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, "")
-            put(ContactsContract.CommonDataKinds.StructuredName.PREFIX, "")
-            put(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, "")
-        }
-
-        val nameUpdated = resolver.update(
-            ContactsContract.Data.CONTENT_URI,
-            nameValues,
-            "${ContactsContract.Data.CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
-            arrayOf(
-                contactId.toString(),
-                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
-            )
-        )
-
-        if (nameUpdated == 0) {
-            val insertName = ContentValues().apply {
-                put(ContactsContract.Data.RAW_CONTACT_ID, rawId)
-                put(ContactsContract.Data.MIMETYPE,
-                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                put(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, name)
-                put(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, "")
-                put(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, "")
-                put(ContactsContract.CommonDataKinds.StructuredName.PREFIX, "")
-                put(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, "")
-            }
-            resolver.insert(ContactsContract.Data.CONTENT_URI, insertName)
-        }
-
-        // 3️⃣ Handle photo
-        if (filePath == null) {
-            // If shouldRemovePhoto is true, explicitly remove the photo
-            if (shouldRemovePhoto) {
-                try {
-                    // Delete the photo data row - the proper Android way
-                    val rowsDeleted = resolver.delete(
-                        ContactsContract.Data.CONTENT_URI,
-                        "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
-                        arrayOf(
-                            rawId.toString(),
-                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                        )
-                    )
-
-                    Log.d("AliasAlarmReceiver", "Removed photo for contact: $contactId (rows deleted: $rowsDeleted)")
-                } catch (e: Exception) {
-                    Log.e("AliasAlarmReceiver", "Failed to remove photo", e)
-                }
-            }
-            return
-        }
-
-        // 4️⃣ Apply photo from file
-        try {
-            // Read bytes from internal storage file
-            val file = java.io.File(filePath)
-            if (!file.exists()) {
-                Log.e("AliasAlarmReceiver", "Image file does not exist: $filePath")
-                return
-            }
-
-            val photoBytes = file.readBytes()
-
-            if (photoBytes.isEmpty()) {
-                Log.e("AliasAlarmReceiver", "Image file is empty: $filePath")
-                return
-            }
-
-            // First, delete existing photo to ensure clean update
-            try {
-                val rowsDeleted = resolver.delete(
-                    ContactsContract.Data.CONTENT_URI,
-                    "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?",
-                    arrayOf(
-                        rawId.toString(),
-                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                    )
-                )
-                Log.d("AliasAlarmReceiver", "Deleted old photo entries: $rowsDeleted")
-            } catch (e: Exception) {
-                Log.w("AliasAlarmReceiver", "Could not delete old photo (may not exist): ${e.message}")
-            }
-
-            // Now write the new photo
-            val photoUri = Uri.withAppendedPath(
-                ContentUris.withAppendedId(
-                    ContactsContract.RawContacts.CONTENT_URI,
-                    rawId
-                ),
-                ContactsContract.RawContacts.DisplayPhoto.CONTENT_DIRECTORY
-            )
-
-            resolver.openOutputStream(photoUri, "w")?.use { stream ->
-                stream.write(photoBytes)
-                stream.flush()
-            }
-
-            Log.d("AliasAlarmReceiver", "Successfully wrote ${photoBytes.size} bytes from file: $filePath")
-        }catch (e: SecurityException) {
-            Log.e("AliasAlarmReceiver", "SecurityException applying photo - check WRITE_CONTACTS permission", e)
-        }
-    }
 
 
 

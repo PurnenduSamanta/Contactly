@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Schedules screen.
@@ -184,12 +183,35 @@ class SchedulesViewModel(
     }
     fun deleteSchedule(schedule: Schedule) {
         val id = schedule.id.toLongOrNull() ?: return
-        viewModelScope.launch {
-            contactlyAlarmManager.cancelScheduleAlarms(id)
-            schedulesRepo.deleteById(id)
-            // Clean up stored images
-            withContext(Dispatchers.IO) {
-                imageStorageManager.deleteImagesForSchedule( id)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Fetch schedule entity before deletion to get original contact data
+                val entity = schedulesRepo.getById(id)
+
+                // Cancel all pending alarms first
+                contactlyAlarmManager.cancelScheduleAlarms(id)
+
+                if (entity != null) {
+                    try {
+                        contactsRepo.applyContact(
+                            contactId = entity.contactId,
+                            name = entity.originalName,
+                            filePath = entity.originalImage,
+                            shouldRemovePhoto = entity.originalImage == null
+                        )
+                        Log.d("SchedulesViewModel", "Restored contact ${entity.contactId} to original state")
+                    } catch (e: Exception) {
+                        Log.e("SchedulesViewModel", "Failed to restore contact ${entity.contactId}", e)
+                    }
+                }
+
+                // Delete from database
+                schedulesRepo.deleteById(id)
+
+                // Clean up stored images
+                imageStorageManager.deleteImagesForSchedule(id)
+            } catch (e: Exception) {
+                Log.e("SchedulesViewModel", "Failed to delete schedule: $id", e)
             }
         }
     }
