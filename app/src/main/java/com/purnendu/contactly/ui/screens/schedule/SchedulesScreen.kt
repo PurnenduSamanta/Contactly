@@ -330,7 +330,7 @@ fun SchedulesScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         containerColor = Color.Transparent,
         floatingActionButton = {
-            AnimatedVisibility(
+         /*   AnimatedVisibility(
                 visible = fabVisible && schedules.isNotEmpty(),
                 enter = slideInVertically(
                     initialOffsetY = { it },
@@ -367,7 +367,7 @@ fun SchedulesScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-            }
+            }*/
         },
         modifier = modifier.fillMaxSize()
     ) { _ ->
