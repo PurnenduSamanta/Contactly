@@ -33,7 +33,8 @@ class SchedulesRepository(private val database: AppDatabase) {
                 endAtMillis = e.endAtMillis,
                 scheduleType = if (e.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT,
                 isCurrentlyActive = isActive,
-                temporaryImageUri = e.temporaryImage
+                temporaryImageUri = e.temporaryImage,
+                originalImageUri = e.originalImage
             )
         }
     }

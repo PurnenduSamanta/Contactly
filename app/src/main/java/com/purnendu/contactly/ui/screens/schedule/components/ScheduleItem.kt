@@ -1,12 +1,9 @@
 package com.purnendu.contactly.ui.screens.schedule.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -18,16 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.ui.components.SlidingImageCarousel
@@ -47,7 +40,6 @@ fun ScheduleItem(
     modifier: Modifier = Modifier,
     schedule: Schedule,
     viewMode: ViewMode = ViewMode.LIST,
-    avatarUri: String? = null,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
     onContactDetailsClick: (schedule: Schedule) -> Unit,
@@ -57,7 +49,6 @@ fun ScheduleItem(
         ListScheduleItem(
             modifier = modifier,
             schedule = schedule,
-            avatarUri = avatarUri,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
             onContactDetailsClick = onContactDetailsClick
@@ -67,7 +58,6 @@ fun ScheduleItem(
         GridScheduleItem(
             modifier = modifier,
             schedule = schedule,
-            avatarUri = avatarUri,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
             onContactDetailsClick = onContactDetailsClick
@@ -79,7 +69,6 @@ fun ScheduleItem(
 private fun ListScheduleItem(
     modifier: Modifier,
     schedule: Schedule,
-    avatarUri: String?,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
     onContactDetailsClick: (schedule: Schedule) -> Unit
@@ -170,7 +159,7 @@ private fun ListScheduleItem(
 
                         // Avatar - Use carousel if temp image exists, otherwise original
                         SlidingImageCarouselRect(
-                            originalImageUri = avatarUri,
+                            originalImageUri = schedule.originalImageUri,
                             temporaryImageUri = schedule.temporaryImageUri,
                             modifier = Modifier
                                 .width(110.dp)
@@ -258,7 +247,6 @@ private fun ListScheduleItem(
 private fun GridScheduleItem(
     modifier: Modifier,
     schedule: Schedule,
-    avatarUri: String?,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
     onContactDetailsClick: (schedule: Schedule) -> Unit
@@ -295,7 +283,7 @@ private fun GridScheduleItem(
             ) {
                 // Avatar - Use carousel for both original and temp images
                 SlidingImageCarousel(
-                    originalImageUri = avatarUri,
+                    originalImageUri = schedule.originalImageUri,
                     temporaryImageUri = schedule.temporaryImageUri,
                     modifier = Modifier,
                     imageSize = Modifier.size(80.dp),
@@ -432,7 +420,9 @@ fun ScheduleItemPreview() {
                     selectedDays = 127,
                     startAtMillis = 0L,
                     endAtMillis = 0L,
-                    scheduleType = ScheduleType.ONE_TIME
+                    scheduleType = ScheduleType.ONE_TIME,
+                    temporaryImageUri = null,
+                    originalImageUri = null
                 ),
                 viewMode = ViewMode.LIST,
                 onEditClick = {},
@@ -451,7 +441,9 @@ fun ScheduleItemPreview() {
                     selectedDays = 127,
                     startAtMillis = 0L,
                     endAtMillis = 0L,
-                    scheduleType = ScheduleType.ONE_TIME
+                    scheduleType = ScheduleType.ONE_TIME,
+                    temporaryImageUri = null,
+                    originalImageUri = null
                 ),
                 viewMode = ViewMode.GRID,
                 onEditClick = {},
