@@ -462,7 +462,6 @@ fun SchedulesScreen(
                             ScheduleItem(
                                 schedule = schedule,
                                 viewMode = ViewMode.LIST,
-                                avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
                                 onEditClick = onEditClick,
                                 onDeleteClick = onDeleteClick,
                                 onContactDetailsClick = onContactDetailsClick
@@ -484,7 +483,6 @@ fun SchedulesScreen(
                             ScheduleItem(
                                 schedule = schedule,
                                 viewMode = ViewMode.GRID,
-                                avatarUri = schedule.contactId?.let { schedulesViewModel.contactForId(it)?.image as String? },
                                 onEditClick = onEditClick,
                                 onDeleteClick = onDeleteClick,
                                 onContactDetailsClick = onContactDetailsClick
