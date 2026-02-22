@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.IntSize
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Schedule
@@ -55,6 +57,7 @@ import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.expressiveScale
+import com.purnendu.contactly.utils.HapticUtils
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -105,6 +108,7 @@ private fun ListScheduleItem(
     onContactDetailsClick: (schedule: Schedule) -> Unit,
     onInstantToggle: ((schedule: Schedule) -> Unit)? = null
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val expressiveScale = rememberExpressiveAnimation(
@@ -192,7 +196,12 @@ private fun ListScheduleItem(
                             Spacer(modifier = Modifier.width(8.dp))
                             Switch(
                                 checked = schedule.isCurrentlyActive,
-                                onCheckedChange = { onInstantToggle?.invoke(schedule) }
+                                onCheckedChange = {
+                                    val feedbackType = if (schedule.isCurrentlyActive)
+                                        HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn
+                                    hapticFeedback.performHapticFeedback(feedbackType)
+                                    onInstantToggle?.invoke(schedule)
+                                }
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -316,6 +325,7 @@ private fun GridScheduleItem(
     onContactDetailsClick: (schedule: Schedule) -> Unit,
     onInstantToggle: ((schedule: Schedule) -> Unit)? = null
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val expressiveScale = rememberExpressiveAnimation(
@@ -396,7 +406,12 @@ private fun GridScheduleItem(
                         Spacer(modifier = Modifier.width(8.dp))
                         Switch(
                             checked = schedule.isCurrentlyActive,
-                            onCheckedChange = { onInstantToggle?.invoke(schedule) }
+                            onCheckedChange = {
+                                val feedbackType = if (schedule.isCurrentlyActive)
+                                    HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn
+                                hapticFeedback.performHapticFeedback(feedbackType)
+                                onInstantToggle?.invoke(schedule)
+                            }
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
