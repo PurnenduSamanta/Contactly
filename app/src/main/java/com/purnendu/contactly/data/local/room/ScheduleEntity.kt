@@ -12,10 +12,11 @@ data class ScheduleEntity(
     val temporaryName: String,
     val temporaryImage: String? = null,
     val originalImage: String? = null,
-    val startAtMillis: Long,
-    val endAtMillis: Long,
-    val selectedDays: Int,
+    val startAtMillis: Long?,
+    val endAtMillis: Long?,
+    val selectedDays: Int?,
     val scheduledAlarmsMetadata: String? = null,  // JSON array of AlarmMetadata
-    val scheduleType: Int, // 0 = ONE_TIME, 1 = REPEAT (default for backward compatibility)
+    val scheduleType: Int, // 0 = ONE_TIME, 1 = REPEAT, 2 = INSTANT
+    val instantSwitchStatus: Boolean? = null // Only for INSTANT: true = applied, false = not applied, null = N/A
 )
 

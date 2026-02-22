@@ -141,18 +141,20 @@ class SchedulesViewModel(
         contact: Contact,
         scheduleId: Long,
         temporaryName: String,
-        tempImage: String? ,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
+        tempImage: String?,
+        startAtMillis: Long? = null,
+        endAtMillis: Long? = null,
+        selectedDays: Int? = null,
         scheduleType: ScheduleType,
         isEditing: Boolean
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             if(isEditing)
             {
-                // First, cancel all existing alarms
-                contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
+                // Cancel existing alarms (only for time-based schedules)
+                if (scheduleType != ScheduleType.INSTANT) {
+                    contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
+                }
                 
                 // Delete old images to avoid unnecessary storage
                 imageStorageManager.deleteImagesForSchedule(scheduleId)
@@ -161,24 +163,66 @@ class SchedulesViewModel(
             // Save temporary image to internal storage (if URI provided)
             val tempImagePath: String? = tempImage?.let { uriString -> imageStorageManager.saveTemporaryImage(scheduleId, uriString) }
 
-            // Save original contact's photo to internal storage
-            val originalImagePath: String? = contact.id?.let { contactId -> if(tempImage!=null) imageStorageManager.saveOriginalImage( scheduleId, contactId) else null}
+            // Save original contact's photo to internal storage (always, for restoration during REVERT)
+            val originalImagePath: String? = contact.id?.let { contactId -> imageStorageManager.saveOriginalImage(scheduleId, contactId) }
 
+            if (scheduleType == ScheduleType.INSTANT) {
+                // INSTANT: No alarms needed, save to database with switch ON
+                if (isEditing) {
+                    updateAlarmToDatabase(
+                        scheduleId = scheduleId,
+                        originalName = contact.name.orEmpty(),
+                        temporaryName = temporaryName,
+                        tempImage = tempImagePath,
+                        originalImage = originalImagePath,
+                        startAtMillis = null,
+                        endAtMillis = null,
+                        selectedDays = null,
+                        scheduleType = scheduleType,
+                        alarmMetadataJson = null,
+                        instantSwitchStatus = true
+                    )
+                } else {
+                    addAlarmToDatabase(
+                        scheduleId = scheduleId,
+                        contact = contact,
+                        temporaryName = temporaryName,
+                        tempImage = tempImagePath,
+                        originalImage = originalImagePath,
+                        startAtMillis = null,
+                        endAtMillis = null,
+                        selectedDays = null,
+                        scheduleType = scheduleType,
+                        alarmMetadataJson = null,
+                        instantSwitchStatus = true
+                    )
+                }
 
-            // Then schedule new alarms
-            scheduleAlarms(
-                contact = contact,
-                scheduleId = scheduleId,
-                originalName = contact.name.orEmpty(),
-                temporaryName = temporaryName,
-                tempImage = tempImagePath,
-                originalImage = originalImagePath,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                scheduleType = scheduleType,
-                isUpdating = isEditing
-            )
+                // Auto-apply temporary name/photo to contact
+                contact.id?.let { contactId ->
+                    contactsRepo.applyContact(
+                        contactId = contactId,
+                        name = temporaryName,
+                        filePath = tempImagePath,
+                        shouldRemovePhoto = tempImagePath == null
+                    )
+                }
+            } else {
+                // ONE_TIME / REPEAT: Schedule alarms then save to database
+                scheduleAlarms(
+                    contact = contact,
+                    scheduleId = scheduleId,
+                    originalName = contact.name.orEmpty(),
+                    temporaryName = temporaryName,
+                    tempImage = tempImagePath,
+                    originalImage = originalImagePath,
+                    startAtMillis = startAtMillis!!,
+                    endAtMillis = endAtMillis!!,
+                    selectedDays = selectedDays!!,
+                    scheduleType = scheduleType,
+                    isUpdating = isEditing
+                )
+            }
         }
     }
     fun deleteSchedule(schedule: Schedule) {
@@ -189,7 +233,9 @@ class SchedulesViewModel(
                 val entity = schedulesRepo.getById(id)
 
                 // Cancel all pending alarms first
-                contactlyAlarmManager.cancelScheduleAlarms(id)
+                if (schedule.scheduleType != ScheduleType.INSTANT) {
+                    contactlyAlarmManager.cancelScheduleAlarms(id)
+                }
 
                 if (entity != null) {
                     try {
@@ -212,6 +258,39 @@ class SchedulesViewModel(
                 imageStorageManager.deleteImagesForSchedule(id)
             } catch (e: Exception) {
                 Log.e("SchedulesViewModel", "Failed to delete schedule: $id", e)
+            }
+        }
+    }
+
+    fun toggleInstantSchedule(schedule: Schedule) {
+        val scheduleId = schedule.id.toLongOrNull() ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val entity = schedulesRepo.getById(scheduleId) ?: return@launch
+                val newStatus = entity.instantSwitchStatus != true
+
+                if (newStatus) {
+                    // Apply temporary name/photo
+                    contactsRepo.applyContact(
+                        contactId = entity.contactId,
+                        name = entity.temporaryName,
+                        filePath = entity.temporaryImage,
+                        shouldRemovePhoto = entity.temporaryImage == null
+                    )
+                } else {
+                    // Revert to original name/photo
+                    contactsRepo.applyContact(
+                        contactId = entity.contactId,
+                        name = entity.originalName,
+                        filePath = entity.originalImage,
+                        shouldRemovePhoto = entity.originalImage == null
+                    )
+                }
+
+                // Update DB column
+                schedulesRepo.update(entity.copy(instantSwitchStatus = newStatus))
+            } catch (e: Exception) {
+                Log.e("SchedulesViewModel", "Failed to toggle instant schedule: $scheduleId", e)
             }
         }
     }
@@ -282,11 +361,12 @@ class SchedulesViewModel(
         temporaryName: String,
         tempImage: String?,
         originalImage: String?,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
+        startAtMillis: Long?,
+        endAtMillis: Long?,
+        selectedDays: Int?,
         scheduleType: ScheduleType,
-        alarmMetadataJson: String
+        alarmMetadataJson: String?,
+        instantSwitchStatus: Boolean? = null
     ) {
         val id = contact.id ?: return
         // Get original image URI from contact for restoration during REVERT
@@ -303,7 +383,8 @@ class SchedulesViewModel(
                 scheduledAlarmsMetadata = alarmMetadataJson,
                 scheduleType = scheduleType,
                 tempImage = tempImage,
-                originalImage = originalImage
+                originalImage = originalImage,
+                instantSwitchStatus = instantSwitchStatus
             )
         }
     }
@@ -314,11 +395,12 @@ class SchedulesViewModel(
         temporaryName: String,
         tempImage: String?,
         originalImage: String?,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
+        startAtMillis: Long?,
+        endAtMillis: Long?,
+        selectedDays: Int?,
         scheduleType: ScheduleType,
-        alarmMetadataJson: String
+        alarmMetadataJson: String?,
+        instantSwitchStatus: Boolean? = null
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
@@ -330,8 +412,9 @@ class SchedulesViewModel(
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
+                scheduleType = ScheduleType.toInt(scheduleType),
                 scheduledAlarmsMetadata = alarmMetadataJson,
+                instantSwitchStatus = instantSwitchStatus,
             )
             schedulesRepo.update(updated)
         }

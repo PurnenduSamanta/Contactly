@@ -99,7 +99,7 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
+                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ScheduleType.toInt(scheduleType))
             }
             val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
                 action = AliasAlarmReceiver.ACTION_ALIAS
@@ -111,7 +111,7 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, if (scheduleType == ScheduleType.ONE_TIME) 0 else 1)
+                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ScheduleType.toInt(scheduleType))
             }
 
             val applyPending = PendingIntent.getBroadcast(
@@ -251,11 +251,13 @@ class ContactlyAlarmManager(
         schedule: ScheduleEntity,
         selectedDays: List<Int>
     ): List<AlarmMetadata> {
+        val startAt = schedule.startAtMillis ?: return emptyList()
+        val endAt = schedule.endAtMillis ?: return emptyList()
         val metadata = mutableListOf<AlarmMetadata>()
 
         selectedDays.forEach { dayOfWeek ->
             // Calculate next occurrence for both times as a pair (ensures consistency)
-            val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(schedule.startAtMillis, schedule.endAtMillis, dayOfWeek)
+            val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(startAt, endAt, dayOfWeek)
 
             // Use centralized utility for request code generation
             val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(schedule.contactId, dayOfWeek)
@@ -327,7 +329,9 @@ class ContactlyAlarmManager(
      */
     suspend fun syncAllSchedules(): SyncResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting alarm sync...")
-        val allSchedules = schedulesRepo.getAllEntities()
+        val allSchedules = schedulesRepo.getAllEntities().filter {
+            ScheduleType.fromInt(it.scheduleType) != ScheduleType.INSTANT
+        }
         var scheduledCount = 0
         var skippedCount = 0
         var errorCount = 0
@@ -361,7 +365,7 @@ class ContactlyAlarmManager(
                 if (storedMetadata.isEmpty()) {
                     // No metadata stored, need to regenerate and schedule all
                     Log.w(TAG, "No metadata for schedule ${schedule.scheduleId}, regenerating")
-                    val daysList = DayUtils.extractDaysFromBitmask(schedule.selectedDays)
+                    val daysList = DayUtils.extractDaysFromBitmask(schedule.selectedDays ?: return@forEach)
                     val newMetadata = generateAlarmMetadata(schedule, daysList)
                     
                     // Schedule all alarms

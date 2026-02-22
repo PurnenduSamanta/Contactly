@@ -285,7 +285,7 @@ fun SchedulesScreen(
                         endMillis = entity?.endAtMillis ?: 0L
                         selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
                         temporaryImage = entity?.temporaryImage
-                        scheduleType = if(entity?.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT
+                        scheduleType = ScheduleType.fromInt(entity?.scheduleType ?: 0)
                         showEditSheet = true
                     }
                 }
@@ -466,7 +466,8 @@ fun SchedulesScreen(
                                 viewMode = ViewMode.LIST,
                                 onEditClick = onEditClick,
                                 onDeleteClick = onDeleteClick,
-                                onContactDetailsClick = onContactDetailsClick
+                                onContactDetailsClick = onContactDetailsClick,
+                                onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
                             )
                         }
                     }
@@ -487,7 +488,8 @@ fun SchedulesScreen(
                                 viewMode = ViewMode.GRID,
                                 onEditClick = onEditClick,
                                 onDeleteClick = onDeleteClick,
-                                onContactDetailsClick = onContactDetailsClick
+                                onContactDetailsClick = onContactDetailsClick,
+                                onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
                             )
                         }
                     }
@@ -577,69 +579,72 @@ fun SchedulesScreen(
                         return@launch
                     }
 
-                    if(startMillis==0L)
-                    {
-                        schedulesViewModel.showError("Start time can not be empty")
-                        isSaving=false
-                        return@launch
-                    }
-
-                    if(endMillis==0L)
-                    {
-                        schedulesViewModel.showError("End time can not be empty")
-                        isSaving=false
-                        return@launch
-                    }
-
+                    // Time/day validations only for scheduled (non-INSTANT) types
                     // Extract time-of-day only (ignore date) for comparison
                     val startCal = Calendar.getInstance().apply { timeInMillis = startMillis }
                     val endCal = Calendar.getInstance().apply { timeInMillis = endMillis }
                     val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
                     val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
 
-                    if(startTimeOfDay == endTimeOfDay)
-                    {
-                        schedulesViewModel.showError("End time and start time can not be same")
-                        isSaving=false
-                        return@launch
+                    if (scheduleType != ScheduleType.INSTANT) {
+                        if(startMillis==0L)
+                        {
+                            schedulesViewModel.showError("Start time can not be empty")
+                            isSaving=false
+                            return@launch
+                        }
+
+                        if(endMillis==0L)
+                        {
+                            schedulesViewModel.showError("End time can not be empty")
+                            isSaving=false
+                            return@launch
+                        }
+
+                        if(startTimeOfDay == endTimeOfDay)
+                        {
+                            schedulesViewModel.showError("End time and start time can not be same")
+                            isSaving=false
+                            return@launch
+                        }
+
+                        // End time must be greater than start time (no crossing midnight allowed)
+                        // Schedules must be within a single 24-hour day
+                        if(endTimeOfDay < startTimeOfDay)
+                        {
+                            schedulesViewModel.showError("End time must be after start time")
+                            isSaving=false
+                            return@launch
+                        }
+
+                        if(selectedDays.isEmpty())
+                        {
+                            schedulesViewModel.showError("Select at least one day")
+                            isSaving=false
+                            return@launch
+                        }
+
+                        val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
+                        if (!exactOk)
+                        {
+                            Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
+                            val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                            context.startActivity(i)
+                            isSaving=false
+                            return@launch
+                        }
+
+                        if(!validateDeviceTime(context).isValid)
+                        {
+                            schedulesViewModel.showError(validateDeviceTime(context).errorMessage.toString())
+                            isSaving=false
+                            return@launch
+                        }
                     }
 
-                    // End time must be greater than start time (no crossing midnight allowed)
-                    // Schedules must be within a single 24-hour day
-                    if(endTimeOfDay < startTimeOfDay)
-                    {
-                        schedulesViewModel.showError("End time must be after start time")
-                        isSaving=false
-                        return@launch
-                    }
-
-                    if(selectedDays.isEmpty())
-                    {
-                        schedulesViewModel.showError("Select at least one day")
-                        isSaving=false
-                        return@launch
-                    }
-
-                    val exactOk = schedulesViewModel.canScheduleExactAlarmPermissions()
-                    if (!exactOk)
-                    {
-                        Toast.makeText(context, context.getString(R.string.toast_enable_exact_alarm), Toast.LENGTH_LONG).show()
-                        val i = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        context.startActivity(i)
-                        isSaving=false
-                        return@launch
-                    }
-
-                    if(!validateDeviceTime(context).isValid)
-                    {
-                        schedulesViewModel.showError(validateDeviceTime(context).errorMessage.toString())
-                        isSaving=false
-                        return@launch
-                    }
-
-                    // Lambda to perform the actual save operation with given times
-                    val performSaveWithTimes: (Long, Long) -> Unit = { saveStartMillis, saveEndMillis ->
-                        val selectedDaysBitmask = DayUtils.daysToBitmask(selectedDays)
+                    // Lambda to perform the actual save operation
+                    val performSave: (Long?, Long?) -> Unit = { saveStartMillis, saveEndMillis ->
+                        val selectedDaysBitmask = if (scheduleType != ScheduleType.INSTANT) DayUtils.daysToBitmask(selectedDays) else null
                         val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
 
                         // Generate scheduleId for new schedules (needed for image file naming)
@@ -657,14 +662,22 @@ fun SchedulesScreen(
                             isEditing = existingScheduleId != null
                         )
                         if (existingScheduleId != null) {
-                            Toast.makeText(context, context.getString(R.string.ScheduleUpdated), Toast.LENGTH_SHORT).show()
+                            val msg = if (scheduleType == ScheduleType.INSTANT) R.string.toast_instant_updated else R.string.ScheduleUpdated
+                            Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, context.getString(R.string.toast_schedule_saved), Toast.LENGTH_SHORT).show()
+                            val msg = if (scheduleType == ScheduleType.INSTANT) R.string.toast_instant_saved else R.string.toast_schedule_saved
+                            Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         }
                         isSaving=false
                         showEditSheet = false
                         showContactSheet = false
                         temporaryImage = null  // Clear temp image after save
+                    }
+
+                    // INSTANT: Save immediately (no time-based logic needed)
+                    if (scheduleType == ScheduleType.INSTANT) {
+                        performSave(null, null)
+                        return@launch
                     }
 
                     // Check if start time is in the past (for today's selected day)
@@ -684,12 +697,12 @@ fun SchedulesScreen(
                             onConfirm = {
                                 // Both ONE_TIME and REPEAT use same logic now
                                 // calculateNextOccurrencePair handles past time automatically
-                                performSaveWithTimes(startMillis, endMillis)
+                                performSave(startMillis, endMillis)
                             }
                         )
                     } else {
                         // Proceed directly with save using original times
-                        performSaveWithTimes(startMillis, endMillis)
+                        performSave(startMillis, endMillis)
                     }
 
 
