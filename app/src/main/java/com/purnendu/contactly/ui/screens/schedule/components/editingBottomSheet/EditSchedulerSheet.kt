@@ -5,10 +5,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring.DampingRatioMediumBouncy
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -217,31 +219,7 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Start Time, End Time (hidden for INSTANT)
-            if (scheduleType != ScheduleType.INSTANT) {
-                item {
-                    LabeledTimeInput(
-                        label = stringResource(id = R.string.label_start_time),
-                        value = startTime,
-                        onClick = if (isSaving) { {} } else onStartTimeClick,
-                        enabled = !isSaving
-                    )
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                // End Time
-                item {
-                    LabeledTimeInput(
-                        label = stringResource(id = R.string.label_end_time),
-                        value = endTime,
-                        onClick = if (isSaving) { {} } else onEndTimeClick,
-                        enabled = !isSaving
-                    )
-                    Spacer(Modifier.height(20.dp))
-                }
-            }
-
-            // Schedule Type Toggle (always visible)
+            // Schedule Type Toggle (always visible, right after image)
             item {
                 Text(
                     text = "Schedule Type",
@@ -257,29 +235,53 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(20.dp))
             }
 
-            // Day Picker (hidden for INSTANT) + Footer Buttons (always shown)
+            // Start Time, End Time, Day Picker (animated visibility for smooth height change)
             item {
-                if (scheduleType != ScheduleType.INSTANT) {
-                    Text(
-                        text = if (scheduleType == ScheduleType.ONE_TIME) {
-                            "Select Day"  // One day only
-                        } else {
-                            "Repeat On"   // Multiple days
-                        },
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    DayPickerWheel(
-                        selectedDays = selectedDays,
-                        onDaysChanged = if (isSaving) { {} } else onDaysChanged,
-                        singleSelection = scheduleType == ScheduleType.ONE_TIME,
-                        enabled = !isSaving
-                    )
-                    Spacer(Modifier.height(24.dp))
-                }
+                AnimatedVisibility(
+                    visible = scheduleType != ScheduleType.INSTANT,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(200))
+                ) {
+                    Column {
+                        LabeledTimeInput(
+                            label = stringResource(id = R.string.label_start_time),
+                            value = startTime,
+                            onClick = if (isSaving) { {} } else onStartTimeClick,
+                            enabled = !isSaving
+                        )
+                        Spacer(Modifier.height(16.dp))
 
-                // Footer Buttons
+                        LabeledTimeInput(
+                            label = stringResource(id = R.string.label_end_time),
+                            value = endTime,
+                            onClick = if (isSaving) { {} } else onEndTimeClick,
+                            enabled = !isSaving
+                        )
+                        Spacer(Modifier.height(20.dp))
+
+                        Text(
+                            text = if (scheduleType == ScheduleType.ONE_TIME) {
+                                "Select Day"
+                            } else {
+                                "Repeat On"
+                            },
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        DayPickerWheel(
+                            selectedDays = selectedDays,
+                            onDaysChanged = if (isSaving) { {} } else onDaysChanged,
+                            singleSelection = scheduleType == ScheduleType.ONE_TIME,
+                            enabled = !isSaving
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
+            }
+
+            // Footer Buttons (always shown)
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
