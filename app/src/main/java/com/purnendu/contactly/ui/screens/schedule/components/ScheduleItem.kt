@@ -57,7 +57,6 @@ import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.expressiveScale
-import com.purnendu.contactly.utils.HapticUtils
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import java.text.SimpleDateFormat
 import java.util.Date
