@@ -61,6 +61,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -68,6 +69,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FloatingActionButton
@@ -90,6 +92,8 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
+import com.purnendu.contactly.ui.screens.schedule.components.ScheduleFilter
+import com.purnendu.contactly.ui.screens.schedule.components.ScheduleFilterChips
 import com.purnendu.contactly.ui.screens.schedule.components.ScheduleItem
 import com.purnendu.contactly.ui.screens.schedule.components.contactSelectionBottomSheet.ContactSelectionBottomSheet
 import com.purnendu.contactly.ui.screens.schedule.components.editingBottomSheet.EditScheduleSheet
@@ -129,6 +133,9 @@ fun SchedulesScreen(
     
     // View mode preference from ViewModel
     val viewMode by schedulesViewModel.viewMode.collectAsStateWithLifecycle()
+
+    // Schedule type filter
+    var selectedFilter by remember { mutableStateOf(ScheduleFilter.ALL) }
 
     // Notify MainActivityViewModel when schedules list changes
     LaunchedEffect(schedules) {
@@ -451,46 +458,67 @@ fun SchedulesScreen(
                 }
             }
         } else {
-            // Conditional rendering based on view mode
-            when (viewMode) {
-                ViewMode.LIST -> {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        itemsIndexed(schedules) { index, schedule ->
-                            ScheduleItem(
-                                schedule = schedule,
-                                index = index,
-                                viewMode = ViewMode.LIST,
-                                onEditClick = onEditClick,
-                                onDeleteClick = onDeleteClick,
-                                onContactDetailsClick = onContactDetailsClick,
-                                onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
-                            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Filter chips row
+                ScheduleFilterChips(
+                    selectedFilter = selectedFilter,
+                    onFilterChange = { selectedFilter = it }
+                )
+
+                // Schedule list with fade animation on filter change
+                AnimatedContent(
+                    targetState = selectedFilter,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(200))
+                    },
+                    label = "schedule-filter-animation",
+                    modifier = Modifier.weight(1f)
+                ) { filter ->
+                    val displaySchedules = if (filter.toScheduleType() == null) schedules
+                        else schedules.filter { it.scheduleType == filter.toScheduleType() }
+
+                    when (viewMode) {
+                        ViewMode.LIST -> {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) {
+                                itemsIndexed(displaySchedules) { index, schedule ->
+                                    ScheduleItem(
+                                        schedule = schedule,
+                                        index = index,
+                                        viewMode = ViewMode.LIST,
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = onDeleteClick,
+                                        onContactDetailsClick = onContactDetailsClick,
+                                        onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
+                                    )
+                                }
+                            }
                         }
-                    }
-                }
-                
-                ViewMode.GRID -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        state = gridState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(schedules) { schedule ->
-                            ScheduleItem(
-                                schedule = schedule,
-                                viewMode = ViewMode.GRID,
-                                onEditClick = onEditClick,
-                                onDeleteClick = onDeleteClick,
-                                onContactDetailsClick = onContactDetailsClick,
-                                onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
-                            )
+
+                        ViewMode.GRID -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                state = gridState,
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(displaySchedules) { schedule ->
+                                    ScheduleItem(
+                                        schedule = schedule,
+                                        viewMode = ViewMode.GRID,
+                                        onEditClick = onEditClick,
+                                        onDeleteClick = onDeleteClick,
+                                        onContactDetailsClick = onContactDetailsClick,
+                                        onInstantToggle = { schedulesViewModel.toggleInstantSchedule(it) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
