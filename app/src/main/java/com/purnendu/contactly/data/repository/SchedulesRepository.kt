@@ -19,8 +19,13 @@ class SchedulesRepository(private val database: AppDatabase) {
     fun getSchedules(): Flow<List<Schedule>> = database.scheduleDao().getAll().map { list ->
         val currentTime = System.currentTimeMillis()
         list.map { e ->
-            // Check if schedule is currently active (between APPLY and REVERT)
-            val isActive = checkIfCurrentlyActive(e.scheduledAlarmsMetadata, currentTime)
+            val scheduleType = ScheduleType.fromInt(e.scheduleType)
+
+            // For INSTANT: active state from DB column; for others: computed from alarm metadata
+            val isActive = when (scheduleType) {
+                ScheduleType.INSTANT -> e.instantSwitchStatus == true
+                else -> checkIfCurrentlyActive(e.scheduledAlarmsMetadata, currentTime)
+            }
             
             Schedule(
                 id = e.scheduleId.toString(),
@@ -31,7 +36,7 @@ class SchedulesRepository(private val database: AppDatabase) {
                 selectedDays = e.selectedDays,
                 startAtMillis = e.startAtMillis,
                 endAtMillis = e.endAtMillis,
-                scheduleType = if (e.scheduleType == 0) ScheduleType.ONE_TIME else ScheduleType.REPEAT,
+                scheduleType = scheduleType,
                 isCurrentlyActive = isActive,
                 temporaryImageUri = e.temporaryImage,
                 originalImageUri = e.originalImage
@@ -88,13 +93,14 @@ class SchedulesRepository(private val database: AppDatabase) {
         contactLookupKey: String?,
         originalName: String,
         temporaryName: String,
-        startAtMillis: Long,
-        endAtMillis: Long,
-        selectedDays: Int,
+        startAtMillis: Long?,
+        endAtMillis: Long?,
+        selectedDays: Int?,
         scheduledAlarmsMetadata: String? = null,
         scheduleType: ScheduleType,
         tempImage: String? = null,
         originalImage: String? = null,
+        instantSwitchStatus: Boolean? = null,
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
@@ -107,9 +113,10 @@ class SchedulesRepository(private val database: AppDatabase) {
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduledAlarmsMetadata = scheduledAlarmsMetadata,
-                scheduleType = if (scheduleType == ScheduleType.ONE_TIME) 0 else 1,
+                scheduleType = ScheduleType.toInt(scheduleType),
                 temporaryImage = tempImage,
                 originalImage = originalImage,
+                instantSwitchStatus = instantSwitchStatus,
             )
         )
     }

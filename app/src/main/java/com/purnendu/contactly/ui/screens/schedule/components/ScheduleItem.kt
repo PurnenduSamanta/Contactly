@@ -69,6 +69,7 @@ fun ScheduleItem(
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
     onContactDetailsClick: (schedule: Schedule) -> Unit,
+    onInstantToggle: ((schedule: Schedule) -> Unit)? = null,
 ) {
     if (viewMode == ViewMode.LIST)
     {
@@ -78,7 +79,8 @@ fun ScheduleItem(
             index = index,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onContactDetailsClick = onContactDetailsClick
+            onContactDetailsClick = onContactDetailsClick,
+            onInstantToggle = onInstantToggle
         )
     }
     else {
@@ -87,7 +89,8 @@ fun ScheduleItem(
             schedule = schedule,
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
-            onContactDetailsClick = onContactDetailsClick
+            onContactDetailsClick = onContactDetailsClick,
+            onInstantToggle = onInstantToggle
         )
     }
 }
@@ -99,7 +102,8 @@ private fun ListScheduleItem(
     index: Int,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
-    onContactDetailsClick: (schedule: Schedule) -> Unit
+    onContactDetailsClick: (schedule: Schedule) -> Unit,
+    onInstantToggle: ((schedule: Schedule) -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -173,8 +177,26 @@ private fun ListScheduleItem(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Time or Active status
-                    if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
+                    // Time/Active/Instant status
+                    if (schedule.scheduleType == ScheduleType.INSTANT) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = if (schedule.isCurrentlyActive) "⚡ Applied" else "⚡ Instant",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Switch(
+                                checked = schedule.isCurrentlyActive,
+                                onCheckedChange = { onInstantToggle?.invoke(schedule) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    } else if (schedule.startAtMillis != null && schedule.startAtMillis > 0 && schedule.endAtMillis != null && schedule.endAtMillis > 0) {
                         if (schedule.isCurrentlyActive) {
                             // Show "Active" when schedule is currently running
                             Text(
@@ -207,11 +229,13 @@ private fun ListScheduleItem(
                         Spacer(modifier = Modifier.height(6.dp))
                     }
 
-                    // Day chips - centered
-                    DayChips(
-                        selectedDays = schedule.selectedDays,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
+                    // Day chips - only for non-INSTANT schedules
+                    if (schedule.scheduleType != ScheduleType.INSTANT) {
+                        DayChips(
+                            selectedDays = schedule.selectedDays ?: 0,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -289,7 +313,8 @@ private fun GridScheduleItem(
     schedule: Schedule,
     onEditClick: (schedule: Schedule) -> Unit,
     onDeleteClick: (schedule: Schedule) -> Unit,
-    onContactDetailsClick: (schedule: Schedule) -> Unit
+    onContactDetailsClick: (schedule: Schedule) -> Unit,
+    onInstantToggle: ((schedule: Schedule) -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -356,8 +381,26 @@ private fun GridScheduleItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Time or Active status
-                if (schedule.startAtMillis > 0 && schedule.endAtMillis > 0) {
+                // Time/Active/Instant status
+                if (schedule.scheduleType == ScheduleType.INSTANT) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = if (schedule.isCurrentlyActive) "⚡ Applied" else "⚡ Instant",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = schedule.isCurrentlyActive,
+                            onCheckedChange = { onInstantToggle?.invoke(schedule) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                } else if (schedule.startAtMillis != null && schedule.startAtMillis > 0 && schedule.endAtMillis != null && schedule.endAtMillis > 0) {
                     if (schedule.isCurrentlyActive) {
                         // Show "Active" when schedule is currently running
                         Text(
@@ -390,11 +433,13 @@ private fun GridScheduleItem(
                     Spacer(modifier = Modifier.height(6.dp))
                 }
 
-                // Compact Day Chips
-                DayChips(
-                    selectedDays = schedule.selectedDays,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                // Day chips - only for non-INSTANT schedules
+                if (schedule.scheduleType != ScheduleType.INSTANT) {
+                    DayChips(
+                        selectedDays = schedule.selectedDays ?: 0,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 

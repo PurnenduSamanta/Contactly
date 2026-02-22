@@ -9,6 +9,7 @@ import com.purnendu.contactly.alarm.AliasAlarmReceiver
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.utils.ScheduleType
 import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +69,9 @@ class SettingsViewModel(
         if(!isInDebugMode)
             return
         viewModelScope.launch(Dispatchers.IO) {
-                val schedules = schedulesRepo.getAllEntities()
+                val schedules = schedulesRepo.getAllEntities().filter {
+                    ScheduleType.fromInt(it.scheduleType) != ScheduleType.INSTANT
+                }
                 val statusList = schedules.map { schedule ->
                     val metadata = contactlyAlarmManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
                     val alarmResults = metadata.map { meta ->

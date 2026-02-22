@@ -9,11 +9,11 @@ data class Schedule(
     val originalName: String,
     @DrawableRes val avatarResId: Int?,
     val contactId: Long?,
-    val selectedDays: Int,
-    val startAtMillis: Long,
-    val endAtMillis: Long,
+    val selectedDays: Int?,
+    val startAtMillis: Long?,
+    val endAtMillis: Long?,
     val scheduleType: ScheduleType,
-    val isCurrentlyActive: Boolean = false,  // True when between APPLY and REVERT operations
+    val isCurrentlyActive: Boolean = false,  // For ONE_TIME/REPEAT: between APPLY and REVERT; For INSTANT: manually toggled
     val temporaryImageUri: String?,
     val originalImageUri: String?
 )

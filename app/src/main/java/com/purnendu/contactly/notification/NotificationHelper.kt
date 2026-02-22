@@ -119,7 +119,12 @@ object NotificationHelper {
         }
 
         // Build notification content
-        val scheduleTypeText = if (scheduleType == 0) "One-Time" else "Repeat"
+        val scheduleTypeText = when (scheduleType) {
+            0 -> "One-Time"
+            1 -> "Repeat"
+            2 -> "Instant"
+            else -> "Unknown"
+        }
         val actionText = if (isApply) "changed to" else "restored to"
 
         val content = if (isApply) {

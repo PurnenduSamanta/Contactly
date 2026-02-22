@@ -10,6 +10,7 @@ import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.utils.ScheduleType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,8 +53,11 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                         return@forEach // Skip to next schedule
                     }
 
+                    // Skip INSTANT schedules - they don't use alarms
+                    if (ScheduleType.fromInt(e.scheduleType) == ScheduleType.INSTANT) return@forEach
+
                     // Extract selected days from bitmask (e.g., 127 = all days)
-                    val daysList = DayUtils.extractDaysFromBitmask(e.selectedDays)
+                    val daysList = DayUtils.extractDaysFromBitmask(e.selectedDays ?: return@forEach)
                     
                     // If no days selected, skip this schedule
                     if (daysList.isEmpty()) {
@@ -64,7 +68,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                     // Schedule alarms for each selected day
                     daysList.forEach { dayOfWeek ->
                         // Calculate next occurrence for both times as a pair (ensures consistency)
-                        val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(e.startAtMillis, e.endAtMillis, dayOfWeek)
+                        val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(e.startAtMillis ?: return@forEach, e.endAtMillis ?: return@forEach, dayOfWeek)
 
                         // Generate unique request codes using centralized utility
                         val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(e.contactId, dayOfWeek)

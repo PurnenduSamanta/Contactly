@@ -217,29 +217,31 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Start Time
-            item {
-                LabeledTimeInput(
-                    label = stringResource(id = R.string.label_start_time),
-                    value = startTime,
-                    onClick = if (isSaving) { {} } else onStartTimeClick,
-                    enabled = !isSaving
-                )
-                Spacer(Modifier.height(16.dp))
+            // Start Time, End Time (hidden for INSTANT)
+            if (scheduleType != ScheduleType.INSTANT) {
+                item {
+                    LabeledTimeInput(
+                        label = stringResource(id = R.string.label_start_time),
+                        value = startTime,
+                        onClick = if (isSaving) { {} } else onStartTimeClick,
+                        enabled = !isSaving
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                // End Time
+                item {
+                    LabeledTimeInput(
+                        label = stringResource(id = R.string.label_end_time),
+                        value = endTime,
+                        onClick = if (isSaving) { {} } else onEndTimeClick,
+                        enabled = !isSaving
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
             }
 
-            // End Time
-            item {
-                LabeledTimeInput(
-                    label = stringResource(id = R.string.label_end_time),
-                    value = endTime,
-                    onClick = if (isSaving) { {} } else onEndTimeClick,
-                    enabled = !isSaving
-                )
-                Spacer(Modifier.height(20.dp))
-            }
-
-            // Schedule Type Toggle
+            // Schedule Type Toggle (always visible)
             item {
                 Text(
                     text = "Schedule Type",
@@ -255,25 +257,27 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(20.dp))
             }
 
-            // Day Picker (Always shown, but label changes)
+            // Day Picker (hidden for INSTANT) + Footer Buttons (always shown)
             item {
-                Text(
-                    text = if (scheduleType == ScheduleType.ONE_TIME) {
-                        "Select Day"  // One day only
-                    } else {
-                        "Repeat On"   // Multiple days
-                    },
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(Modifier.height(8.dp))
-                DayPickerWheel(
-                    selectedDays = selectedDays,
-                    onDaysChanged = if (isSaving) { {} } else onDaysChanged,
-                    singleSelection = scheduleType == ScheduleType.ONE_TIME,
-                    enabled = !isSaving
-                )
-                Spacer(Modifier.height(24.dp))
+                if (scheduleType != ScheduleType.INSTANT) {
+                    Text(
+                        text = if (scheduleType == ScheduleType.ONE_TIME) {
+                            "Select Day"  // One day only
+                        } else {
+                            "Repeat On"   // Multiple days
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    DayPickerWheel(
+                        selectedDays = selectedDays,
+                        onDaysChanged = if (isSaving) { {} } else onDaysChanged,
+                        singleSelection = scheduleType == ScheduleType.ONE_TIME,
+                        enabled = !isSaving
+                    )
+                    Spacer(Modifier.height(24.dp))
+                }
 
                 // Footer Buttons
                 Row(

@@ -70,7 +70,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                     contactId= contactId,
                     name= nameToApply,
                     filePath = if(isApply) tempImage else originalImage,
-                    shouldRemovePhoto = !isApply && originalImage == null // Remove photo when reverting and no original image
+                    shouldRemovePhoto = if(isApply) tempImage == null else originalImage == null
                 )
 
                 val notificationsEnabled = try {

@@ -53,4 +53,6 @@
     <string name="ok">Ok</string>
     <string name="ScheduleUpdated">Schedule updated</string>
     <string name="action_instant_switch">Instant Switch</string>
+    <string name="toast_instant_saved">Instant schedule saved! Toggle it anytime from the card.</string>
+    <string name="toast_instant_updated">Instant schedule updated!</string>
 </resources>

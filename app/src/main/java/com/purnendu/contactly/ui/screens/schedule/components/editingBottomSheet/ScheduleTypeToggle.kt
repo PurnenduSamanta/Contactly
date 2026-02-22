@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.Icon
@@ -37,7 +38,7 @@ fun ScheduleTypeToggle(
         modifier = modifier
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.5f),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ScheduleTypeChip(
             text = "One-time",
@@ -52,6 +53,14 @@ fun ScheduleTypeToggle(
             icon = Icons.Outlined.Repeat,
             selected = selectedType == ScheduleType.REPEAT,
             onClick = { if (enabled) onTypeChange(ScheduleType.REPEAT) },
+            modifier = Modifier.weight(1f)
+        )
+
+        ScheduleTypeChip(
+            text = "Instant",
+            icon = Icons.Outlined.Bolt,
+            selected = selectedType == ScheduleType.INSTANT,
+            onClick = { if (enabled) onTypeChange(ScheduleType.INSTANT) },
             modifier = Modifier.weight(1f)
         )
     }
@@ -81,12 +90,12 @@ private fun ScheduleTypeChip(
             .clip(RoundedCornerShape(20.dp))
             .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -98,7 +107,8 @@ private fun ScheduleTypeChip(
                 text = text,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                maxLines = 1
             )
         }
     }
