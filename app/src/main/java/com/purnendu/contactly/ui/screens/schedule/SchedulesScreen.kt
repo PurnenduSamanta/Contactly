@@ -61,7 +61,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -69,7 +69,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FloatingActionButton
@@ -466,12 +465,9 @@ fun SchedulesScreen(
                 )
 
                 // Schedule list with fade animation on filter change
-                AnimatedContent(
+                Crossfade(
                     targetState = selectedFilter,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) togetherWith
-                                fadeOut(animationSpec = tween(200))
-                    },
+                    animationSpec = tween(300),
                     label = "schedule-filter-animation",
                     modifier = Modifier.weight(1f)
                 ) { filter ->
