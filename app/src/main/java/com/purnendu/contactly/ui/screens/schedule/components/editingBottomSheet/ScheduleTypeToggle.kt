@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
@@ -34,35 +35,52 @@ fun ScheduleTypeToggle(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    Row(
+    LazyRow  (
         modifier = modifier
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.5f),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ScheduleTypeChip(
-            text = "One-time",
-            icon = Icons.Outlined.CalendarMonth,
-            selected = selectedType == ScheduleType.ONE_TIME,
-            onClick = { if (enabled) onTypeChange(ScheduleType.ONE_TIME) },
-            modifier = Modifier.weight(1f)
-        )
-        
-        ScheduleTypeChip(
-            text = "Repeat",
-            icon = Icons.Outlined.Repeat,
-            selected = selectedType == ScheduleType.REPEAT,
-            onClick = { if (enabled) onTypeChange(ScheduleType.REPEAT) },
-            modifier = Modifier.weight(1f)
-        )
+        item{
+            Spacer(modifier = Modifier.width(8.dp))
 
-        ScheduleTypeChip(
-            text = "Instant",
-            icon = Icons.Outlined.Bolt,
-            selected = selectedType == ScheduleType.INSTANT,
-            onClick = { if (enabled) onTypeChange(ScheduleType.INSTANT) },
-            modifier = Modifier.weight(1f)
-        )
+            Row {
+                ScheduleTypeChip(
+                    text = "One-time",
+                    icon = Icons.Outlined.CalendarMonth,
+                    selected = selectedType == ScheduleType.ONE_TIME,
+                    onClick = { if (enabled) onTypeChange(ScheduleType.ONE_TIME) },
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+        }
+
+        item{
+            Spacer(modifier = Modifier.width(8.dp))
+            Row {
+                ScheduleTypeChip(
+                    text = "Repeat",
+                    icon = Icons.Outlined.Repeat,
+                    selected = selectedType == ScheduleType.REPEAT,
+                    onClick = { if (enabled) onTypeChange(ScheduleType.REPEAT) },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+        }
+
+        item {
+            Spacer(modifier = Modifier.width(8.dp))
+            Row {
+                ScheduleTypeChip(
+                    text = "Instant",
+                    icon = Icons.Outlined.Bolt,
+                    selected = selectedType == ScheduleType.INSTANT,
+                    onClick = { if (enabled) onTypeChange(ScheduleType.INSTANT) },
+                )
+                Spacer(modifier = Modifier.width(8.dp))            }
+        }
     }
 }
 
