@@ -20,8 +20,8 @@ android {
         applicationId = "com.purnendu.contactly"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "3.4"
+        versionCode = 8
+        versionName = "3.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
