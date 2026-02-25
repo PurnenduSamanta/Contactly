@@ -177,11 +177,30 @@ cd Contactly
 
 Open in Android Studio and run on an emulator or device (API 24+).
 
-### Firebase Setup
-- Create project at console.firebase.google.com
-- Download `google-services.json`
-- Place inside `app/`
-- Enable Crashlytics & Analytics
+### Firebase Setup (Required)
+1. Create a Firebase project at `https://console.firebase.google.com`
+2. Add Android app: `com.purnendu.contactly`
+3. Download `google-services.json`
+4. Place the file at this exact path:
+
+```text
+app/google-services.json
+```
+
+5. Enable Crashlytics and Analytics in Firebase Console
+
+Verify before building:
+
+```bash
+# from project root
+ls app/google-services.json
+```
+
+If the file is missing, build will fail with:
+
+```text
+Missing Firebase config: place google-services.json at app/google-services.json before building.
+```
 
 ---
 

@@ -10,6 +10,21 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 }
 
+val validateGoogleServicesJson by tasks.registering {
+    doLast {
+        val googleServicesFile = file("$projectDir/google-services.json")
+        if (!googleServicesFile.exists()) {
+            throw GradleException(
+                "Missing Firebase config: place google-services.json at app/google-services.json before building."
+            )
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(validateGoogleServicesJson)
+}
+
 android {
     namespace = "com.purnendu.contactly"
     compileSdk {
