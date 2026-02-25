@@ -13,3 +13,20 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# 🔐 Signing Keys
+*.jks
+*.keystore
+keystore.properties
+Contactly_key.jks
+
+# 🔥 Firebase
+app/google-services.json
+
+# 📄 Sensitive Info
+information.txt
+app/App_Essentials/information.txt
+app/App_Essentials/Contactly_key.jks
+
+# Local config
+local.properties
