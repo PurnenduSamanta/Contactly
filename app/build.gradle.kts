@@ -114,6 +114,9 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
 
+    // Google Play Services - Location (Geofencing)
+    implementation(libs.play.services.location)
+
     // Ktor
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.client.core)
