@@ -101,7 +101,7 @@ import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.ui.components.ContactlyTimePicker
 import com.purnendu.contactly.ui.components.ConfirmationDialogState
 import com.purnendu.contactly.ui.components.getDialogProperties
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.DayUtils
 import com.purnendu.contactly.utils.AppThemeMode
@@ -149,7 +149,7 @@ fun SchedulesScreen(
     var temporaryImage by remember { mutableStateOf<String?>(null) }
     var startMillis by remember { mutableLongStateOf(0L) }
     var endMillis by remember { mutableLongStateOf(0L) }
-    var scheduleType by remember { mutableStateOf(ScheduleType.ONE_TIME) }
+    var activationMode by remember { mutableStateOf(ActivationMode.ONE_TIME) }
     var selectedDays by remember { mutableStateOf(setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)) }
     
     // Custom time picker states
@@ -291,7 +291,7 @@ fun SchedulesScreen(
                         endMillis = entity?.endAtMillis ?: 0L
                         selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
                         temporaryImage = entity?.temporaryImage
-                        scheduleType = ScheduleType.fromInt(entity?.scheduleType ?: 0)
+                        activationMode = ActivationMode.fromInt(entity?.activationMode ?: 0)
                         showEditSheet = true
                     }
                 }
@@ -471,8 +471,8 @@ fun SchedulesScreen(
                     label = "schedule-filter-animation",
                     modifier = Modifier.weight(1f)
                 ) { filter ->
-                    val displaySchedules = if (filter.toScheduleType() == null) schedules
-                        else schedules.filter { it.scheduleType == filter.toScheduleType() }
+                    val displaySchedules = if (filter.toActivationMode() == null) schedules
+                        else schedules.filter { it.activationMode == filter.toActivationMode() }
 
                     when (viewMode) {
                         ViewMode.LIST -> {
@@ -545,7 +545,7 @@ fun SchedulesScreen(
                 temporaryImage = null  // Reset temp image for new schedule
                 startMillis = 0L
                 endMillis = 0L
-                scheduleType = ScheduleType.ONE_TIME
+                activationMode = ActivationMode.ONE_TIME
                 selectedDays = setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)
                 showEditSheet = true
                 schedulesViewModel.clearError()
@@ -565,14 +565,14 @@ fun SchedulesScreen(
             startTime = if(startMillis==0L) "" else formatter.format(startMillis),
             endTime = if(endMillis==0L) "" else formatter.format(endMillis),
             selectedDays = selectedDays,
-            scheduleType = scheduleType,
+            activationMode = activationMode,
             isSaving = isSaving,
             onTemporaryNameChange = { temporaryName = it },
             onTemporaryImageClick = { imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             onTemporaryImageRemove = { temporaryImage = null },
             onDaysChanged = { selectedDays = it },
             onScheduleTypeChange = { newType ->
-                scheduleType = newType
+                activationMode = newType
                 val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
                 selectedDays = setOf(today)
             },
@@ -610,7 +610,7 @@ fun SchedulesScreen(
                     val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
                     val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
 
-                    if (scheduleType != ScheduleType.INSTANT) {
+                    if (activationMode != ActivationMode.INSTANT) {
                         if(startMillis==0L)
                         {
                             schedulesViewModel.showError("Start time can not be empty")
@@ -668,7 +668,7 @@ fun SchedulesScreen(
 
                     // Lambda to perform the actual save operation
                     val performSave: (Long?, Long?) -> Unit = { saveStartMillis, saveEndMillis ->
-                        val selectedDaysBitmask = if (scheduleType != ScheduleType.INSTANT) DayUtils.daysToBitmask(selectedDays) else null
+                        val selectedDaysBitmask = if (activationMode != ActivationMode.INSTANT) DayUtils.daysToBitmask(selectedDays) else null
                         val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
 
                         // Generate scheduleId for new schedules (needed for image file naming)
@@ -682,14 +682,14 @@ fun SchedulesScreen(
                             startAtMillis = saveStartMillis,
                             endAtMillis = saveEndMillis,
                             selectedDays = selectedDaysBitmask,
-                            scheduleType = scheduleType,
+                            activationMode = activationMode,
                             isEditing = existingScheduleId != null
                         )
                         if (existingScheduleId != null) {
-                            val msg = if (scheduleType == ScheduleType.INSTANT) R.string.toast_instant_updated else R.string.ScheduleUpdated
+                            val msg = if (activationMode == ActivationMode.INSTANT) R.string.toast_instant_updated else R.string.ScheduleUpdated
                             Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         } else {
-                            val msg = if (scheduleType == ScheduleType.INSTANT) R.string.toast_instant_saved else R.string.toast_schedule_saved
+                            val msg = if (activationMode == ActivationMode.INSTANT) R.string.toast_instant_saved else R.string.toast_schedule_saved
                             Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         }
                         isSaving=false
@@ -699,7 +699,7 @@ fun SchedulesScreen(
                     }
 
                     // INSTANT: Save immediately (no time-based logic needed)
-                    if (scheduleType == ScheduleType.INSTANT) {
+                    if (activationMode == ActivationMode.INSTANT) {
                         performSave(null, null)
                         return@launch
                     }

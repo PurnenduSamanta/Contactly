@@ -68,7 +68,7 @@ import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ErrorMessageCard
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +79,7 @@ fun EditScheduleSheet(
     startTime: String,
     endTime: String,
     selectedDays: Set<Int> = setOf(0, 1, 2, 3, 4, 5, 6),  // Default: all days
-    scheduleType: ScheduleType = ScheduleType.ONE_TIME,
+    activationMode: ActivationMode = ActivationMode.ONE_TIME,
     error: String?,
     isSaving: Boolean,
     onErrorCardDismiss: () -> Unit,
@@ -89,7 +89,7 @@ fun EditScheduleSheet(
     onStartTimeClick: () -> Unit,
     onEndTimeClick: () -> Unit,
     onDaysChanged: (Set<Int>) -> Unit,
-    onScheduleTypeChange: (ScheduleType) -> Unit,
+    onScheduleTypeChange: (ActivationMode) -> Unit,
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -228,7 +228,7 @@ fun EditScheduleSheet(
                 )
                 Spacer(Modifier.height(8.dp))
                 ScheduleTypeToggle(
-                    selectedType = scheduleType,
+                    selectedType = activationMode,
                     onTypeChange = if (isSaving) { {} } else onScheduleTypeChange,
                     enabled = !isSaving
                 )
@@ -238,7 +238,7 @@ fun EditScheduleSheet(
             // Start Time, End Time, Day Picker (animated visibility for smooth height change)
             item {
                 AnimatedVisibility(
-                    visible = scheduleType != ScheduleType.INSTANT,
+                    visible = activationMode != ActivationMode.INSTANT,
                     enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
                     exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(200))
                 ) {
@@ -260,7 +260,7 @@ fun EditScheduleSheet(
                         Spacer(Modifier.height(20.dp))
 
                         Text(
-                            text = if (scheduleType == ScheduleType.ONE_TIME) {
+                            text = if (activationMode == ActivationMode.ONE_TIME) {
                                 "Select Day"
                             } else {
                                 "Repeat On"
@@ -272,7 +272,7 @@ fun EditScheduleSheet(
                         DayPickerWheel(
                             selectedDays = selectedDays,
                             onDaysChanged = if (isSaving) { {} } else onDaysChanged,
-                            singleSelection = scheduleType == ScheduleType.ONE_TIME,
+                            singleSelection = activationMode == ActivationMode.ONE_TIME,
                             enabled = !isSaving
                         )
                         Spacer(Modifier.height(24.dp))
@@ -537,7 +537,7 @@ fun EditScheduleSheetPreview() {
         startTime = "",
         endTime = "",
         selectedDays = setOf(1, 3, 5),  // Mon, Wed, Fri
-        scheduleType = ScheduleType.REPEAT,
+        activationMode = ActivationMode.REPEAT,
         onTemporaryNameChange = {},
         onTemporaryImageClick = {},
         onTemporaryImageRemove = {},

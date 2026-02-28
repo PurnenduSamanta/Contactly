@@ -23,7 +23,7 @@ appUpdate = "2.1.0"
 kotlinxSerializationJson = "1.10.0"
 ktor = "3.4.0"
 # Firebase
-firebaseBom = "34.9.0"
+firebaseBom = "34.10.0"
 googleServices = "4.4.4"
 firebaseCrashlyticsPlugin = "3.0.6"
 

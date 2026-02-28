@@ -14,7 +14,7 @@ import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.ContactlyAlarmManager
 import com.purnendu.contactly.utils.PermissionChecker
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import com.purnendu.contactly.utils.ViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -145,14 +145,14 @@ class SchedulesViewModel(
         startAtMillis: Long? = null,
         endAtMillis: Long? = null,
         selectedDays: Int? = null,
-        scheduleType: ScheduleType,
+        activationMode: ActivationMode,
         isEditing: Boolean
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             if(isEditing)
             {
                 // Cancel existing alarms (only for time-based schedules)
-                if (scheduleType != ScheduleType.INSTANT) {
+                if (activationMode != ActivationMode.INSTANT) {
                     contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
                 }
                 
@@ -166,10 +166,10 @@ class SchedulesViewModel(
             // Save original contact's photo to internal storage (always, for restoration during REVERT)
             val originalImagePath: String? = contact.id?.let { contactId -> imageStorageManager.saveOriginalImage(scheduleId, contactId) }
 
-            if (scheduleType == ScheduleType.INSTANT) {
+            if (activationMode == ActivationMode.INSTANT) {
                 // INSTANT: No alarms needed, save to database with switch ON
                 if (isEditing) {
-                    updateAlarmToDatabase(
+                    updateToDatabase(
                         scheduleId = scheduleId,
                         originalName = contact.name.orEmpty(),
                         temporaryName = temporaryName,
@@ -178,12 +178,12 @@ class SchedulesViewModel(
                         startAtMillis = null,
                         endAtMillis = null,
                         selectedDays = null,
-                        scheduleType = scheduleType,
+                        activationMode = activationMode,
                         alarmMetadataJson = null,
                         instantSwitchStatus = true
                     )
                 } else {
-                    addAlarmToDatabase(
+                    addToDatabase(
                         scheduleId = scheduleId,
                         contact = contact,
                         temporaryName = temporaryName,
@@ -192,7 +192,7 @@ class SchedulesViewModel(
                         startAtMillis = null,
                         endAtMillis = null,
                         selectedDays = null,
-                        scheduleType = scheduleType,
+                        activationMode = activationMode,
                         alarmMetadataJson = null,
                         instantSwitchStatus = true
                     )
@@ -219,7 +219,7 @@ class SchedulesViewModel(
                     startAtMillis = startAtMillis!!,
                     endAtMillis = endAtMillis!!,
                     selectedDays = selectedDays!!,
-                    scheduleType = scheduleType,
+                    activationMode = activationMode,
                     isUpdating = isEditing
                 )
             }
@@ -233,7 +233,7 @@ class SchedulesViewModel(
                 val entity = schedulesRepo.getById(id)
 
                 // Cancel all pending alarms first
-                if (schedule.scheduleType != ScheduleType.INSTANT) {
+                if (schedule.activationMode != ActivationMode.INSTANT) {
                     contactlyAlarmManager.cancelScheduleAlarms(id)
                 }
 
@@ -305,7 +305,7 @@ class SchedulesViewModel(
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
-        scheduleType: ScheduleType,
+        activationMode: ActivationMode,
         isUpdating: Boolean
     ) {
         val result = contactlyAlarmManager.scheduleAlarms(
@@ -318,13 +318,13 @@ class SchedulesViewModel(
             startAtMillis = startAtMillis,
             endAtMillis = endAtMillis,
             selectedDays = selectedDays,
-            scheduleType = scheduleType
+            activationMode = activationMode
         )
         if (result.success) {
             val nearestStartAtMillis = result.alarmMetadata.filter{ it.operation == OP_APPLY }.minByOrNull {it.triggerTimeMillis }?.triggerTimeMillis ?: startAtMillis
             val nearestEndAtMillis   = result.alarmMetadata.filter{ it.operation == OP_REVERT }.minByOrNull {it.triggerTimeMillis }?.triggerTimeMillis ?: endAtMillis
             if (isUpdating) {
-                updateAlarmToDatabase(
+                updateToDatabase(
                     scheduleId = scheduleId,
                     originalName = originalName,
                     temporaryName = temporaryName,
@@ -333,11 +333,11 @@ class SchedulesViewModel(
                     startAtMillis = nearestStartAtMillis,
                     endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
-                    scheduleType = scheduleType,
+                    activationMode = activationMode,
                     alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
                 )
             } else {
-                addAlarmToDatabase(
+                addToDatabase(
                     scheduleId = scheduleId,
                     contact = contact,
                     temporaryName = temporaryName,
@@ -346,7 +346,7 @@ class SchedulesViewModel(
                     startAtMillis = nearestStartAtMillis,
                     endAtMillis = nearestEndAtMillis,
                     selectedDays = selectedDays,
-                    scheduleType = scheduleType,
+                    activationMode = activationMode,
                     alarmMetadataJson = contactlyAlarmManager.toJson(result.alarmMetadata)
                 )
             }
@@ -355,7 +355,7 @@ class SchedulesViewModel(
         }
     }
 
-    private fun addAlarmToDatabase(
+    private fun addToDatabase(
         scheduleId: Long,
         contact: Contact,
         temporaryName: String,
@@ -364,7 +364,7 @@ class SchedulesViewModel(
         startAtMillis: Long?,
         endAtMillis: Long?,
         selectedDays: Int?,
-        scheduleType: ScheduleType,
+        activationMode: ActivationMode,
         alarmMetadataJson: String?,
         instantSwitchStatus: Boolean? = null
     ) {
@@ -381,7 +381,7 @@ class SchedulesViewModel(
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduledAlarmsMetadata = alarmMetadataJson,
-                scheduleType = scheduleType,
+                activationMode = activationMode,
                 tempImage = tempImage,
                 originalImage = originalImage,
                 instantSwitchStatus = instantSwitchStatus
@@ -389,7 +389,7 @@ class SchedulesViewModel(
         }
     }
 
-    private fun updateAlarmToDatabase(
+    private fun updateToDatabase(
         scheduleId: Long,
         originalName: String,
         temporaryName: String,
@@ -398,7 +398,7 @@ class SchedulesViewModel(
         startAtMillis: Long?,
         endAtMillis: Long?,
         selectedDays: Int?,
-        scheduleType: ScheduleType,
+        activationMode: ActivationMode,
         alarmMetadataJson: String?,
         instantSwitchStatus: Boolean? = null
     ) {
@@ -412,7 +412,7 @@ class SchedulesViewModel(
                 startAtMillis = startAtMillis,
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
-                scheduleType = ScheduleType.toInt(scheduleType),
+                activationMode = ActivationMode.toInt(activationMode),
                 scheduledAlarmsMetadata = alarmMetadataJson,
                 instantSwitchStatus = instantSwitchStatus,
             )

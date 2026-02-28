@@ -47,7 +47,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         val originalImage = intent.getStringExtra(EXTRA_ORIGINAL_IMAGE)
         val scheduleId = intent.getLongExtra(EXTRA_SCHEDULE_ID, -1L)
         val dayOfWeek = intent.getIntExtra(EXTRA_DAY_OF_WEEK, -1)
-        val scheduleType = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
+        val activationMode = intent.getIntExtra(EXTRA_SCHEDULE_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
         if (contactId <= 0) return
 
         val pendingResult = goAsync()
@@ -89,7 +89,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                                 originalName = originalName,
                                 temporaryName = temporaryName,
                                 isApply = isApply,
-                                scheduleType = scheduleType,
+                                activationMode = activationMode,
                                 contactImage = if(isApply) tempImage else originalImage
                             )
                         } catch (e: Exception) {
@@ -99,7 +99,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 }
 
                 // For one-time schedules: delete from database (IO thread)
-                if (scheduleType == 0 && op == OP_REVERT && scheduleId > 0) {
+                if (activationMode == 0 && op == OP_REVERT && scheduleId > 0) {
                     try {
                         // Delete associated images first
                         imageStorageManager.deleteImagesForSchedule(scheduleId)
@@ -114,8 +114,8 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 }
 
 
-                // Only reschedule for next week if this is a REPEAT schedule (scheduleType == 1)
-                if (scheduleType == 1 && dayOfWeek >= 0) {
+                // Only reschedule for next week if this is a REPEAT schedule (activationMode == 1)
+                if (activationMode == 1 && dayOfWeek >= 0) {
                     rescheduleForNextWeek(context, intent, dayOfWeek)
                 }
                 

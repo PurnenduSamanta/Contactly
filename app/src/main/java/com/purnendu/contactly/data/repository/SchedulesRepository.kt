@@ -8,7 +8,7 @@ import com.purnendu.contactly.alarm.models.AlarmMetadata
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Schedule
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -19,11 +19,14 @@ class SchedulesRepository(private val database: AppDatabase) {
     fun getSchedules(): Flow<List<Schedule>> = database.scheduleDao().getAll().map { list ->
         val currentTime = System.currentTimeMillis()
         list.map { e ->
-            val scheduleType = ScheduleType.fromInt(e.scheduleType)
+            val activationMode = ActivationMode.fromInt(e.activationMode)
 
-            // For INSTANT: active state from DB column; for others: computed from alarm metadata
-            val isActive = when (scheduleType) {
-                ScheduleType.INSTANT -> e.instantSwitchStatus == true
+            // For INSTANT: active state from DB column
+            // For NEARBY: default false (ViewModel overrides via EventBus)
+            // For ONE_TIME/REPEAT: computed from alarm metadata
+            val isActive = when (activationMode) {
+                ActivationMode.INSTANT -> e.instantSwitchStatus == true
+                ActivationMode.NEARBY -> false
                 else -> checkIfCurrentlyActive(e.scheduledAlarmsMetadata, currentTime)
             }
             
@@ -36,7 +39,7 @@ class SchedulesRepository(private val database: AppDatabase) {
                 selectedDays = e.selectedDays,
                 startAtMillis = e.startAtMillis,
                 endAtMillis = e.endAtMillis,
-                scheduleType = scheduleType,
+                activationMode = activationMode,
                 isCurrentlyActive = isActive,
                 temporaryImageUri = e.temporaryImage,
                 originalImageUri = e.originalImage
@@ -97,7 +100,7 @@ class SchedulesRepository(private val database: AppDatabase) {
         endAtMillis: Long?,
         selectedDays: Int?,
         scheduledAlarmsMetadata: String? = null,
-        scheduleType: ScheduleType,
+        activationMode: ActivationMode,
         tempImage: String? = null,
         originalImage: String? = null,
         instantSwitchStatus: Boolean? = null,
@@ -113,7 +116,7 @@ class SchedulesRepository(private val database: AppDatabase) {
                 endAtMillis = endAtMillis,
                 selectedDays = selectedDays,
                 scheduledAlarmsMetadata = scheduledAlarmsMetadata,
-                scheduleType = ScheduleType.toInt(scheduleType),
+                activationMode = ActivationMode.toInt(activationMode),
                 temporaryImage = tempImage,
                 originalImage = originalImage,
                 instantSwitchStatus = instantSwitchStatus,

@@ -16,7 +16,7 @@ import com.purnendu.contactly.data.local.room.ScheduleEntity
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -49,7 +49,7 @@ class ContactlyAlarmManager(
         startAtMillis: Long,
         endAtMillis: Long,
         selectedDays: Int,
-        scheduleType: ScheduleType
+        activationMode: ActivationMode
     ): AlarmScheduleResult {
         var isAlarmSuccessfullyScheduled = true
         val contactId = contact.id ?: return AlarmScheduleResult(false, emptyList())
@@ -99,7 +99,7 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ScheduleType.toInt(scheduleType))
+                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ActivationMode.toInt(activationMode))
             }
             val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
                 action = AliasAlarmReceiver.ACTION_ALIAS
@@ -111,7 +111,7 @@ class ContactlyAlarmManager(
                 putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
                 putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                 putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ScheduleType.toInt(scheduleType))
+                putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, ActivationMode.toInt(activationMode))
             }
 
             val applyPending = PendingIntent.getBroadcast(
@@ -166,7 +166,7 @@ class ContactlyAlarmManager(
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
-        scheduleType: Int
+        activationMode: Int
     ): Boolean {
         val intent = buildAlarmIntent(
             context = context,
@@ -178,7 +178,7 @@ class ContactlyAlarmManager(
             operation = operation,
             dayOfWeek = dayOfWeek,
             scheduleId = scheduleId,
-            scheduleType = scheduleType
+            activationMode = activationMode
         )
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -207,7 +207,7 @@ class ContactlyAlarmManager(
         operation: String,
         dayOfWeek: Int,
         scheduleId: Long,
-        scheduleType: Int
+        activationMode: Int
     ): Intent {
         return Intent(context, AliasAlarmReceiver::class.java).apply {
             action = AliasAlarmReceiver.ACTION_ALIAS
@@ -219,7 +219,7 @@ class ContactlyAlarmManager(
             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, scheduleType)
+            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, activationMode)
         }
     }
 
@@ -301,7 +301,7 @@ class ContactlyAlarmManager(
             operation = metadata.operation,
             dayOfWeek = metadata.dayOfWeek,
             scheduleId = schedule.scheduleId,
-            scheduleType = schedule.scheduleType
+            activationMode = schedule.activationMode
         )
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -330,7 +330,7 @@ class ContactlyAlarmManager(
     suspend fun syncAllSchedules(): SyncResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting alarm sync...")
         val allSchedules = schedulesRepo.getAllEntities().filter {
-            ScheduleType.fromInt(it.scheduleType) != ScheduleType.INSTANT
+            ActivationMode.fromInt(it.activationMode) != ActivationMode.INSTANT
         }
         var scheduledCount = 0
         var skippedCount = 0
@@ -401,7 +401,7 @@ class ContactlyAlarmManager(
                             operation = metadata.operation,
                             dayOfWeek = metadata.dayOfWeek,
                             scheduleId = schedule.scheduleId,
-                            scheduleType = schedule.scheduleType
+                            activationMode = schedule.activationMode
                         )
 
                         if (!exists) {
@@ -452,7 +452,7 @@ class ContactlyAlarmManager(
                     putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, existingSchedule.temporaryImage)
                     putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, scheduleId)
                     putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
-                    putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, existingSchedule.scheduleType)
+                    putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, existingSchedule.activationMode)
                 }
 
                 val oldPending = PendingIntent.getBroadcast(

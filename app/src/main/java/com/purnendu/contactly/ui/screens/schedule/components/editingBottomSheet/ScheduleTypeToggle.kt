@@ -25,13 +25,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.purnendu.contactly.utils.ScheduleType
+import androidx.compose.material.icons.outlined.LocationOn
+import com.purnendu.contactly.utils.ActivationMode
 import com.purnendu.contactly.utils.expressiveScale
 
 @Composable
 fun ScheduleTypeToggle(
-    selectedType: ScheduleType,
-    onTypeChange: (ScheduleType) -> Unit,
+    selectedType: ActivationMode,
+    onTypeChange: (ActivationMode) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
@@ -47,8 +48,8 @@ fun ScheduleTypeToggle(
                 ScheduleTypeChip(
                     text = "One-time",
                     icon = Icons.Outlined.CalendarMonth,
-                    selected = selectedType == ScheduleType.ONE_TIME,
-                    onClick = { if (enabled) onTypeChange(ScheduleType.ONE_TIME) },
+                    selected = selectedType == ActivationMode.ONE_TIME,
+                    onClick = { if (enabled) onTypeChange(ActivationMode.ONE_TIME) },
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -62,8 +63,8 @@ fun ScheduleTypeToggle(
                 ScheduleTypeChip(
                     text = "Repeat",
                     icon = Icons.Outlined.Repeat,
-                    selected = selectedType == ScheduleType.REPEAT,
-                    onClick = { if (enabled) onTypeChange(ScheduleType.REPEAT) },
+                    selected = selectedType == ActivationMode.REPEAT,
+                    onClick = { if (enabled) onTypeChange(ActivationMode.REPEAT) },
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
@@ -76,10 +77,24 @@ fun ScheduleTypeToggle(
                 ScheduleTypeChip(
                     text = "Instant",
                     icon = Icons.Outlined.Bolt,
-                    selected = selectedType == ScheduleType.INSTANT,
-                    onClick = { if (enabled) onTypeChange(ScheduleType.INSTANT) },
+                    selected = selectedType == ActivationMode.INSTANT,
+                    onClick = { if (enabled) onTypeChange(ActivationMode.INSTANT) },
                 )
-                Spacer(modifier = Modifier.width(8.dp))            }
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.width(8.dp))
+            Row {
+                ScheduleTypeChip(
+                    text = "Nearby",
+                    icon = Icons.Outlined.LocationOn,
+                    selected = selectedType == ActivationMode.NEARBY,
+                    onClick = { if (enabled) onTypeChange(ActivationMode.NEARBY) },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
         }
     }
 }

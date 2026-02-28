@@ -541,7 +541,7 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        "Type: ${if (statusInfo.schedule.scheduleType == 0) "One-Time" else "Repeat"}",
+                                        "Type: ${when (statusInfo.schedule.activationMode) { 0 -> "One-Time"; 1 -> "Repeat"; 2 -> "Instant"; 3 -> "Nearby"; else -> "Unknown" }}",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )

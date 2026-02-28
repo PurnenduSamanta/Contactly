@@ -1,5 +1,6 @@
 package com.purnendu.contactly.data.local.room
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -16,7 +17,7 @@ data class ScheduleEntity(
     val endAtMillis: Long?,
     val selectedDays: Int?,
     val scheduledAlarmsMetadata: String? = null,  // JSON array of AlarmMetadata
-    val scheduleType: Int, // 0 = ONE_TIME, 1 = REPEAT, 2 = INSTANT
+    @ColumnInfo(name = "scheduleType") val activationMode: Int, // 0 = ONE_TIME, 1 = REPEAT, 2 = INSTANT, 3 = NEARBY
     val instantSwitchStatus: Boolean? = null // Only for INSTANT: true = applied, false = not applied, null = N/A
 )
 

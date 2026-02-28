@@ -14,23 +14,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 
 /**
  * Filter options for the schedule list.
- * null = All, otherwise filters by ScheduleType.
+ * null = All, otherwise filters by ActivationMode.
  */
 enum class ScheduleFilter(val label: String) {
     ALL("All"),
     ONE_TIME("One-time"),
     REPEAT("Repeat"),
-    INSTANT("Instant");
+    INSTANT("Instant"),
+    NEARBY("Nearby");
 
-    fun toScheduleType(): ScheduleType? = when (this) {
+    fun toActivationMode(): ActivationMode? = when (this) {
         ALL -> null
-        ONE_TIME -> ScheduleType.ONE_TIME
-        REPEAT -> ScheduleType.REPEAT
-        INSTANT -> ScheduleType.INSTANT
+        ONE_TIME -> ActivationMode.ONE_TIME
+        REPEAT -> ActivationMode.REPEAT
+        INSTANT -> ActivationMode.INSTANT
+        NEARBY -> ActivationMode.NEARBY
     }
 }
 

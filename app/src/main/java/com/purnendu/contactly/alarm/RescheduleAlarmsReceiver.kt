@@ -10,7 +10,7 @@ import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.utils.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,7 +54,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                     }
 
                     // Skip INSTANT schedules - they don't use alarms
-                    if (ScheduleType.fromInt(e.scheduleType) == ScheduleType.INSTANT) return@forEach
+                    if (ActivationMode.fromInt(e.activationMode) == ActivationMode.INSTANT) return@forEach
 
                     // Extract selected days from bitmask (e.g., 127 = all days)
                     val daysList = DayUtils.extractDaysFromBitmask(e.selectedDays ?: return@forEach)
@@ -85,7 +85,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
+                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.activationMode) // 0 = ONE_TIME, 1 = REPEAT
                         }
                         
                         val applyPending = PendingIntent.getBroadcast(
@@ -118,7 +118,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
                             putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
                             putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
                             putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.scheduleType) // 0 = ONE_TIME, 1 = REPEAT
+                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.activationMode) // 0 = ONE_TIME, 1 = REPEAT
                         }
                         
                         val revertPending = PendingIntent.getBroadcast(

@@ -55,7 +55,7 @@ import com.purnendu.contactly.ui.components.SlidingImageCarousel
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.utils.ViewMode
 import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.ScheduleType
+import com.purnendu.contactly.utils.ActivationMode
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import java.text.SimpleDateFormat
@@ -181,7 +181,7 @@ private fun ListScheduleItem(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Time/Active/Instant status
-                    if (schedule.scheduleType == ScheduleType.INSTANT) {
+                    if (schedule.activationMode == ActivationMode.INSTANT) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
@@ -238,7 +238,7 @@ private fun ListScheduleItem(
                     }
 
                     // Day chips - only for non-INSTANT schedules
-                    if (schedule.scheduleType != ScheduleType.INSTANT) {
+                    if (schedule.activationMode != ActivationMode.INSTANT) {
                         DayChips(
                             selectedDays = schedule.selectedDays ?: 0,
                             modifier = Modifier.padding(horizontal = 4.dp)
@@ -391,7 +391,7 @@ private fun GridScheduleItem(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Time/Active/Instant status
-                if (schedule.scheduleType == ScheduleType.INSTANT) {
+                if (schedule.activationMode == ActivationMode.INSTANT) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -448,7 +448,7 @@ private fun GridScheduleItem(
                 }
 
                 // Day chips - only for non-INSTANT schedules
-                if (schedule.scheduleType != ScheduleType.INSTANT) {
+                if (schedule.activationMode != ActivationMode.INSTANT) {
                     DayChips(
                         selectedDays = schedule.selectedDays ?: 0,
                         modifier = Modifier.padding(horizontal = 4.dp)
@@ -535,7 +535,7 @@ fun ScheduleItemPreview() {
                     selectedDays = 127,
                     startAtMillis = 0L,
                     endAtMillis = 0L,
-                    scheduleType = ScheduleType.ONE_TIME,
+                    activationMode = ActivationMode.ONE_TIME,
                     temporaryImageUri = null,
                     originalImageUri = null
                 ),
@@ -557,7 +557,7 @@ fun ScheduleItemPreview() {
                     selectedDays = 127,
                     startAtMillis = 0L,
                     endAtMillis = 0L,
-                    scheduleType = ScheduleType.ONE_TIME,
+                    activationMode = ActivationMode.ONE_TIME,
                     temporaryImageUri = null,
                     originalImageUri = null
                 ),

@@ -103,7 +103,7 @@ object NotificationHelper {
         originalName: String,
         temporaryName: String,
         isApply: Boolean, // true = APPLY (change name), false = REVERT (restore name)
-        scheduleType: Int, // 0 = ONE_TIME, 1 = REPEAT
+        activationMode: Int, // 0 = ONE_TIME, 1 = REPEAT, 2 = INSTANT, 3 = NEARBY
         contactImage: String?
     ) {
         if (!hasNotificationPermission(context)) return
@@ -119,18 +119,19 @@ object NotificationHelper {
         }
 
         // Build notification content
-        val scheduleTypeText = when (scheduleType) {
+        val activationModeText = when (activationMode) {
             0 -> "One-Time"
             1 -> "Repeat"
             2 -> "Instant"
+            3 -> "Nearby"
             else -> "Unknown"
         }
         val actionText = if (isApply) "changed to" else "restored to"
 
         val content = if (isApply) {
-            "\"$originalName\" → \"$temporaryName\" 📝 ($scheduleTypeText)"
+            "\"$originalName\" → \"$temporaryName\" 📝 ($activationModeText)"
         } else {
-            "\"$temporaryName\" → \"$originalName\" 📝 ($scheduleTypeText)"
+            "\"$temporaryName\" → \"$originalName\" 📝 ($activationModeText)"
         }
 
         val expandedText = buildString {
@@ -145,7 +146,7 @@ object NotificationHelper {
                 append("Was using: $temporaryName")
             }
             appendLine()
-            append("Schedule: $scheduleTypeText")
+            append("Schedule: $activationModeText")
         }
 
         // Try to load contact image for large icon
