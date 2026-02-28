@@ -42,7 +42,11 @@ class SchedulesRepository(private val database: AppDatabase) {
                 activationMode = activationMode,
                 isCurrentlyActive = isActive,
                 temporaryImageUri = e.temporaryImage,
-                originalImageUri = e.originalImage
+                originalImageUri = e.originalImage,
+                latitude = e.latitude,
+                longitude = e.longitude,
+                radiusMeters = e.radiusMeters,
+                locationLabel = e.locationLabel
             )
         }
     }
@@ -104,6 +108,10 @@ class SchedulesRepository(private val database: AppDatabase) {
         tempImage: String? = null,
         originalImage: String? = null,
         instantSwitchStatus: Boolean? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        radiusMeters: Float? = null,
+        locationLabel: String? = null,
     ): Long {
         return database.scheduleDao().insert(
             ScheduleEntity(
@@ -120,6 +128,10 @@ class SchedulesRepository(private val database: AppDatabase) {
                 temporaryImage = tempImage,
                 originalImage = originalImage,
                 instantSwitchStatus = instantSwitchStatus,
+                latitude = latitude,
+                longitude = longitude,
+                radiusMeters = radiusMeters,
+                locationLabel = locationLabel,
             )
         )
     }

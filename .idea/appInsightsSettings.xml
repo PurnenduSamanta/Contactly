@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.purnendu.contactly" />
+                  <option name="mobileSdkAppId" value="1:1071257595150:android:f6cf6e327c77b58920bb5f" />
+                  <option name="projectId" value="contactly-acb74" />
+                  <option name="projectNumber" value="1071257595150" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

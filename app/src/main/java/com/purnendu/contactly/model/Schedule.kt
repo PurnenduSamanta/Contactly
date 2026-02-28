@@ -15,5 +15,10 @@ data class Schedule(
     val activationMode: ActivationMode,
     val isCurrentlyActive: Boolean = false,  // For ONE_TIME/REPEAT: between APPLY and REVERT; For INSTANT: manually toggled
     val temporaryImageUri: String?,
-    val originalImageUri: String?
+    val originalImageUri: String?,
+    // Nearby (geofence) fields
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val radiusMeters: Float? = null,
+    val locationLabel: String? = null
 )
