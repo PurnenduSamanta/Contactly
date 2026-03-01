@@ -13,6 +13,7 @@ import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
 import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.alarm.ContactlyGeofenceManager
 import com.purnendu.contactly.utils.PermissionChecker
 import com.purnendu.contactly.utils.ActivationMode
 import com.purnendu.contactly.utils.ViewMode
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
  * All dependencies are injected via Koin using interfaces:
  * - PermissionChecker: Abstracts Android permission checks
  * - ContactlyAlarmManager: Handles all alarm-related operations
+ * - ContactlyGeofenceManager: Handles geofence registration for NEARBY schedules
  * - AppPreferences: Abstracts DataStore preferences
  * 
  * This design makes the ViewModel fully testable without needing Android mocks.
@@ -47,6 +49,7 @@ class SchedulesViewModel(
     private val contactsRepo: ContactsRepository,
     private val contactlyAlarmManager: ContactlyAlarmManager,
     private val imageStorageManager: ImageStorageManager,
+    private val geofenceManager: ContactlyGeofenceManager,
     appPreferences: AppPreferences
 ) : ViewModel() {
 

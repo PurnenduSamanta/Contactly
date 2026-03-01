@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class SchedulesRepository(private val database: AppDatabase) {
+class SchedulesRepository(
+    private val database: AppDatabase,
+    private val contactsRepo: ContactsRepository
+) {
     private val gson = Gson()
     
     fun getSchedules(): Flow<List<Schedule>> = database.scheduleDao().getAll().map { list ->
@@ -22,11 +25,14 @@ class SchedulesRepository(private val database: AppDatabase) {
             val activationMode = ActivationMode.fromInt(e.activationMode)
 
             // For INSTANT: active state from DB column
-            // For NEARBY: default false (ViewModel overrides via EventBus)
+            // For NEARBY: check contact's current name (single source of truth)
             // For ONE_TIME/REPEAT: computed from alarm metadata
             val isActive = when (activationMode) {
                 ActivationMode.INSTANT -> e.instantSwitchStatus == true
-                ActivationMode.NEARBY -> false
+                ActivationMode.NEARBY -> {
+                    val currentContact = contactsRepo.fetchContactById(e.contactId)
+                    currentContact?.name == e.temporaryName
+                }
                 else -> checkIfCurrentlyActive(e.scheduledAlarmsMetadata, currentTime)
             }
             
@@ -59,6 +65,8 @@ class SchedulesRepository(private val database: AppDatabase) {
      * For REPEAT schedules: APPLY time is rescheduled to next week after firing,
      * so APPLY > REVERT indicates the active state (APPLY is next week, REVERT is today).
      * 
+     * Note: NEARBY uses contact name check instead (see getSchedules above).
+     * 
      * @param metadataJson JSON string of AlarmMetadata list
      * @param currentTime Current time in milliseconds
      * @return True if the schedule is currently active
@@ -70,7 +78,7 @@ class SchedulesRepository(private val database: AppDatabase) {
             val type = object : TypeToken<List<AlarmMetadata>>() {}.type
             val alarmList: List<AlarmMetadata> = gson.fromJson(metadataJson, type) ?: emptyList()
             
-            // Separate APPLY and REVERT alarms
+            // ONE_TIME/REPEAT: pair-based logic
             val applyAlarms = alarmList.filter { it.operation == OP_APPLY }
             val revertAlarms = alarmList.filter { it.operation == OP_REVERT }
             

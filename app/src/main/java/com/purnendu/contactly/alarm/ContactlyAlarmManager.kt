@@ -330,7 +330,8 @@ class ContactlyAlarmManager(
     suspend fun syncAllSchedules(): SyncResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting alarm sync...")
         val allSchedules = schedulesRepo.getAllEntities().filter {
-            ActivationMode.fromInt(it.activationMode) != ActivationMode.INSTANT
+            val mode = ActivationMode.fromInt(it.activationMode)
+            mode != ActivationMode.INSTANT && mode != ActivationMode.NEARBY
         }
         var scheduledCount = 0
         var skippedCount = 0

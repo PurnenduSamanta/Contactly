@@ -2,6 +2,7 @@ package com.purnendu.contactly.di
 
 import com.purnendu.contactly.MainActivityViewModel
 import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.alarm.ContactlyGeofenceManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
@@ -39,7 +40,7 @@ val appModule = module {
     single { AppDatabase.getDataBase(androidContext()) }
     
     // ========== Repositories ==========
-    single { SchedulesRepository(get()) }
+    single { SchedulesRepository(get(), get()) }
     single { ContactsRepository(androidContext().contentResolver) }
     
     // ========== Preferences ==========
@@ -54,11 +55,12 @@ val appModule = module {
     // ContactlyAlarmManager handles all alarm-related operations
     single { ContactlyAlarmManager(androidContext(), get(), get()) }
     single { ImageStorageManager(androidContext()) }
+    single { ContactlyGeofenceManager(androidContext(), get()) }
     
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
     viewModel { MainActivityViewModel(get(), get()) }
-    viewModel { SchedulesViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { SchedulesViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
 

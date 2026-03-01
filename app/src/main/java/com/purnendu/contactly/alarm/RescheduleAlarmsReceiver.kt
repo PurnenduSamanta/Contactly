@@ -1,16 +1,9 @@
 package com.purnendu.contactly.alarm
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.purnendu.contactly.data.repository.ContactsRepository
-import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.utils.AlarmRequestCodeUtils
-import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.ActivationMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,15 +11,18 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * BroadcastReceiver that reschedules all alarms after device boot.
- * 
+ * BroadcastReceiver that reschedules all alarms and geofences after device boot.
+ *
  * Uses Koin for dependency injection via KoinComponent interface.
+ *
+ * After a reboot, both AlarmManager alarms and geofences are cleared by the system.
+ * This receiver re-registers them using the same sync logic used during app startup.
  */
 class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
-    
-    private val schedulesRepo: SchedulesRepository by inject()
-    private val contactsRepo: ContactsRepository by inject()
-    
+
+    private val contactlyAlarmManager: ContactlyAlarmManager by inject()
+    private val geofenceManager: ContactlyGeofenceManager by inject()
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
@@ -34,116 +30,21 @@ class RescheduleAlarmsReceiver : BroadcastReceiver(), KoinComponent {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val alarmManager = context.getSystemService(AlarmManager::class.java)
-                val entities = schedulesRepo.getAllEntities()
+                // Re-register time-based alarms (ONE_TIME / REPEAT)
+                val syncResult = contactlyAlarmManager.syncAllSchedules()
+                Log.d(TAG, "Boot alarm sync: $syncResult")
 
-                entities.forEach { e ->
-                    // Check if the contact still exists
-                    val contact = try {
-                        contactsRepo.fetchContactById(e.contactId)
-                    } catch (ex: SecurityException) {
-                        Log.e("RescheduleAlarmsRx", "No permission to access contacts", ex)
-                        null
-                    }
-                    
-                    // If contact doesn't exist, remove from database and skip scheduling
-                    if (contact == null) {
-                        Log.d("RescheduleAlarmsRx", "Contact ${e.contactId} not found, removing schedule")
-                        schedulesRepo.deleteByContactId(e.contactId)
-                        return@forEach // Skip to next schedule
-                    }
-
-                    // Skip INSTANT schedules - they don't use alarms
-                    if (ActivationMode.fromInt(e.activationMode) == ActivationMode.INSTANT) return@forEach
-
-                    // Extract selected days from bitmask (e.g., 127 = all days)
-                    val daysList = DayUtils.extractDaysFromBitmask(e.selectedDays ?: return@forEach)
-                    
-                    // If no days selected, skip this schedule
-                    if (daysList.isEmpty()) {
-                        Log.w("RescheduleAlarmsRx", "No days selected for schedule ${e.scheduleId}, skipping")
-                        return@forEach
-                    }
-
-                    // Schedule alarms for each selected day
-                    daysList.forEach { dayOfWeek ->
-                        // Calculate next occurrence for both times as a pair (ensures consistency)
-                        val (applyAt, revertAt) = DayUtils.calculateNextOccurrencePair(e.startAtMillis ?: return@forEach, e.endAtMillis ?: return@forEach, dayOfWeek)
-
-                        // Generate unique request codes using centralized utility
-                        val applyReqCode = AlarmRequestCodeUtils.generateApplyRequestCode(e.contactId, dayOfWeek)
-                        val revertReqCode = AlarmRequestCodeUtils.generateRevertRequestCode(e.contactId, dayOfWeek)
-
-                        // Create APPLY alarm intent
-                        val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-                            action = AliasAlarmReceiver.ACTION_ALIAS
-                            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_APPLY)
-                            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
-                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
-                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
-                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, e.temporaryImage)
-                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
-                            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.activationMode) // 0 = ONE_TIME, 1 = REPEAT
-                        }
-                        
-                        val applyPending = PendingIntent.getBroadcast(
-                            context,
-                            applyReqCode,
-                            applyIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-
-                        // Schedule APPLY alarm
-                        try {
-                            alarmManager.setExactAndAllowWhileIdle(
-                                AlarmManager.RTC,
-                                applyAt,
-                                applyPending
-                            )
-                            Log.d("RescheduleAlarmsRx", "Scheduled APPLY for contact ${e.contactId}, day $dayOfWeek at $applyAt")
-                        } catch (ex: SecurityException) {
-                            Log.e("RescheduleAlarmsRx", "Failed to schedule APPLY alarm", ex)
-                        }
-
-                        // Create REVERT alarm intent
-                        val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-                            action = AliasAlarmReceiver.ACTION_ALIAS
-                            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AliasAlarmReceiver.OP_REVERT)
-                            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, e.contactId)
-                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, e.originalName)
-                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, e.temporaryName)
-                            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, e.temporaryImage)
-                            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, e.originalImage)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_ID, e.scheduleId)
-                            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                            putExtra(AliasAlarmReceiver.EXTRA_SCHEDULE_TYPE, e.activationMode) // 0 = ONE_TIME, 1 = REPEAT
-                        }
-                        
-                        val revertPending = PendingIntent.getBroadcast(
-                            context,
-                            revertReqCode,
-                            revertIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-
-                        // Schedule REVERT alarm
-                        try {
-                            alarmManager.setExactAndAllowWhileIdle(
-                                AlarmManager.RTC,
-                                revertAt,
-                                revertPending
-                            )
-                            Log.d("RescheduleAlarmsRx", "Scheduled REVERT for contact ${e.contactId}, day $dayOfWeek at $revertAt")
-                        } catch (ex: SecurityException) {
-                            Log.e("RescheduleAlarmsRx", "Failed to schedule REVERT alarm", ex)
-                        }
-                    }
-                }
+                // Re-register NEARBY geofences
+                geofenceManager.syncAllGeofences()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to sync on boot", e)
             } finally {
                 pendingResult.finish()
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "RescheduleAlarmsRx"
     }
 }
