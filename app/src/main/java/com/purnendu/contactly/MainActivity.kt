@@ -1,5 +1,6 @@
 package com.purnendu.contactly
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
@@ -72,6 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 class MainActivity : FragmentActivity() {
 
     private lateinit var appUpdateManager: AppUpdateManager
+    private lateinit var mainActivityViewModel: MainActivityViewModel
     private val updateType = AppUpdateType.IMMEDIATE
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result: ActivityResult ->
@@ -100,7 +102,7 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             // Get ViewModels from Koin
-            val mainActivityViewModel: MainActivityViewModel = koinViewModel()
+            mainActivityViewModel = koinViewModel()
             val settingsViewModel: SettingsViewModel = koinViewModel()
             
             // Keep the splash screen visible until the app is ready
@@ -153,17 +155,33 @@ class MainActivity : FragmentActivity() {
                             isAppearanceLightNavigationBars = useDarkIcons
                         }
                     }
-                    ContactlyApp()
+                    ContactlyApp(mainActivityViewModel)
                 }
+            }
+        }
+
+        // Handle share intent on initial launch
+        handleShareIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+            if (!sharedText.isNullOrBlank() && ::mainActivityViewModel.isInitialized) {
+                mainActivityViewModel.handleSharedLocation(sharedText)
             }
         }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun ContactlyApp() {
+    fun ContactlyApp(mainActivityViewModel: MainActivityViewModel) {
         val navController = rememberNavController()
-        val mainActivityViewModel: MainActivityViewModel = koinViewModel()
         
         // Define bottom nav screens (only screens with icons will be shown)
         val bottomNavScreens = listOf(

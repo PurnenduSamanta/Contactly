@@ -113,6 +113,7 @@ import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
 import com.purnendu.contactly.MainActivityViewModel
+import com.purnendu.contactly.utils.GoogleMapsUrlParser
 import com.purnendu.contactly.utils.validateDeviceTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -151,6 +152,12 @@ fun SchedulesScreen(
     var endMillis by remember { mutableLongStateOf(0L) }
     var activationMode by remember { mutableStateOf(ActivationMode.ONE_TIME) }
     var selectedDays by remember { mutableStateOf(setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)) }
+    
+    // Nearby location states
+    var nearbyLatitude by remember { mutableStateOf("") }
+    var nearbyLongitude by remember { mutableStateOf("") }
+    var nearbyRadius by remember { mutableStateOf("200") }
+    var nearbyLocationLabel by remember { mutableStateOf<String?>(null) }
     
     // Custom time picker states
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -249,6 +256,23 @@ fun SchedulesScreen(
                 showContactSheet = true
             }
         }
+
+        // Listen for shared location events from Google Maps
+        LaunchedEffect(Unit) {
+            viewModel.sharedLocationEvent.collect { sharedText ->
+                val latLng = GoogleMapsUrlParser.parseFromSharedText(sharedText)
+                if (latLng != null) {
+                    nearbyLatitude = latLng.latitude.toString()
+                    nearbyLongitude = latLng.longitude.toString()
+                    nearbyRadius = "200"
+                    nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(sharedText)
+                    activationMode = ActivationMode.NEARBY
+                    showContactSheet = true
+                } else {
+                    Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     LaunchedEffect(key1 = combinedPermissionKey)
@@ -292,6 +316,11 @@ fun SchedulesScreen(
                         selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
                         temporaryImage = entity?.temporaryImage
                         activationMode = ActivationMode.fromInt(entity?.activationMode ?: 0)
+                        // Pre-fill location data for NEARBY
+                        nearbyLatitude = entity?.latitude?.toString() ?: ""
+                        nearbyLongitude = entity?.longitude?.toString() ?: ""
+                        nearbyRadius = entity?.radiusMeters?.toInt()?.toString() ?: "200"
+                        nearbyLocationLabel = entity?.locationLabel
                         showEditSheet = true
                     }
                 }
@@ -547,6 +576,10 @@ fun SchedulesScreen(
                 endMillis = 0L
                 activationMode = ActivationMode.ONE_TIME
                 selectedDays = setOf(Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1)
+                nearbyLatitude = ""
+                nearbyLongitude = ""
+                nearbyRadius = "200"
+                nearbyLocationLabel = null
                 showEditSheet = true
                 schedulesViewModel.clearError()
             }
@@ -578,11 +611,35 @@ fun SchedulesScreen(
             },
             onStartTimeClick = { showStartTimePicker = true },
             onEndTimeClick = { showEndTimePicker = true },
+            // Nearby fields
+            nearbyLatitude = nearbyLatitude,
+            nearbyLongitude = nearbyLongitude,
+            nearbyRadius = nearbyRadius,
+            nearbyLocationLabel = nearbyLocationLabel,
+            onNearbyLatitudeChange = { nearbyLatitude = it },
+            onNearbyLongitudeChange = { nearbyLongitude = it },
+            onNearbyRadiusChange = { nearbyRadius = it },
+            onSelectLocationClick = {
+                // Open Google Maps to pick a location
+                try {
+                    val mapIntent = Intent(Intent.ACTION_VIEW, "https://maps.google.com".toUri())
+                    mapIntent.setPackage("com.google.android.apps.maps")
+                    context.startActivity(mapIntent)
+                } catch (e: Exception) {
+                    // Fallback: open Maps in browser
+                    val browserIntent = Intent(Intent.ACTION_VIEW, "https://maps.google.com".toUri())
+                    context.startActivity(browserIntent)
+                }
+            },
             onCancel = {
                 showEditSheet = false
                 showContactSheet = false
                 selectedContact = null
                 temporaryImage = null  // Clear temp image on cancel
+                nearbyLatitude = ""
+                nearbyLongitude = ""
+                nearbyRadius = "200"
+                nearbyLocationLabel = null
                 schedulesViewModel.clearError()
             },
             onSave = {
@@ -610,7 +667,7 @@ fun SchedulesScreen(
                     val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
                     val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
 
-                    if (activationMode != ActivationMode.INSTANT) {
+                    if (activationMode != ActivationMode.INSTANT && activationMode != ActivationMode.NEARBY) {
                         if(startMillis==0L)
                         {
                             schedulesViewModel.showError("Start time can not be empty")
@@ -666,9 +723,32 @@ fun SchedulesScreen(
                         }
                     }
 
+                    // NEARBY validations
+                    if (activationMode == ActivationMode.NEARBY) {
+                        val lat = nearbyLatitude.toDoubleOrNull()
+                        val lng = nearbyLongitude.toDoubleOrNull()
+                        val rad = nearbyRadius.toFloatOrNull()
+
+                        if (lat == null || lat !in -90.0..90.0) {
+                            schedulesViewModel.showError("Please enter a valid latitude")
+                            isSaving = false
+                            return@launch
+                        }
+                        if (lng == null || lng !in -180.0..180.0) {
+                            schedulesViewModel.showError("Please enter a valid longitude")
+                            isSaving = false
+                            return@launch
+                        }
+                        if (rad == null || rad < 50f || rad > 50000f) {
+                            schedulesViewModel.showError("Please enter a valid radius")
+                            isSaving = false
+                            return@launch
+                        }
+                    }
+
                     // Lambda to perform the actual save operation
                     val performSave: (Long?, Long?) -> Unit = { saveStartMillis, saveEndMillis ->
-                        val selectedDaysBitmask = if (activationMode != ActivationMode.INSTANT) DayUtils.daysToBitmask(selectedDays) else null
+                        val selectedDaysBitmask = if (activationMode != ActivationMode.INSTANT && activationMode != ActivationMode.NEARBY) DayUtils.daysToBitmask(selectedDays) else null
                         val existingScheduleId = schedules.firstOrNull { it.contactId == contact.id }?.id?.toLongOrNull()
 
                         // Generate scheduleId for new schedules (needed for image file naming)
@@ -683,7 +763,11 @@ fun SchedulesScreen(
                             endAtMillis = saveEndMillis,
                             selectedDays = selectedDaysBitmask,
                             activationMode = activationMode,
-                            isEditing = existingScheduleId != null
+                            isEditing = existingScheduleId != null,
+                            latitude = nearbyLatitude.toDoubleOrNull(),
+                            longitude = nearbyLongitude.toDoubleOrNull(),
+                            radiusMeters = nearbyRadius.toFloatOrNull(),
+                            locationLabel = nearbyLocationLabel
                         )
                         if (existingScheduleId != null) {
                             val msg = if (activationMode == ActivationMode.INSTANT) R.string.toast_instant_updated else R.string.ScheduleUpdated
@@ -698,8 +782,8 @@ fun SchedulesScreen(
                         temporaryImage = null  // Clear temp image after save
                     }
 
-                    // INSTANT: Save immediately (no time-based logic needed)
-                    if (activationMode == ActivationMode.INSTANT) {
+                    // INSTANT or NEARBY: Save immediately (no time-based logic needed)
+                    if (activationMode == ActivationMode.INSTANT || activationMode == ActivationMode.NEARBY) {
                         performSave(null, null)
                         return@launch
                     }

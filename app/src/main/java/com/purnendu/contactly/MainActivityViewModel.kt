@@ -33,6 +33,10 @@ class MainActivityViewModel(
     private val _addScheduleEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val addScheduleEvent: SharedFlow<Unit> = _addScheduleEvent.asSharedFlow()
 
+    // Event flow for shared location from Google Maps
+    private val _sharedLocationEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val sharedLocationEvent: SharedFlow<String> = _sharedLocationEvent.asSharedFlow()
+
     // Track whether schedules exist (for hiding center FAB when empty)
     private val _hasSchedules = MutableStateFlow(false)
     val hasSchedules: StateFlow<Boolean> = _hasSchedules
@@ -42,6 +46,13 @@ class MainActivityViewModel(
      */
     fun triggerAddSchedule() {
         _addScheduleEvent.tryEmit(Unit)
+    }
+
+    /**
+     * Handle shared location text from Google Maps
+     */
+    fun handleSharedLocation(sharedText: String) {
+        _sharedLocationEvent.tryEmit(sharedText)
     }
 
     /**

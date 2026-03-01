@@ -149,14 +149,23 @@ class SchedulesViewModel(
         endAtMillis: Long? = null,
         selectedDays: Int? = null,
         activationMode: ActivationMode,
-        isEditing: Boolean
+        isEditing: Boolean,
+        // Nearby fields
+        latitude: Double? = null,
+        longitude: Double? = null,
+        radiusMeters: Float? = null,
+        locationLabel: String? = null
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             if(isEditing)
             {
                 // Cancel existing alarms (only for time-based schedules)
-                if (activationMode != ActivationMode.INSTANT) {
+                if (activationMode == ActivationMode.ONE_TIME || activationMode == ActivationMode.REPEAT) {
                     contactlyAlarmManager.cancelScheduleAlarms(scheduleId)
+                }
+                // Unregister old geofence if editing a NEARBY schedule
+                if (activationMode == ActivationMode.NEARBY) {
+                    geofenceManager.unregisterGeofence(scheduleId)
                 }
                 
                 // Delete old images to avoid unnecessary storage
@@ -169,62 +178,80 @@ class SchedulesViewModel(
             // Save original contact's photo to internal storage (always, for restoration during REVERT)
             val originalImagePath: String? = contact.id?.let { contactId -> imageStorageManager.saveOriginalImage(scheduleId, contactId) }
 
-            if (activationMode == ActivationMode.INSTANT) {
-                // INSTANT: No alarms needed, save to database with switch ON
-                if (isEditing) {
-                    updateToDatabase(
+            when (activationMode) {
+                ActivationMode.INSTANT -> {
+                    // INSTANT: No alarms needed, save to database with switch ON
+                    if (isEditing) {
+                        updateToDatabase(
+                            scheduleId = scheduleId,
+                            originalName = contact.name.orEmpty(),
+                            temporaryName = temporaryName,
+                            tempImage = tempImagePath,
+                            originalImage = originalImagePath,
+                            startAtMillis = null,
+                            endAtMillis = null,
+                            selectedDays = null,
+                            activationMode = activationMode,
+                            alarmMetadataJson = null,
+                            instantSwitchStatus = true
+                        )
+                    } else {
+                        addToDatabase(
+                            scheduleId = scheduleId,
+                            contact = contact,
+                            temporaryName = temporaryName,
+                            tempImage = tempImagePath,
+                            originalImage = originalImagePath,
+                            startAtMillis = null,
+                            endAtMillis = null,
+                            selectedDays = null,
+                            activationMode = activationMode,
+                            alarmMetadataJson = null,
+                            instantSwitchStatus = true
+                        )
+                    }
+
+                    // Auto-apply temporary name/photo to contact
+                    contact.id?.let { contactId ->
+                        contactsRepo.applyContact(
+                            contactId = contactId,
+                            name = temporaryName,
+                            filePath = tempImagePath,
+                            shouldRemovePhoto = tempImagePath == null
+                        )
+                    }
+                }
+                ActivationMode.NEARBY -> {
+                    // NEARBY: Save to DB with location data, then register geofence
+                    addNearbySchedule(
+                        contact = contact,
+                        scheduleId = scheduleId,
+                        temporaryName = temporaryName,
+                        tempImage = tempImagePath,
+                        originalImage = originalImagePath,
+                        latitude = latitude!!,
+                        longitude = longitude!!,
+                        radiusMeters = radiusMeters!!,
+                        locationLabel = locationLabel,
+                        isEditing = isEditing
+                    )
+                }
+                else -> {
+                    // ONE_TIME / REPEAT: Schedule alarms then save to database
+                    scheduleAlarms(
+                        contact = contact,
                         scheduleId = scheduleId,
                         originalName = contact.name.orEmpty(),
                         temporaryName = temporaryName,
                         tempImage = tempImagePath,
                         originalImage = originalImagePath,
-                        startAtMillis = null,
-                        endAtMillis = null,
-                        selectedDays = null,
+                        startAtMillis = startAtMillis!!,
+                        endAtMillis = endAtMillis!!,
+                        selectedDays = selectedDays!!,
                         activationMode = activationMode,
-                        alarmMetadataJson = null,
-                        instantSwitchStatus = true
-                    )
-                } else {
-                    addToDatabase(
-                        scheduleId = scheduleId,
-                        contact = contact,
-                        temporaryName = temporaryName,
-                        tempImage = tempImagePath,
-                        originalImage = originalImagePath,
-                        startAtMillis = null,
-                        endAtMillis = null,
-                        selectedDays = null,
-                        activationMode = activationMode,
-                        alarmMetadataJson = null,
-                        instantSwitchStatus = true
+                        isUpdating = isEditing
                     )
                 }
-
-                // Auto-apply temporary name/photo to contact
-                contact.id?.let { contactId ->
-                    contactsRepo.applyContact(
-                        contactId = contactId,
-                        name = temporaryName,
-                        filePath = tempImagePath,
-                        shouldRemovePhoto = tempImagePath == null
-                    )
-                }
-            } else {
-                // ONE_TIME / REPEAT: Schedule alarms then save to database
-                scheduleAlarms(
-                    contact = contact,
-                    scheduleId = scheduleId,
-                    originalName = contact.name.orEmpty(),
-                    temporaryName = temporaryName,
-                    tempImage = tempImagePath,
-                    originalImage = originalImagePath,
-                    startAtMillis = startAtMillis!!,
-                    endAtMillis = endAtMillis!!,
-                    selectedDays = selectedDays!!,
-                    activationMode = activationMode,
-                    isUpdating = isEditing
-                )
             }
         }
     }
@@ -235,9 +262,11 @@ class SchedulesViewModel(
                 // Fetch schedule entity before deletion to get original contact data
                 val entity = schedulesRepo.getById(id)
 
-                // Cancel all pending alarms first
-                if (schedule.activationMode != ActivationMode.INSTANT) {
-                    contactlyAlarmManager.cancelScheduleAlarms(id)
+                // Cancel pending alarms or unregister geofence
+                when (schedule.activationMode) {
+                    ActivationMode.INSTANT -> { /* No alarms to cancel */ }
+                    ActivationMode.NEARBY -> geofenceManager.unregisterGeofence(id)
+                    else -> contactlyAlarmManager.cancelScheduleAlarms(id)
                 }
 
                 if (entity != null) {
@@ -358,6 +387,64 @@ class SchedulesViewModel(
         }
     }
 
+    private suspend fun addNearbySchedule(
+        contact: Contact,
+        scheduleId: Long,
+        temporaryName: String,
+        tempImage: String?,
+        originalImage: String?,
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Float,
+        locationLabel: String?,
+        isEditing: Boolean
+    ) {
+        // Register geofence first — only save to DB if it succeeds
+        val success = geofenceManager.registerGeofence(scheduleId, latitude, longitude, radiusMeters)
+
+        if (!success) {
+            Log.e("SchedulesViewModel", "Geofence registration failed for schedule: $scheduleId")
+            _errorMessage.value = "Failed to register geofence. Please check location permissions."
+            return
+        }
+
+        if (isEditing) {
+            updateToDatabase(
+                scheduleId = scheduleId,
+                originalName = contact.name.orEmpty(),
+                temporaryName = temporaryName,
+                tempImage = tempImage,
+                originalImage = originalImage,
+                startAtMillis = null,
+                endAtMillis = null,
+                selectedDays = null,
+                activationMode = ActivationMode.NEARBY,
+                alarmMetadataJson = null,
+                latitude = latitude,
+                longitude = longitude,
+                radiusMeters = radiusMeters,
+                locationLabel = locationLabel
+            )
+        } else {
+            addToDatabase(
+                scheduleId = scheduleId,
+                contact = contact,
+                temporaryName = temporaryName,
+                tempImage = tempImage,
+                originalImage = originalImage,
+                startAtMillis = null,
+                endAtMillis = null,
+                selectedDays = null,
+                activationMode = ActivationMode.NEARBY,
+                alarmMetadataJson = null,
+                latitude = latitude,
+                longitude = longitude,
+                radiusMeters = radiusMeters,
+                locationLabel = locationLabel
+            )
+        }
+    }
+
     private fun addToDatabase(
         scheduleId: Long,
         contact: Contact,
@@ -369,10 +456,13 @@ class SchedulesViewModel(
         selectedDays: Int?,
         activationMode: ActivationMode,
         alarmMetadataJson: String?,
-        instantSwitchStatus: Boolean? = null
+        instantSwitchStatus: Boolean? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        radiusMeters: Float? = null,
+        locationLabel: String? = null
     ) {
         val id = contact.id ?: return
-        // Get original image URI from contact for restoration during REVERT
         viewModelScope.launch(Dispatchers.IO) {
             schedulesRepo.create(
                 scheduleId = scheduleId,
@@ -387,7 +477,11 @@ class SchedulesViewModel(
                 activationMode = activationMode,
                 tempImage = tempImage,
                 originalImage = originalImage,
-                instantSwitchStatus = instantSwitchStatus
+                instantSwitchStatus = instantSwitchStatus,
+                latitude = latitude,
+                longitude = longitude,
+                radiusMeters = radiusMeters,
+                locationLabel = locationLabel
             )
         }
     }
@@ -403,7 +497,11 @@ class SchedulesViewModel(
         selectedDays: Int?,
         activationMode: ActivationMode,
         alarmMetadataJson: String?,
-        instantSwitchStatus: Boolean? = null
+        instantSwitchStatus: Boolean? = null,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        radiusMeters: Float? = null,
+        locationLabel: String? = null
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val current = schedulesRepo.getById(scheduleId) ?: return@launch
@@ -418,6 +516,10 @@ class SchedulesViewModel(
                 activationMode = ActivationMode.toInt(activationMode),
                 scheduledAlarmsMetadata = alarmMetadataJson,
                 instantSwitchStatus = instantSwitchStatus,
+                latitude = latitude,
+                longitude = longitude,
+                radiusMeters = radiusMeters,
+                locationLabel = locationLabel,
             )
             schedulesRepo.update(updated)
         }

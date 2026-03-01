@@ -10,6 +10,8 @@ import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.purnendu.contactly.data.repository.SchedulesRepository
 import com.purnendu.contactly.utils.ActivationMode
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * Manages geofence registration/unregistration for NEARBY schedules.
@@ -30,15 +32,16 @@ class ContactlyGeofenceManager(
 
     /**
      * Register a geofence for a NEARBY schedule.
+     * Returns true if registration succeeds, false otherwise.
      * Caller must ensure location permissions are granted.
      */
     @SuppressLint("MissingPermission")
-    fun registerGeofence(
+    suspend fun registerGeofence(
         scheduleId: Long,
         latitude: Double,
         longitude: Double,
         radiusMeters: Float
-    ) {
+    ): Boolean {
         val geofence = Geofence.Builder()
             .setRequestId(scheduleId.toString())
             .setCircularRegion(latitude, longitude, radiusMeters)
@@ -54,26 +57,35 @@ class ContactlyGeofenceManager(
             .addGeofence(geofence)
             .build()
 
-        geofencingClient.addGeofences(request, getGeofencePendingIntent())
-            .addOnSuccessListener {
-                Log.d(TAG, "Geofence registered: $scheduleId (lat=$latitude, lng=$longitude, r=$radiusMeters)")
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to register geofence: $scheduleId", e)
-            }
+        return suspendCancellableCoroutine { continuation ->
+            geofencingClient.addGeofences(request, getGeofencePendingIntent())
+                .addOnSuccessListener {
+                    Log.d(TAG, "Geofence registered: $scheduleId (lat=$latitude, lng=$longitude, r=$radiusMeters)")
+                    continuation.resume(true)
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to register geofence: $scheduleId", e)
+                    continuation.resume(false)
+                }
+        }
     }
 
     /**
      * Unregister a geofence for a NEARBY schedule.
+     * Returns true if unregistration succeeds, false otherwise.
      */
-    fun unregisterGeofence(scheduleId: Long) {
-        geofencingClient.removeGeofences(listOf(scheduleId.toString()))
-            .addOnSuccessListener {
-                Log.d(TAG, "Geofence unregistered: $scheduleId")
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to unregister geofence: $scheduleId", e)
-            }
+    suspend fun unregisterGeofence(scheduleId: Long): Boolean {
+        return suspendCancellableCoroutine { continuation ->
+            geofencingClient.removeGeofences(listOf(scheduleId.toString()))
+                .addOnSuccessListener {
+                    Log.d(TAG, "Geofence unregistered: $scheduleId")
+                    continuation.resume(true)
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to unregister geofence: $scheduleId", e)
+                    continuation.resume(false)
+                }
+        }
     }
 
     /**
