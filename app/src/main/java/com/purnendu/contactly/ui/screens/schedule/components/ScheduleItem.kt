@@ -180,7 +180,7 @@ private fun ListScheduleItem(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Time/Active/Instant status
+                    // Time/Active/Instant/Nearby status
                     if (schedule.activationMode == ActivationMode.INSTANT) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -201,6 +201,33 @@ private fun ListScheduleItem(
                                     hapticFeedback.performHapticFeedback(feedbackType)
                                     onInstantToggle?.invoke(schedule)
                                 }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    } else if (schedule.activationMode == ActivationMode.NEARBY) {
+                        Text(
+                            text = if (schedule.isCurrentlyActive) "\uD83D\uDCCD Active" else "\uD83D\uDCCD Nearby",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        schedule.locationLabel?.let { label ->
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        schedule.radiusMeters?.let { radius ->
+                            Text(
+                                text = "${radius.toInt()}m radius",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -237,8 +264,9 @@ private fun ListScheduleItem(
                         Spacer(modifier = Modifier.height(6.dp))
                     }
 
-                    // Day chips - only for non-INSTANT schedules
-                    if (schedule.activationMode != ActivationMode.INSTANT) {
+                    // Day chips - only for time-based schedules
+                    if (schedule.activationMode != ActivationMode.INSTANT
+                        && schedule.activationMode != ActivationMode.NEARBY) {
                         DayChips(
                             selectedDays = schedule.selectedDays ?: 0,
                             modifier = Modifier.padding(horizontal = 4.dp)
@@ -390,7 +418,7 @@ private fun GridScheduleItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Time/Active/Instant status
+                // Time/Active/Instant/Nearby status
                 if (schedule.activationMode == ActivationMode.INSTANT) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -411,6 +439,33 @@ private fun GridScheduleItem(
                                 hapticFeedback.performHapticFeedback(feedbackType)
                                 onInstantToggle?.invoke(schedule)
                             }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                } else if (schedule.activationMode == ActivationMode.NEARBY) {
+                    Text(
+                        text = if (schedule.isCurrentlyActive) "\uD83D\uDCCD Active" else "\uD83D\uDCCD Nearby",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    schedule.locationLabel?.let { label ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    schedule.radiusMeters?.let { radius ->
+                        Text(
+                            text = "${radius.toInt()}m radius",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -447,8 +502,9 @@ private fun GridScheduleItem(
                     Spacer(modifier = Modifier.height(6.dp))
                 }
 
-                // Day chips - only for non-INSTANT schedules
-                if (schedule.activationMode != ActivationMode.INSTANT) {
+                // Day chips - only for time-based schedules
+                if (schedule.activationMode != ActivationMode.INSTANT
+                    && schedule.activationMode != ActivationMode.NEARBY) {
                     DayChips(
                         selectedDays = schedule.selectedDays ?: 0,
                         modifier = Modifier.padding(horizontal = 4.dp)

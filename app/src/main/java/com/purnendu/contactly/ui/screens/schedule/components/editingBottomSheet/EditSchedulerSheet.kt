@@ -69,6 +69,9 @@ import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.schedule.components.ErrorMessageCard
 import com.purnendu.contactly.utils.ActivationMode
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material.icons.outlined.LocationOn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +93,15 @@ fun EditScheduleSheet(
     onEndTimeClick: () -> Unit,
     onDaysChanged: (Set<Int>) -> Unit,
     onScheduleTypeChange: (ActivationMode) -> Unit,
+    // Nearby location fields
+    nearbyLatitude: String = "",
+    nearbyLongitude: String = "",
+    nearbyRadius: String = "200",
+    nearbyLocationLabel: String? = null,
+    onNearbyLatitudeChange: (String) -> Unit = {},
+    onNearbyLongitudeChange: (String) -> Unit = {},
+    onNearbyRadiusChange: (String) -> Unit = {},
+    onSelectLocationClick: () -> Unit = {},
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -235,10 +247,11 @@ fun EditScheduleSheet(
                 Spacer(Modifier.height(20.dp))
             }
 
-            // Start Time, End Time, Day Picker (animated visibility for smooth height change)
+            // Start Time, End Time, Day Picker (hidden for INSTANT and NEARBY)
             item {
                 AnimatedVisibility(
-                    visible = activationMode != ActivationMode.INSTANT,
+                    visible = activationMode != ActivationMode.INSTANT
+                            && activationMode != ActivationMode.NEARBY,
                     enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
                     exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(200))
                 ) {
@@ -275,6 +288,103 @@ fun EditScheduleSheet(
                             singleSelection = activationMode == ActivationMode.ONE_TIME,
                             enabled = !isSaving
                         )
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
+            }
+
+            // Nearby Location Section (only visible for NEARBY)
+            item {
+                AnimatedVisibility(
+                    visible = activationMode == ActivationMode.NEARBY,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(200))
+                ) {
+                    Column {
+                        Text(
+                            text = "Location",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        // "Select from Google Maps" button
+                        OutlinedButton(
+                            onClick = if (isSaving) { {} } else onSelectLocationClick,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !isSaving
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.LocationOn,
+                                contentDescription = "Select Location",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Select from Google Maps")
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Open Maps \u2192 Drop a pin \u2192 Tap Share \u2192 Select Contactly",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Show location label if available
+                        nearbyLocationLabel?.let { label ->
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "\uD83D\uDCCD $label",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Latitude and Longitude fields
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = nearbyLatitude,
+                                onValueChange = onNearbyLatitudeChange,
+                                label = { Text("Latitude") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                enabled = !isSaving
+                            )
+                            OutlinedTextField(
+                                value = nearbyLongitude,
+                                onValueChange = onNearbyLongitudeChange,
+                                label = { Text("Longitude") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                enabled = !isSaving
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Radius input
+                        OutlinedTextField(
+                            value = nearbyRadius,
+                            onValueChange = onNearbyRadiusChange,
+                            label = { Text("Radius (meters)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            enabled = !isSaving
+                        )
+
                         Spacer(Modifier.height(24.dp))
                     }
                 }
