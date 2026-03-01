@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.alarm.ContactlyGeofenceManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit
  */
 class MainActivityViewModel(
     private val contactlyAlarmManager: ContactlyAlarmManager,
+    private val geofenceManager: ContactlyGeofenceManager,
     private val appPreferences: AppPreferences
 ) : ViewModel() {
 
@@ -65,10 +67,11 @@ class MainActivityViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Sync alarms, but only if it's been more than 12 hours
+                // Sync alarms and geofences, but only if it's been more than 12 hours
                 if (shouldSyncNow()) {
-                    Log.d("MainActivityViewModel", "Syncing alarms...")
+                    Log.d("MainActivityViewModel", "Syncing alarms and geofences...")
                     syncAlarms()
+                    syncGeofences()
                     appPreferences.updateLastSyncTimestamp()
                 } else {
                     Log.d("MainActivityViewModel", "Sync skipped, not enough time has passed.")
@@ -116,6 +119,19 @@ class MainActivityViewModel(
                     "orphaned=${result.orphanedSchedulesRemoved}")
         } catch (e: Exception) {
             Log.e("MainActivityViewModel", "Failed to sync alarms", e)
+        }
+    }
+
+    /**
+     * Re-register all NEARBY geofences
+     * Geofences can be lost if the system clears them
+     */
+    private suspend fun syncGeofences() {
+        try {
+            geofenceManager.syncAllGeofences()
+            Log.d("MainActivityViewModel", "Geofence sync completed")
+        } catch (e: Exception) {
+            Log.e("MainActivityViewModel", "Failed to sync geofences", e)
         }
     }
 }

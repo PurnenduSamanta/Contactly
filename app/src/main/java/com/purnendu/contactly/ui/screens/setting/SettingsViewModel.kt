@@ -70,7 +70,8 @@ class SettingsViewModel(
             return
         viewModelScope.launch(Dispatchers.IO) {
                 val schedules = schedulesRepo.getAllEntities().filter {
-                    ActivationMode.fromInt(it.activationMode) != ActivationMode.INSTANT
+                    val mode = ActivationMode.fromInt(it.activationMode)
+                    mode != ActivationMode.INSTANT && mode != ActivationMode.NEARBY
                 }
                 val statusList = schedules.map { schedule ->
                     val metadata = contactlyAlarmManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)

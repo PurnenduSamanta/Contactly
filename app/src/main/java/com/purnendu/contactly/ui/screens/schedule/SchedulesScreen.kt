@@ -770,10 +770,18 @@ fun SchedulesScreen(
                             locationLabel = nearbyLocationLabel
                         )
                         if (existingScheduleId != null) {
-                            val msg = if (activationMode == ActivationMode.INSTANT) R.string.toast_instant_updated else R.string.ScheduleUpdated
+                            val msg = when (activationMode) {
+                                ActivationMode.INSTANT -> R.string.toast_instant_updated
+                                ActivationMode.NEARBY -> R.string.toast_nearby_updated
+                                else -> R.string.ScheduleUpdated
+                            }
                             Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         } else {
-                            val msg = if (activationMode == ActivationMode.INSTANT) R.string.toast_instant_saved else R.string.toast_schedule_saved
+                            val msg = when (activationMode) {
+                                ActivationMode.INSTANT -> R.string.toast_instant_saved
+                                ActivationMode.NEARBY -> R.string.toast_nearby_saved
+                                else -> R.string.toast_schedule_saved
+                            }
                             Toast.makeText(context, context.getString(msg), Toast.LENGTH_SHORT).show()
                         }
                         isSaving=false

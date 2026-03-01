@@ -55,4 +55,6 @@
     <string name="action_instant_switch">Instant Switch</string>
     <string name="toast_instant_saved">Instant schedule saved! Toggle it anytime from the card.</string>
     <string name="toast_instant_updated">Instant schedule updated!</string>
+    <string name="toast_nearby_saved">Nearby schedule saved! It will activate when you enter the location.</string>
+    <string name="toast_nearby_updated">Nearby schedule updated!</string>
 </resources>

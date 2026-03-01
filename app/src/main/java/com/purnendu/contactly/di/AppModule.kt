@@ -59,7 +59,7 @@ val appModule = module {
     
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
-    viewModel { MainActivityViewModel(get(), get()) }
+    viewModel { MainActivityViewModel(get(), get(), get()) }
     viewModel { SchedulesViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
