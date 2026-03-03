@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -60,19 +59,10 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -87,9 +77,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.rememberPermissionState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
@@ -139,11 +127,6 @@ fun SchedulesScreen(
     // Schedule type filter
     var selectedFilter by remember { mutableStateOf(ScheduleFilter.ALL) }
 
-    // Notify MainActivityViewModel when schedules list changes
-    LaunchedEffect(schedules) {
-        mainActivityViewModel?.setHasSchedules(schedules.isNotEmpty())
-    }
-
     var isSaving by remember { mutableStateOf(false) }
     var showContactSheet by remember { mutableStateOf(false) }
     var showEditSheet by remember { mutableStateOf(false) }
@@ -165,16 +148,18 @@ fun SchedulesScreen(
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
-    // Image picker launcher for temporary image
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        temporaryImage = uri?.toString()
-    }
-    
     // Generic confirmation dialog state - can handle various confirmation scenarios
     var confirmationDialogState by remember { mutableStateOf<ConfirmationDialogState?>(null) }
-    
+
+    val showContactPermissionDialogFromViewModel = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
+    val showContactPermissionDialog = rememberSaveable { mutableStateOf(false) }
+    var showLocationRevokedDialog by remember { mutableStateOf(false) }
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+
+    val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
+
+    val lifeCycleOwner = LocalLifecycleOwner.current
+
     // FAB scroll behavior
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -191,23 +176,47 @@ fun SchedulesScreen(
         }
     }
 
-    val showContactDialog = schedulesViewModel.showContactPermissionDialog.collectAsStateWithLifecycle()
-    val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
+    // Image picker launcher for temporary image
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        temporaryImage = uri?.toString()
+    }
 
-    val permissionState = rememberMultiplePermissionsState(
+    val contactPermissionState = rememberMultiplePermissionsState(
         permissions = listOf(
             Manifest.permission.READ_CONTACTS,
             Manifest.permission.WRITE_CONTACTS
         )
     )
-    val lifeCycleOwner = LocalLifecycleOwner.current
+
+    // Location permission for NEARBY geofencing
+    val locationPermissionState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ),
+        onPermissionsResult = { results ->
+            val allGranted = results.values.all { it }
+            if (!allGranted && activationMode == ActivationMode.NEARBY) {
+                // User denied system permission dialog → revert to ONE_TIME
+                activationMode = ActivationMode.ONE_TIME
+            }
+        }
+    )
+
     DisposableEffect(key1 = lifeCycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
-                permissionState.launchMultiplePermissionRequest()
+                contactPermissionState.launchMultiplePermissionRequest()
             }
             if (event == Lifecycle.Event.ON_RESUME) {
                schedulesViewModel.checkCriticalPermissions()
+               // Check: if NEARBY schedules exist but location permission is revoked
+               val hasNearbySchedules = schedules.any { it.activationMode == ActivationMode.NEARBY }
+               if (hasNearbySchedules && !locationPermissionState.allPermissionsGranted) {
+                   showLocationRevokedDialog = true
+               }
             }
         }
         lifeCycleOwner.lifecycle.addObserver(observer)
@@ -217,13 +226,11 @@ fun SchedulesScreen(
     }
 
     val combinedPermissionKey =  buildString {
-        append(permissionState.permissions[0].status.toString())
-        append(permissionState.permissions[1].status.toString())
+        append(contactPermissionState.permissions[0].status.toString())
+        append(contactPermissionState.permissions[1].status.toString())
     }
 
-    val showPermissionDialog = rememberSaveable { mutableStateOf(false) }
-
-    if(showPermissionDialog.value || showContactDialog.value)
+    if(showContactPermissionDialog.value || showContactPermissionDialogFromViewModel.value)
     {
         context.apply {
             ContactlyDialog(
@@ -236,11 +243,11 @@ fun SchedulesScreen(
                         data = "package:${context.packageName}".toUri()
                     }
                     startActivity(intent)
-                    showPermissionDialog.value =false
+                    showContactPermissionDialog.value =false
                     schedulesViewModel.dismissContactPermissionDialog()
                 },
                 onDismiss = {
-                    showPermissionDialog.value =false
+                    showContactPermissionDialog.value =false
                     schedulesViewModel.dismissContactPermissionDialog()
                     val activity = context as? Activity
                     activity?.finish()
@@ -251,14 +258,26 @@ fun SchedulesScreen(
         }
     }
 
-    // Location permission for NEARBY geofencing
-    val locationPermissionState = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-    )
-    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showLocationRevokedDialog) {
+        context.apply {
+            ContactlyDialog(
+                isConfirmButtonAvailable = true,
+                isDismissButtonAvailable = true,
+                title = getString(R.string.app_name),
+                message = "Location permission has been revoked. Your Nearby schedules won't trigger until permission is granted again.",
+                onConfirm = {
+                    locationPermissionState.launchMultiplePermissionRequest()
+                    showLocationRevokedDialog = false
+                },
+                onDismiss = {
+                    showLocationRevokedDialog = false
+                },
+                confirmButtonText = "Grant",
+                dismissButtonText = "Later"
+            )
+        }
+    }
 
     if (showLocationPermissionDialog) {
         context.apply {
@@ -266,11 +285,10 @@ fun SchedulesScreen(
                 isConfirmButtonAvailable = true,
                 isDismissButtonAvailable = true,
                 title = "Location Permission Required",
-                message = "Contactly needs location permission to detect when you are near a place and automatically apply the schedule. Please grant location access (including \"Allow all the time\" for background detection).",
+                message = "Contactly needs location permission to detect when you are near a place and automatically apply the schedule. Please grant location access (including \"Allow all the time\" for background detection) going to the app settings.",
                 onConfirm = {
                     if (locationPermissionState.shouldShowRationale ||
                         !locationPermissionState.allPermissionsGranted) {
-                        // First try system dialog
                         locationPermissionState.launchMultiplePermissionRequest()
                     }
                     showLocationPermissionDialog = false
@@ -285,6 +303,11 @@ fun SchedulesScreen(
             )
         }
     }
+
+
+
+    // Notify MainActivityViewModel when schedules list changes
+    LaunchedEffect(schedules) { mainActivityViewModel?.setHasSchedules(schedules.isNotEmpty()) }
 
     // Listen for add schedule events from center FAB in bottom nav
     mainActivityViewModel?.let { viewModel ->
@@ -338,18 +361,18 @@ fun SchedulesScreen(
     {
         //Checking permission status
         when {
-            permissionState.allPermissionsGranted -> {
-                showPermissionDialog.value = false
+            contactPermissionState.allPermissionsGranted -> {
+                showContactPermissionDialog.value = false
                 if(contacts.isEmpty())
                 schedulesViewModel.loadContacts()
             }
 
-            permissionState.shouldShowRationale -> {
-                showPermissionDialog.value = true
+            contactPermissionState.shouldShowRationale -> {
+                showContactPermissionDialog.value = true
             }
 
-            !permissionState.allPermissionsGranted && !permissionState.shouldShowRationale -> {
-                showPermissionDialog.value = true
+            !contactPermissionState.allPermissionsGranted && !contactPermissionState.shouldShowRationale -> {
+                showContactPermissionDialog.value = true
             }
         }
     }
@@ -730,7 +753,7 @@ fun SchedulesScreen(
                     val startTimeOfDay = startCal.get(Calendar.HOUR_OF_DAY) * 60 + startCal.get(Calendar.MINUTE)
                     val endTimeOfDay = endCal.get(Calendar.HOUR_OF_DAY) * 60 + endCal.get(Calendar.MINUTE)
 
-                    if (activationMode != ActivationMode.INSTANT && activationMode != ActivationMode.NEARBY) {
+                    if (activationMode == ActivationMode.ONE_TIME || activationMode == ActivationMode.REPEAT) {
                         if(startMillis==0L)
                         {
                             schedulesViewModel.showError("Start time can not be empty")

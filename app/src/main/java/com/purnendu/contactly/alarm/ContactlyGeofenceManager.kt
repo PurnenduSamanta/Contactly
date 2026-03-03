@@ -1,10 +1,12 @@
 package com.purnendu.contactly.alarm
 
-import android.annotation.SuppressLint
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
@@ -31,17 +33,39 @@ class ContactlyGeofenceManager(
     }
 
     /**
+     * Check if location permissions are granted at runtime.
+     * Returns true only if BOTH fine and coarse location are granted.
+     */
+    fun hasLocationPermission(): Boolean {
+        val fine = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val coarse = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        return fine && coarse
+    }
+
+    /**
      * Register a geofence for a NEARBY schedule.
      * Returns true if registration succeeds, false otherwise.
-     * Caller must ensure location permissions are granted.
+     * Dynamically checks location permission — returns false if not granted
+     * instead of silently failing.
      */
-    @SuppressLint("MissingPermission")
     suspend fun registerGeofence(
         scheduleId: Long,
         latitude: Double,
         longitude: Double,
         radiusMeters: Float
     ): Boolean {
+        // Dynamic permission check — prevents silent failure
+        if (!hasLocationPermission()) {
+            Log.w(TAG, "Cannot register geofence $scheduleId: location permission not granted")
+            return false
+        }
+
         val geofence = Geofence.Builder()
             .setRequestId(scheduleId.toString())
             .setCircularRegion(latitude, longitude, radiusMeters)
@@ -57,16 +81,22 @@ class ContactlyGeofenceManager(
             .addGeofence(geofence)
             .build()
 
-        return suspendCancellableCoroutine { continuation ->
-            geofencingClient.addGeofences(request, getGeofencePendingIntent())
-                .addOnSuccessListener {
-                    Log.d(TAG, "Geofence registered: $scheduleId (lat=$latitude, lng=$longitude, r=$radiusMeters)")
-                    continuation.resume(true)
-                }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Failed to register geofence: $scheduleId", e)
-                    continuation.resume(false)
-                }
+        return try {
+            suspendCancellableCoroutine { continuation ->
+                @Suppress("MissingPermission") // Already checked above
+                geofencingClient.addGeofences(request, getGeofencePendingIntent())
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Geofence registered: $scheduleId (lat=$latitude, lng=$longitude, r=$radiusMeters)")
+                        continuation.resume(true)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to register geofence: $scheduleId", e)
+                        continuation.resume(false)
+                    }
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException: permission revoked during registration for $scheduleId", e)
+            false
         }
     }
 
@@ -91,9 +121,15 @@ class ContactlyGeofenceManager(
     /**
      * Re-register all NEARBY geofences.
      * Called after boot or app update since geofences don't survive restarts.
+     * Dynamically checks permission — skips ALL geofences if permission is missing.
      */
-    @SuppressLint("MissingPermission")
     suspend fun syncAllGeofences() {
+        // Check permission BEFORE iterating — no point trying if permission is gone
+        if (!hasLocationPermission()) {
+            Log.w(TAG, "Cannot sync geofences: location permission not granted. Skipping all.")
+            return
+        }
+
         val nearbySchedules = schedulesRepo.getAllEntities().filter {
             ActivationMode.fromInt(it.activationMode) == ActivationMode.NEARBY
         }
@@ -104,13 +140,13 @@ class ContactlyGeofenceManager(
                 && schedule.radiusMeters != null
             ) {
                 try {
-                    registerGeofence(
+                    val success = registerGeofence(
                         scheduleId = schedule.scheduleId,
                         latitude = schedule.latitude,
                         longitude = schedule.longitude,
                         radiusMeters = schedule.radiusMeters
                     )
-                    registeredCount++
+                    if (success) registeredCount++
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to sync geofence: ${schedule.scheduleId}", e)
                 }

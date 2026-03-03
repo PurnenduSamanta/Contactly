@@ -404,7 +404,7 @@ class SchedulesViewModel(
 
         if (!success) {
             Log.e("SchedulesViewModel", "Geofence registration failed for schedule: $scheduleId")
-            _errorMessage.value = "Failed to register geofence. Please check location permissions."
+            _errorMessage.value = "Location permission is required for Nearby schedules. Please grant location permission from Settings."
             return
         }
 
