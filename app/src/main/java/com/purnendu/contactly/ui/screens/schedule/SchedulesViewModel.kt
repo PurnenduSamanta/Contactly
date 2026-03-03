@@ -140,6 +140,10 @@ class SchedulesViewModel(
         return permissionChecker.canScheduleExactAlarms()
     }
 
+    fun hasBackgroundLocationPermission(): Boolean {
+        return geofenceManager.hasBackgroundLocationPermission()
+    }
+
     fun addSchedule(
         contact: Contact,
         scheduleId: Long,

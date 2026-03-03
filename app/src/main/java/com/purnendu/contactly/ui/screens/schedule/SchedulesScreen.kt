@@ -155,6 +155,7 @@ fun SchedulesScreen(
     val showContactPermissionDialog = rememberSaveable { mutableStateOf(false) }
     var showLocationRevokedDialog by remember { mutableStateOf(false) }
     var showLocationPermissionDialog by remember { mutableStateOf(false) }
+    var showBackgroundLocationDialog by remember { mutableStateOf(false) }
 
     val errorMessage = schedulesViewModel.errorMessage.collectAsStateWithLifecycle()
 
@@ -198,7 +199,12 @@ fun SchedulesScreen(
         ),
         onPermissionsResult = { results ->
             val allGranted = results.values.all { it }
-            if (!allGranted && activationMode == ActivationMode.NEARBY) {
+            if (allGranted) {
+                // Foreground granted → now check background
+                if (!schedulesViewModel.hasBackgroundLocationPermission()) {
+                    showBackgroundLocationDialog = true
+                }
+            } else if (activationMode == ActivationMode.NEARBY && showEditSheet) {
                 // User denied system permission dialog → revert to ONE_TIME
                 activationMode = ActivationMode.ONE_TIME
             }
@@ -214,8 +220,12 @@ fun SchedulesScreen(
                schedulesViewModel.checkCriticalPermissions()
                // Check: if NEARBY schedules exist but location permission is revoked
                val hasNearbySchedules = schedules.any { it.activationMode == ActivationMode.NEARBY }
-               if (hasNearbySchedules && !locationPermissionState.allPermissionsGranted) {
-                   showLocationRevokedDialog = true
+               if (hasNearbySchedules) {
+                   if (!locationPermissionState.allPermissionsGranted) {
+                       showLocationRevokedDialog = true
+                   } else if (!schedulesViewModel.hasBackgroundLocationPermission()) {
+                       showBackgroundLocationDialog = true
+                   }
                }
             }
         }
@@ -265,7 +275,7 @@ fun SchedulesScreen(
                 isConfirmButtonAvailable = true,
                 isDismissButtonAvailable = true,
                 title = getString(R.string.app_name),
-                message = "Location permission has been revoked. Your Nearby schedules won't trigger until permission is granted again.",
+                message = "Location permission has been revoked. Your Nearby schedules won't trigger until permission is granted again.Please go to app settings and grant the permission",
                 onConfirm = {
                     locationPermissionState.launchMultiplePermissionRequest()
                     showLocationRevokedDialog = false
@@ -300,6 +310,30 @@ fun SchedulesScreen(
                 },
                 confirmButtonText = "Grant",
                 dismissButtonText = getString(R.string.action_cancel)
+            )
+        }
+    }
+
+    if (showBackgroundLocationDialog) {
+        context.apply {
+            ContactlyDialog(
+                isConfirmButtonAvailable = true,
+                isDismissButtonAvailable = true,
+                title = "Background Location Required",
+                message = "For Nearby schedules to trigger automatically, please select \"Allow all the time\" in Location permission settings. Without this, geofences won't work when the app is closed.",
+                onConfirm = {
+                    // Open app settings — Android 11+ requires this for background location
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = "package:${context.packageName}".toUri()
+                    }
+                    startActivity(intent)
+                    showBackgroundLocationDialog = false
+                },
+                onDismiss = {
+                    showBackgroundLocationDialog = false
+                },
+                confirmButtonText = getString(R.string.action_settings),
+                dismissButtonText = "Later"
             )
         }
     }
@@ -691,8 +725,12 @@ fun SchedulesScreen(
                 val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
                 selectedDays = setOf(today)
                 // Request location permission when NEARBY is selected
-                if (newType == ActivationMode.NEARBY && !locationPermissionState.allPermissionsGranted) {
-                    showLocationPermissionDialog = true
+                if (newType == ActivationMode.NEARBY) {
+                    if (!locationPermissionState.allPermissionsGranted) {
+                        showLocationPermissionDialog = true
+                    } else if (!schedulesViewModel.hasBackgroundLocationPermission()) {
+                        showBackgroundLocationDialog = true
+                    }
                 }
             },
             onStartTimeClick = { showStartTimePicker = true },

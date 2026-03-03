@@ -34,7 +34,7 @@ class ContactlyGeofenceManager(
 
     /**
      * Check if location permissions are granted at runtime.
-     * Returns true only if BOTH fine and coarse location are granted.
+     * Returns true only if fine, coarse AND background location are granted.
      */
     fun hasLocationPermission(): Boolean {
         val fine = ContextCompat.checkSelfPermission(
@@ -45,7 +45,25 @@ class ContactlyGeofenceManager(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        return fine && coarse
+        // Geofencing requires background location on Android 10+
+        val background = hasBackgroundLocationPermission()
+
+        return fine && coarse && background
+    }
+
+    /**
+     * Check if background location ("Allow all the time") is granted.
+     * Needed separately because foreground and background permissions
+     * must be requested in two separate steps on Android 10+.
+     */
+    fun hasBackgroundLocationPermission(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
     }
 
     /**
