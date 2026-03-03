@@ -87,7 +87,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.rememberPermissionState
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Schedule
@@ -249,6 +251,41 @@ fun SchedulesScreen(
         }
     }
 
+    // Location permission for NEARBY geofencing
+    val locationPermissionState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showLocationPermissionDialog) {
+        context.apply {
+            ContactlyDialog(
+                isConfirmButtonAvailable = true,
+                isDismissButtonAvailable = true,
+                title = "Location Permission Required",
+                message = "Contactly needs location permission to detect when you are near a place and automatically apply the schedule. Please grant location access (including \"Allow all the time\" for background detection).",
+                onConfirm = {
+                    if (locationPermissionState.shouldShowRationale ||
+                        !locationPermissionState.allPermissionsGranted) {
+                        // First try system dialog
+                        locationPermissionState.launchMultiplePermissionRequest()
+                    }
+                    showLocationPermissionDialog = false
+                },
+                onDismiss = {
+                    showLocationPermissionDialog = false
+                    // Revert to ONE_TIME if user denies
+                    activationMode = ActivationMode.ONE_TIME
+                },
+                confirmButtonText = "Grant",
+                dismissButtonText = getString(R.string.action_cancel)
+            )
+        }
+    }
+
     // Listen for add schedule events from center FAB in bottom nav
     mainActivityViewModel?.let { viewModel ->
         LaunchedEffect(Unit) {
@@ -257,21 +294,35 @@ fun SchedulesScreen(
             }
         }
 
-        // Listen for shared location events from Google Maps
-        LaunchedEffect(Unit) {
-            viewModel.sharedLocationEvent.collect { sharedText ->
-                val latLng = GoogleMapsUrlParser.parseFromSharedText(sharedText)
-                if (latLng != null) {
-                    nearbyLatitude = latLng.latitude.toString()
-                    nearbyLongitude = latLng.longitude.toString()
-                    nearbyRadius = "200"
-                    nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(sharedText)
-                    activationMode = ActivationMode.NEARBY
-                    showContactSheet = true
-                } else {
-                    Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
-                }
+        // Observe shared location state — persists until consumed
+        val sharedLocationText by viewModel.sharedLocationText.collectAsStateWithLifecycle()
+        LaunchedEffect(sharedLocationText) {
+            val text = sharedLocationText ?: return@LaunchedEffect
+
+            if(!showEditSheet) {
+                viewModel.clearSharedLocation()
+                return@LaunchedEffect
             }
+
+            // Try parsing, with one retry if first attempt fails
+            // (handles "quick share" where network isn't ready yet)
+            var latLng = GoogleMapsUrlParser.parseFromSharedText(text)
+            if (latLng == null) {
+                kotlinx.coroutines.delay(2000L)
+                latLng = GoogleMapsUrlParser.parseFromSharedText(text)
+            }
+
+            if (latLng != null) {
+                nearbyLatitude = latLng.latitude.toString()
+                nearbyLongitude = latLng.longitude.toString()
+                nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(text)
+                activationMode = ActivationMode.NEARBY
+
+                // If EditSheet is already open (returned from Maps), fields are updated in-place
+            } else {
+                Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
+            }
+            viewModel.clearSharedLocation()
         }
     }
 
@@ -608,6 +659,10 @@ fun SchedulesScreen(
                 activationMode = newType
                 val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
                 selectedDays = setOf(today)
+                // Request location permission when NEARBY is selected
+                if (newType == ActivationMode.NEARBY && !locationPermissionState.allPermissionsGranted) {
+                    showLocationPermissionDialog = true
+                }
             },
             onStartTimeClick = { showStartTimePicker = true },
             onEndTimeClick = { showEndTimePicker = true },

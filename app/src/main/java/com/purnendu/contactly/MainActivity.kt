@@ -68,12 +68,13 @@ import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
 import com.purnendu.contactly.utils.BiometricHelper
 import com.purnendu.contactly.utils.isNetworkAvailable
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : FragmentActivity() {
 
     private lateinit var appUpdateManager: AppUpdateManager
-    private lateinit var mainActivityViewModel: MainActivityViewModel
+    private val mainActivityViewModel: MainActivityViewModel by viewModel()
     private val updateType = AppUpdateType.IMMEDIATE
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result: ActivityResult ->
@@ -100,9 +101,11 @@ class MainActivity : FragmentActivity() {
         appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
         checkForAppUpdate()
 
+        // Handle share intent immediately — ViewModel is ready at Activity level!
+        handleShareIntent(intent)
+
         setContent {
             // Get ViewModels from Koin
-            mainActivityViewModel = koinViewModel()
             val settingsViewModel: SettingsViewModel = koinViewModel()
             
             // Keep the splash screen visible until the app is ready
@@ -159,9 +162,6 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
-
-        // Handle share intent on initial launch
-        handleShareIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -172,7 +172,7 @@ class MainActivity : FragmentActivity() {
     private fun handleShareIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-            if (!sharedText.isNullOrBlank() && ::mainActivityViewModel.isInitialized) {
+            if (!sharedText.isNullOrBlank()) {
                 mainActivityViewModel.handleSharedLocation(sharedText)
             }
         }

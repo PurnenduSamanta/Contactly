@@ -351,7 +351,13 @@ fun EditScheduleSheet(
                         ) {
                             OutlinedTextField(
                                 value = nearbyLatitude,
-                                onValueChange = onNearbyLatitudeChange,
+                                onValueChange = { input ->
+                                    // Allow digits, minus (only at start), and single dot
+                                    val filtered = input.filterIndexed { index, char ->
+                                        char.isDigit() || (char == '-' && index == 0) || (char == '.' && input.count { it == '.' } <= 1)
+                                    }
+                                    if (filtered == input) onNearbyLatitudeChange(input)
+                                },
                                 label = { Text("Latitude") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
@@ -361,7 +367,12 @@ fun EditScheduleSheet(
                             )
                             OutlinedTextField(
                                 value = nearbyLongitude,
-                                onValueChange = onNearbyLongitudeChange,
+                                onValueChange = { input ->
+                                    val filtered = input.filterIndexed { index, char ->
+                                        char.isDigit() || (char == '-' && index == 0) || (char == '.' && input.count { it == '.' } <= 1)
+                                    }
+                                    if (filtered == input) onNearbyLongitudeChange(input)
+                                },
                                 label = { Text("Longitude") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
@@ -376,7 +387,10 @@ fun EditScheduleSheet(
                         // Radius input
                         OutlinedTextField(
                             value = nearbyRadius,
-                            onValueChange = onNearbyRadiusChange,
+                            onValueChange = { input ->
+                                // Only allow digits for radius
+                                if (input.all { it.isDigit() }) onNearbyRadiusChange(input)
+                            },
                             label = { Text("Radius (meters)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),

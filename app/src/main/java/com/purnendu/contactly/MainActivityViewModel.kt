@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -35,9 +36,10 @@ class MainActivityViewModel(
     private val _addScheduleEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val addScheduleEvent: SharedFlow<Unit> = _addScheduleEvent.asSharedFlow()
 
-    // Event flow for shared location from Google Maps
-    private val _sharedLocationEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val sharedLocationEvent: SharedFlow<String> = _sharedLocationEvent.asSharedFlow()
+    // Shared location from Google Maps — StateFlow so the value persists until consumed
+    // (SharedFlow would drop the event if SchedulesScreen hasn't composed yet)
+    private val _sharedLocationText = MutableStateFlow<String?>(null)
+    val sharedLocationText: StateFlow<String?> = _sharedLocationText.asStateFlow()
 
     // Track whether schedules exist (for hiding center FAB when empty)
     private val _hasSchedules = MutableStateFlow(false)
@@ -54,7 +56,14 @@ class MainActivityViewModel(
      * Handle shared location text from Google Maps
      */
     fun handleSharedLocation(sharedText: String) {
-        _sharedLocationEvent.tryEmit(sharedText)
+        _sharedLocationText.value = sharedText
+    }
+
+    /**
+     * Clear shared location after it has been consumed by the UI
+     */
+    fun clearSharedLocation() {
+        _sharedLocationText.value = null
     }
 
     /**
