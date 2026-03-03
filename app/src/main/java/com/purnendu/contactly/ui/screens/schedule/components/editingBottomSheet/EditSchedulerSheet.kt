@@ -326,9 +326,9 @@ fun EditScheduleSheet(
 
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Open Maps \u2192 Drop a pin \u2192 Tap Share \u2192 Select Contactly",
+                            text = "Connect to internet \u2192 Open Maps \u2192 Drop a pin \u2192 Tap Share \u2192 Select Contactly",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
                         // Show location label if available

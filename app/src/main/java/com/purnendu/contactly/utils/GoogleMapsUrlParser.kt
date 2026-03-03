@@ -42,7 +42,7 @@ object GoogleMapsUrlParser {
      * Parse lat/lng from shared Google Maps text.
      * Returns null if parsing fails.
      */
-    suspend fun parseFromSharedText(sharedText: String): LatLng? {
+    suspend fun parseFromSharedText(sharedText: String, context: android.content.Context? = null): LatLng? {
         val text = sharedText.trim()
         Log.d(TAG, "Parsing shared text: $text")
 
@@ -65,7 +65,18 @@ object GoogleMapsUrlParser {
         // Try to find any coordinate pair after '@' sign specifically
         tryParseRegexAfterAt(text)?.let { return it }
 
-        // ─── PHASE 3: Network resolution (only for shortened URLs) ───
+        // ─── PHASE 3: Geocode place name (instant, offline) ───
+
+        if (context != null) {
+            val placeName = extractLabel(text)
+                ?: text.lines().firstOrNull { it.isNotBlank() && !it.startsWith("http") }
+            if (!placeName.isNullOrBlank()) {
+                Log.d(TAG, "Trying geocoder for place: $placeName")
+                tryGeocode(context, placeName)?.let { return it }
+            }
+        }
+
+        // ─── PHASE 4: Network resolution (slow, only for shortened URLs without place name) ───
 
         val url = extractUrl(text)
         if (url != null && isGoogleShortenedUrl(url)) {
@@ -195,6 +206,31 @@ object GoogleMapsUrlParser {
 
     private fun isValidLatLng(lat: Double, lng: Double): Boolean {
         return lat in -90.0..90.0 && lng in -180.0..180.0
+    }
+
+    /**
+     * Fallback: Use Android's built-in Geocoder to convert a place name to coordinates.
+     * No API key needed — uses the device's geocoding service.
+     */
+    private suspend fun tryGeocode(context: android.content.Context, placeName: String): LatLng? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(placeName, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val lat = addresses[0].latitude
+                    val lng = addresses[0].longitude
+                    if (isValidLatLng(lat, lng)) {
+                        Log.d(TAG, "Parsed from Geocoder → lat=$lat, lng=$lng")
+                        LatLng(lat, lng)
+                    } else null
+                } else null
+            } catch (e: Exception) {
+                Log.e(TAG, "Geocoder failed for: $placeName — ${e.message}")
+                null
+            }
+        }
     }
 
     /**

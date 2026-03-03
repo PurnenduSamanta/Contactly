@@ -304,24 +304,32 @@ fun SchedulesScreen(
                 return@LaunchedEffect
             }
 
-            // Try parsing, with one retry if first attempt fails
-            // (handles "quick share" where network isn't ready yet)
-            var latLng = GoogleMapsUrlParser.parseFromSharedText(text)
+            // Show loader and disable all inputs while parsing
+            isSaving = true
+
+            // Try parsing (with context for geocoding fallback), retry once if first attempt fails
+            var latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
             if (latLng == null) {
                 kotlinx.coroutines.delay(2000L)
-                latLng = GoogleMapsUrlParser.parseFromSharedText(text)
+                latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
             }
 
             if (latLng != null) {
-                nearbyLatitude = latLng.latitude.toString()
-                nearbyLongitude = latLng.longitude.toString()
+                nearbyLatitude = "%.7f".format(latLng.latitude).trimEnd('0').trimEnd('.')
+                nearbyLongitude = "%.7f".format(latLng.longitude).trimEnd('0').trimEnd('.')
                 nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(text)
                 activationMode = ActivationMode.NEARBY
 
                 // If EditSheet is already open (returned from Maps), fields are updated in-place
             } else {
                 Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
+                nearbyLatitude = ""
+                nearbyLongitude = ""
+                nearbyRadius = "200"
+                nearbyLocationLabel = null
             }
+
+            isSaving = false
             viewModel.clearSharedLocation()
         }
     }
