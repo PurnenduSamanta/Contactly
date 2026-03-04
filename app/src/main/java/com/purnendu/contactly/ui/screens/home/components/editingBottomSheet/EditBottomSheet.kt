@@ -68,7 +68,7 @@ import coil.compose.AsyncImage
 import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.ui.screens.home.components.ErrorMessageCard
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ActivationMode
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.outlined.LocationOn

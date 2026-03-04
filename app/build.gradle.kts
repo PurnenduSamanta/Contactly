@@ -58,6 +58,9 @@ android {
 }
 
 dependencies {
+    // Module dependencies
+    implementation(project(":core:common"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)

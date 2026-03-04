@@ -9,13 +9,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.purnendu.contactly.ui.screens.home.StatusEventBus
+import com.purnendu.contactly.common.StatusEventBus
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.notification.NotificationHelper
-import com.purnendu.contactly.utils.AlarmRequestCodeUtils
+import com.purnendu.contactly.common.AlarmRequestCodeUtils
 import com.purnendu.contactly.utils.ImageStorageManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi

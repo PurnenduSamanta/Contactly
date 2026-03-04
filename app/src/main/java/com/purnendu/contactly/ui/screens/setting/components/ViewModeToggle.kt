@@ -22,7 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.common.ViewMode
 import com.purnendu.contactly.utils.expressiveScale
 
 @Composable

@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.ui.theme.ChipBorder
 import com.purnendu.contactly.ui.theme.ChipSelectedBorder
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.common.AppThemeMode
 
 /**
  * Reusable day chip component with selection animation

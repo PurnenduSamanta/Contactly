@@ -10,6 +10,12 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     // Domain depends on common (for enums like ActivationMode, ViewMode, etc.)
     implementation(project(":core:common"))

@@ -13,7 +13,7 @@ import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.purnendu.contactly.receiver.GeofenceBroadcastReceiver
 import com.purnendu.contactly.data.repository.ActivationsRepository
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ActivationMode
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 

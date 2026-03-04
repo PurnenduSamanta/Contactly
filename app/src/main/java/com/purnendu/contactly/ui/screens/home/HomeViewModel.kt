@@ -13,9 +13,10 @@ import com.purnendu.contactly.model.Contact
 import com.purnendu.contactly.model.Activation
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.manager.ContactlyGeofenceManager
-import com.purnendu.contactly.utils.PermissionChecker
-import com.purnendu.contactly.utils.ActivationMode
-import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.common.PermissionChecker
+import com.purnendu.contactly.common.StatusEventBus
+import com.purnendu.contactly.common.ActivationMode
+import com.purnendu.contactly.common.ViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

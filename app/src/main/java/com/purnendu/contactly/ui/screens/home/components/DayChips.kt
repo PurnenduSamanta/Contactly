@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.common.DayUtils
+import com.purnendu.contactly.common.AppThemeMode
 
 /**
  * Display-only day chips component showing selected days

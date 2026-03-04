@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.purnendu.contactly.common.PermissionChecker
 
 /**
  * Android implementation of PermissionChecker.

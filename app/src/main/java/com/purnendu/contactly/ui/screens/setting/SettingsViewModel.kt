@@ -8,9 +8,9 @@ import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.receiver.AliasAlarmReceiver
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
-import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.ActivationMode
-import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.common.AppThemeMode
+import com.purnendu.contactly.common.ActivationMode
+import com.purnendu.contactly.common.ViewMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

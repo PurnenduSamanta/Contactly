@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.purnendu.contactly.ui.screens.home.components.DayChip
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.DayUtils
+import com.purnendu.contactly.common.AppThemeMode
+import com.purnendu.contactly.common.DayUtils
 
 /**
  * iOS-style day picker with circular chips for each day of the week

@@ -1,7 +1,7 @@
 package com.purnendu.contactly.model
 
 import androidx.annotation.DrawableRes
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ActivationMode
 
 data class Activation(
     val id: String,

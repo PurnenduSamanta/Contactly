@@ -1,4 +1,4 @@
-package com.purnendu.contactly.ui.screens.home
+package com.purnendu.contactly.common
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow

@@ -53,7 +53,7 @@ import com.purnendu.contactly.ui.screens.setting.components.ArtisticFooter
 import com.purnendu.contactly.ui.screens.setting.components.SettingsRow
 import com.purnendu.contactly.ui.screens.setting.components.ThemeChip
 import com.purnendu.contactly.ui.screens.setting.components.ViewModeToggle
-import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.common.AppThemeMode
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver

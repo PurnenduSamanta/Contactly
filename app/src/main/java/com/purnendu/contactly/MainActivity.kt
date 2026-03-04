@@ -145,9 +145,9 @@ class MainActivity : FragmentActivity() {
                 ContactlyTheme(appThemeMode = themeMode) {
                     // Determine if current theme is dark based on the resolved theme mode
                     val isDarkTheme = when (themeMode) {
-                        com.purnendu.contactly.utils.AppThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
-                        com.purnendu.contactly.utils.AppThemeMode.DARK -> true
-                        com.purnendu.contactly.utils.AppThemeMode.LIGHT -> false
+                        com.purnendu.contactly.common.AppThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+                        com.purnendu.contactly.common.AppThemeMode.DARK -> true
+                        com.purnendu.contactly.common.AppThemeMode.LIGHT -> false
                     }
                     
                     // Update status bar appearance: use dark icons in light mode, light icons in dark mode

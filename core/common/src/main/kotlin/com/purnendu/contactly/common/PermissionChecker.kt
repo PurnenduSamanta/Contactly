@@ -1,4 +1,4 @@
-package com.purnendu.contactly.utils
+package com.purnendu.contactly.common
 
 /**
  * Interface for permission-related operations.

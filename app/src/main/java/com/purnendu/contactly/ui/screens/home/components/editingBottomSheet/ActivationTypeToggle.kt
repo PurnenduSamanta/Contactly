@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.outlined.LocationOn
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ActivationMode
 import com.purnendu.contactly.utils.expressiveScale
 
 @Composable

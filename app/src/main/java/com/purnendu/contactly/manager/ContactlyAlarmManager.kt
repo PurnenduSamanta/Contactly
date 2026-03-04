@@ -15,9 +15,9 @@ import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.room.ActivationEntity
 import com.purnendu.contactly.model.Contact
-import com.purnendu.contactly.utils.AlarmRequestCodeUtils
-import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.AlarmRequestCodeUtils
+import com.purnendu.contactly.common.DayUtils
+import com.purnendu.contactly.common.ActivationMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

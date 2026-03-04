@@ -53,9 +53,9 @@ import com.purnendu.contactly.R
 import com.purnendu.contactly.model.Activation
 import com.purnendu.contactly.ui.components.SlidingImageCarousel
 import com.purnendu.contactly.ui.theme.ContactlyTheme
-import com.purnendu.contactly.utils.ViewMode
-import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ViewMode
+import com.purnendu.contactly.common.AppThemeMode
+import com.purnendu.contactly.common.ActivationMode
 import com.purnendu.contactly.utils.expressiveScale
 import com.purnendu.contactly.utils.rememberExpressiveAnimation
 import java.text.SimpleDateFormat

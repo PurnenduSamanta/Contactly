@@ -9,8 +9,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.purnendu.contactly.notification.NotificationHelper
-import com.purnendu.contactly.utils.AppThemeMode
-import com.purnendu.contactly.utils.ViewMode
+import com.purnendu.contactly.common.AppThemeMode
+import com.purnendu.contactly.common.ViewMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

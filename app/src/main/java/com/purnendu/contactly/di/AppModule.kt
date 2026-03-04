@@ -12,7 +12,7 @@ import com.purnendu.contactly.ui.screens.home.HomeViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import com.purnendu.contactly.utils.AndroidPermissionChecker
 import com.purnendu.contactly.utils.ImageStorageManager
-import com.purnendu.contactly.utils.PermissionChecker
+import com.purnendu.contactly.common.PermissionChecker
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module

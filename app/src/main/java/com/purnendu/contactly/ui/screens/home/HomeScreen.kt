@@ -91,10 +91,10 @@ import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.ui.components.ContactlyTimePicker
 import com.purnendu.contactly.ui.components.ConfirmationDialogState
 import com.purnendu.contactly.ui.components.getDialogProperties
-import com.purnendu.contactly.utils.ActivationMode
-import com.purnendu.contactly.utils.ViewMode
-import com.purnendu.contactly.utils.DayUtils
-import com.purnendu.contactly.utils.AppThemeMode
+import com.purnendu.contactly.common.ActivationMode
+import com.purnendu.contactly.common.ViewMode
+import com.purnendu.contactly.common.DayUtils
+import com.purnendu.contactly.common.AppThemeMode
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar

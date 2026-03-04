@@ -8,7 +8,7 @@ import com.purnendu.contactly.model.alarm.AlarmMetadata
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ActivationEntity
 import com.purnendu.contactly.model.Activation
-import com.purnendu.contactly.utils.ActivationMode
+import com.purnendu.contactly.common.ActivationMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
