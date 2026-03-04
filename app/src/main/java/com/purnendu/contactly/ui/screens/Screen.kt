@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Screen(val route: String, @Contextual val selectedIcon: ImageVector?, @Contextual val notSelectedIcon: ImageVector?, val title: String?) {
     @Serializable
-    data object Schedules : Screen("schedules", Icons.Default.Home, Icons.Outlined.Home, "Home")
+    data object Home : Screen("home", Icons.Default.Home, Icons.Outlined.Home, "Home")
     @Serializable
     data object Settings : Screen("settings", Icons.Default.Settings, Icons.Outlined.Settings, "Settings")
     @Serializable

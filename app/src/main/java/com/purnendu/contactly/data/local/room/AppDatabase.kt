@@ -6,12 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [ScheduleEntity::class],
+    entities = [ActivationEntity::class],
     version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun scheduleDao(): ScheduleDao
+    abstract fun activationDao(): ActivationDao
 
     companion object {
         @Volatile

@@ -32,7 +32,7 @@ class AndroidPermissionChecker(private val context: Context) : PermissionChecker
         ) == PackageManager.PERMISSION_GRANTED
     }
     
-    override fun canScheduleExactAlarms(): Boolean {
+    override fun canActivateExactAlarms(): Boolean {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         return if (Build.VERSION.SDK_INT >= 31) {
             alarmManager.canScheduleExactAlarms()

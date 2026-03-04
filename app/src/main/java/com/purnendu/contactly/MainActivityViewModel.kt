@@ -3,8 +3,8 @@ package com.purnendu.contactly
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.alarm.ContactlyAlarmManager
-import com.purnendu.contactly.alarm.ContactlyGeofenceManager
+import com.purnendu.contactly.manager.ContactlyAlarmManager
+import com.purnendu.contactly.manager.ContactlyGeofenceManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,24 +32,24 @@ class MainActivityViewModel(
     private val _isAppReady = MutableStateFlow(false)
     val isAppReady: StateFlow<Boolean> = _isAppReady
 
-    // Event flow for triggering add schedule action (center FAB click)
-    private val _addScheduleEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val addScheduleEvent: SharedFlow<Unit> = _addScheduleEvent.asSharedFlow()
+    // Event flow for triggering add activation action (center FAB click)
+    private val _addActivationEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val addActivationEvent: SharedFlow<Unit> = _addActivationEvent.asSharedFlow()
 
     // Shared location from Google Maps — StateFlow so the value persists until consumed
-    // (SharedFlow would drop the event if SchedulesScreen hasn't composed yet)
+    // (SharedFlow would drop the event if HomeScreen hasn't composed yet)
     private val _sharedLocationText = MutableStateFlow<String?>(null)
     val sharedLocationText: StateFlow<String?> = _sharedLocationText.asStateFlow()
 
-    // Track whether schedules exist (for hiding center FAB when empty)
-    private val _hasSchedules = MutableStateFlow(false)
-    val hasSchedules: StateFlow<Boolean> = _hasSchedules
+    // Track whether activations exist (for hiding center FAB when empty)
+    private val _hasActivations = MutableStateFlow(false)
+    val hasActivations: StateFlow<Boolean> = _hasActivations
 
     /**
-     * Trigger the add schedule flow (called when center FAB is clicked)
+     * Trigger the add activation flow (called when center FAB is clicked)
      */
-    fun triggerAddSchedule() {
-        _addScheduleEvent.tryEmit(Unit)
+    fun triggerAddActivation() {
+        _addActivationEvent.tryEmit(Unit)
     }
 
     /**
@@ -67,10 +67,10 @@ class MainActivityViewModel(
     }
 
     /**
-     * Update whether schedules exist
+     * Update whether activations exist
      */
-    fun setHasSchedules(hasSchedules: Boolean) {
-        _hasSchedules.value = hasSchedules
+    fun setHasActivations(hasActivation: Boolean) {
+        _hasActivations.value = hasActivation
     }
 
     init {
@@ -114,18 +114,18 @@ class MainActivityViewModel(
     }
 
     /**
-     * Sync all scheduled alarms from database to AlarmManager
-     * Runs during splash screen to ensure alarms are properly scheduled
+     * Sync all activated alarms from database to AlarmManager
+     * Runs during splash screen to ensure alarms are properly activation
      */
     private suspend fun syncAlarms() {
         try {
-            val result = contactlyAlarmManager.syncAllSchedules()
+            val result = contactlyAlarmManager.syncAllActivations()
             
             Log.d("MainActivityViewModel", "Alarm sync completed: " +
-                    "scheduled=${result.alarmsScheduled}, " +
+                    "activated=${result.alarmsActivated}, " +
                     "skipped=${result.alarmsSkipped}, " +
                     "errors=${result.errors}, " +
-                    "orphaned=${result.orphanedSchedulesRemoved}")
+                    "orphaned=${result.orphanedActivationsRemoved}")
         } catch (e: Exception) {
             Log.e("MainActivityViewModel", "Failed to sync alarms", e)
         }

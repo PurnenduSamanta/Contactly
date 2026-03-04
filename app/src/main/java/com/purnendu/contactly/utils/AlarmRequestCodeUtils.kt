@@ -3,9 +3,9 @@ package com.purnendu.contactly.utils
 /**
  * Centralized utility for generating unique alarm request codes.
  * 
- * This ensures consistency across all alarm scheduling operations
- * throughout the application (SchedulesViewModel, AlarmSyncManager, 
- * RescheduleAlarmsReceiver, AliasAlarmReceiver).
+ * This ensures consistency across all alarm activation operations
+ * throughout the application (HomeViewModel, ContactlyAlarmManager, 
+ * ReActivationReceiver, AliasAlarmReceiver).
  * 
  * Request code scheme:
  * - Base: (contactId % 1,000,000) * 100

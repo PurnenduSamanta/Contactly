@@ -42,10 +42,10 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".alarm.AliasAlarmReceiver"
+            android:name=".receiver.AliasAlarmReceiver"
             android:exported="false" />
         <receiver
-            android:name=".alarm.RescheduleAlarmsReceiver"
+            android:name=".receiver.ReActivationReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -53,7 +53,7 @@
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".alarm.GeofenceBroadcastReceiver"
+            android:name=".receiver.GeofenceBroadcastReceiver"
             android:exported="false" />
     </application>
 

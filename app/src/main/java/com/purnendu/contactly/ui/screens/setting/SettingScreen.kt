@@ -65,7 +65,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
-import com.purnendu.contactly.alarm.AliasAlarmReceiver
+import com.purnendu.contactly.receiver.AliasAlarmReceiver
 import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -253,12 +253,12 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Schedule Notifications",
+                            "Activation Notifications",
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            "Get fun notifications while changing your contact name 🎭",
+                            "Get fun notifications while your contact names are being activated 🎭",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
@@ -470,10 +470,10 @@ fun SettingsScreen(
                     )
                 }
 
-                // View Scheduled Alarms Row
+                // View Activation Status Row
                 item {
                     SettingsRow(
-                        name = "View Alarm Status",
+                        name = "View Activation Status",
                         value = null
                     )
                     {
@@ -491,7 +491,7 @@ fun SettingsScreen(
         }
     }
     
-    // Scheduled Alarms Dialog
+    // Activation Status Dialog
     if (showAlarmsDialog) {
         val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
         val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
@@ -517,7 +517,7 @@ fun SettingsScreen(
             },
             text = {
                 if (alarmStatusList.isEmpty()) {
-                    Text("No schedules found")
+                    Text("No activations found")
                 } else {
                     LazyColumn(
                         modifier = Modifier.heightIn(max = 400.dp),
@@ -534,14 +534,14 @@ fun SettingsScreen(
                                 Column(
                                     modifier = Modifier.padding(12.dp)
                                 ) {
-                                    // Schedule header
+                                    // Activation header
                                     Text(
-                                        statusInfo.schedule.temporaryName,
+                                        statusInfo.activation.temporaryName,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        "Type: ${when (statusInfo.schedule.activationMode) { 0 -> "One-Time"; 1 -> "Repeat"; 2 -> "Instant"; 3 -> "Nearby"; else -> "Unknown" }}",
+                                        "Type: ${when (statusInfo.activation.activationMode) { 0 -> "One-Time"; 1 -> "Repeat"; 2 -> "Instant"; 3 -> "Nearby"; else -> "Unknown" }}",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )

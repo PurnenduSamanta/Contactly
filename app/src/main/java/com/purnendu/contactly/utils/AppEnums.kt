@@ -6,7 +6,7 @@ enum class ViewMode {
 }
 
 enum class ActivationMode {
-    ONE_TIME,    // Schedule once for specific date/time
+    ONE_TIME,    // Activate once for specific date/time
     REPEAT,      // Repeat every week on selected days
     INSTANT,     // Manual instant toggle (no alarms)
     NEARBY;      // Location-based geofence trigger

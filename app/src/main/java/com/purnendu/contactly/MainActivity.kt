@@ -61,7 +61,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.crashlytics.crashlytics
 
 import com.purnendu.contactly.ui.components.BottomNavigationWithCutout
-import com.purnendu.contactly.ui.screens.schedule.SchedulesScreen
+import com.purnendu.contactly.ui.screens.home.HomeScreen
 import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
 import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
@@ -185,12 +185,12 @@ class MainActivity : FragmentActivity() {
         
         // Define bottom nav screens (only screens with icons will be shown)
         val bottomNavScreens = listOf(
-            Screen.Schedules,
+            Screen.Home,
             Screen.Settings
         )
         
         val allScreens = listOf(
-            Screen.Schedules,
+            Screen.Home,
             Screen.Settings,
             Screen.Feedback,
             Screen.PrivacyPolicy,
@@ -202,13 +202,13 @@ class MainActivity : FragmentActivity() {
         // Determine current screen for top bar title
         val currentScreen = allScreens.find { screen ->
             currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName } == true
-        } ?: Screen.Schedules
+        } ?: Screen.Home
         
         // Get current route for nav highlighting
         val currentRoute = currentDestination?.route
         
-        // Track whether schedules exist (for conditional FAB display)
-        val hasSchedules by mainActivityViewModel.hasSchedules.collectAsStateWithLifecycle()
+        // Track whether activations exist (for conditional FAB display)
+        val hasActivations by mainActivityViewModel.hasActivations.collectAsStateWithLifecycle()
 
         Scaffold(
             topBar = {
@@ -216,7 +216,7 @@ class MainActivity : FragmentActivity() {
                     title = {
                         Text(
                             text = when (currentScreen) {
-                                Screen.Schedules -> stringResource(id = R.string.title_schedules)
+                                Screen.Home -> stringResource(id = R.string.title_activations)
                                 Screen.Settings ->  stringResource(id = R.string.title_settings)
                                 Screen.Feedback ->  stringResource(id = R.string.title_feedback)
                                 Screen.PrivacyPolicy -> stringResource(id = R.string.row_privacy_policy)
@@ -251,14 +251,14 @@ class MainActivity : FragmentActivity() {
                         fabContent = {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = stringResource(id = R.string.action_add_schedule),
+                                contentDescription = stringResource(id = R.string.action_add_activation),
                                 modifier = Modifier.size(28.dp)
                             )
                         },
                         fabOnClick = {
-                            // Navigate to Home if not already there, then trigger add schedule
-                            if (currentScreen != Screen.Schedules) {
-                                navController.navigate(Screen.Schedules) {
+                            // Navigate to Home if not already there, then trigger add activation
+                            if (currentScreen != Screen.Home) {
+                                navController.navigate(Screen.Home) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -266,10 +266,10 @@ class MainActivity : FragmentActivity() {
                                     restoreState = true
                                 }
                             }
-                            // Trigger the add schedule event
-                            mainActivityViewModel.triggerAddSchedule()
+                            // Trigger the add activation event
+                            mainActivityViewModel.triggerAddActivation()
                         },
-                        showFab = hasSchedules,
+                        showFab = hasActivations,
                         containerColor = MaterialTheme.colorScheme.surface,
                         fabContainerColor = MaterialTheme.colorScheme.primary,
                         fabContentColor = MaterialTheme.colorScheme.onPrimary
@@ -281,11 +281,11 @@ class MainActivity : FragmentActivity() {
             // All padding controlled from here - single source of truth
             NavHost(
                 navController = navController,
-                startDestination = Screen.Schedules,
+                startDestination = Screen.Home,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable<Screen.Schedules> { 
-                    SchedulesScreen(
+                composable<Screen.Home> {
+                    HomeScreen(
                         navController = navController,
                         contentPadding = PaddingValues(), // No extra padding needed
                         mainActivityViewModel = mainActivityViewModel

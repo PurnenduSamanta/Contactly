@@ -2,11 +2,11 @@ package com.purnendu.contactly.ui.screens.setting
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.alarm.models.AlarmCheckResult
-import com.purnendu.contactly.alarm.models.AlarmStatusInfo
-import com.purnendu.contactly.alarm.ContactlyAlarmManager
-import com.purnendu.contactly.alarm.AliasAlarmReceiver
-import com.purnendu.contactly.data.repository.SchedulesRepository
+import com.purnendu.contactly.model.alarm.AlarmCheckResult
+import com.purnendu.contactly.model.alarm.AlarmStatusInfo
+import com.purnendu.contactly.manager.ContactlyAlarmManager
+import com.purnendu.contactly.receiver.AliasAlarmReceiver
+import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.utils.AppThemeMode
 import com.purnendu.contactly.utils.ActivationMode
@@ -23,12 +23,10 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel for Settings screen.
  * 
- * Manages app preferences (theme, view mode, notifications) and alarm status debugging.
- * 
- * Dependencies are injected via Koin using interfaces for testability.
+ * Manages app preferences (theme, view mode, notifications) and activation status debugging.
  */
 class SettingsViewModel(
-    private val schedulesRepo: SchedulesRepository,
+    private val activationsRepo: ActivationsRepository,
     private val contactlyAlarmManager: ContactlyAlarmManager,
     private val appPreferences: AppPreferences
 ) : ViewModel() {
@@ -69,29 +67,29 @@ class SettingsViewModel(
         if(!isInDebugMode)
             return
         viewModelScope.launch(Dispatchers.IO) {
-                val schedules = schedulesRepo.getAllEntities().filter {
+                val activations = activationsRepo.getAllEntities().filter {
                     val mode = ActivationMode.fromInt(it.activationMode)
                     mode != ActivationMode.INSTANT && mode != ActivationMode.NEARBY
                 }
-                val statusList = schedules.map { schedule ->
-                    val metadata = contactlyAlarmManager.parseAlarmMetadata(schedule.scheduledAlarmsMetadata)
+                val statusList = activations.map { activation ->
+                    val metadata = contactlyAlarmManager.parseAlarmMetadata(activation.activatedAlarmsMetadata)
                     val alarmResults = metadata.map { meta ->
                         val displayName = if (meta.operation == AliasAlarmReceiver.OP_APPLY) {
-                            schedule.temporaryName
+                            activation.temporaryName
                         } else {
-                            schedule.originalName
+                            activation.originalName
                         }
-                        val isSet = contactlyAlarmManager.isAlarmScheduled(
+                        val isSet = contactlyAlarmManager.isAlarmActivated(
                             requestCode = meta.requestCode,
-                            contactId = schedule.contactId,
-                            originalName = schedule.originalName,
-                            temporaryName = schedule.temporaryName,
-                            tempImage = schedule.temporaryImage,
-                            originalImage = schedule.originalImage,
+                            contactId = activation.contactId,
+                            originalName = activation.originalName,
+                            temporaryName = activation.temporaryName,
+                            tempImage = activation.temporaryImage,
+                            originalImage = activation.originalImage,
                             operation = meta.operation,
                             dayOfWeek = meta.dayOfWeek,
-                            scheduleId = schedule.scheduleId,
-                            activationMode = schedule.activationMode
+                            activationId = activation.activationId,
+                            activationMode = activation.activationMode
                         )
                         AlarmCheckResult(
                             metadata = meta,
@@ -99,7 +97,7 @@ class SettingsViewModel(
                             name = displayName
                         )
                     }
-                    AlarmStatusInfo(schedule = schedule, alarms = alarmResults)
+                    AlarmStatusInfo(activation = activation, alarms = alarmResults)
                 }
                 _alarmStatusList.value = statusList
         }

@@ -7,5 +7,5 @@ package com.purnendu.contactly.utils
 interface PermissionChecker {
     fun hasContactsPermission(): Boolean
     fun hasWriteContactsPermission(): Boolean
-    fun canScheduleExactAlarms(): Boolean
+    fun canActivateExactAlarms(): Boolean
 }

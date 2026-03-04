@@ -1,14 +1,14 @@
 package com.purnendu.contactly.di
 
 import com.purnendu.contactly.MainActivityViewModel
-import com.purnendu.contactly.alarm.ContactlyAlarmManager
-import com.purnendu.contactly.alarm.ContactlyGeofenceManager
+import com.purnendu.contactly.manager.ContactlyAlarmManager
+import com.purnendu.contactly.manager.ContactlyGeofenceManager
 import com.purnendu.contactly.data.local.preferences.AppPreferences
 import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.repository.ContactsRepository
-import com.purnendu.contactly.data.repository.SchedulesRepository
-import com.purnendu.contactly.ui.screens.schedule.SchedulesViewModel
+import com.purnendu.contactly.data.repository.ActivationsRepository
+import com.purnendu.contactly.ui.screens.home.HomeViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import com.purnendu.contactly.utils.AndroidPermissionChecker
 import com.purnendu.contactly.utils.ImageStorageManager
@@ -40,7 +40,7 @@ val appModule = module {
     single { AppDatabase.getDataBase(androidContext()) }
     
     // ========== Repositories ==========
-    single { SchedulesRepository(get(), get()) }
+    single { ActivationsRepository(get(), get()) }
     single { ContactsRepository(androidContext().contentResolver) }
     
     // ========== Preferences ==========
@@ -60,7 +60,7 @@ val appModule = module {
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
     viewModel { MainActivityViewModel(get(), get(), get()) }
-    viewModel { SchedulesViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
 

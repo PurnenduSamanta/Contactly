@@ -1,6 +1,6 @@
 [versions]
 accompanistPermissions = "0.37.3"
-agp = "9.0.1"
+agp = "9.1.0"
 coilCompose = "2.7.0"
 gson = "2.13.2"
 kotlin = "2.3.10"

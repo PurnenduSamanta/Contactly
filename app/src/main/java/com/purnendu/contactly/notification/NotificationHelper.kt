@@ -21,7 +21,7 @@ import kotlin.random.Random
 object NotificationHelper {
 
     private const val CHANNEL_ID = "contactly_alarm_notifications"
-    private const val CHANNEL_NAME = "Schedule Notifications"
+    private const val CHANNEL_NAME = "Activation Notifications"
     private const val CHANNEL_DESCRIPTION = "Notifications when contact names are changed"
 
     // Funny messages for APPLY (name change)
@@ -146,7 +146,7 @@ object NotificationHelper {
                 append("Was using: $temporaryName")
             }
             appendLine()
-            append("Schedule: $activationModeText")
+            append("Activation: $activationModeText")
         }
 
         // Try to load contact image for large icon

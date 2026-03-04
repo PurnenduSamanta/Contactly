@@ -4,7 +4,7 @@ import java.util.Calendar
 
 /**
  * Utility functions for working with day selection bitmasks
- * and calculating recurring schedule occurrences
+ * and calculating recurring activation occurrences
  */
 object DayUtils {
     
@@ -43,7 +43,7 @@ object DayUtils {
      * 
      * IMPORTANT: This function always uses TODAY's date as the base for calculations.
      * Only the hour:minute from the input times are used - the date portion is ignored.
-     * This ensures correct behavior when updating schedules with stored future dates.
+     * This ensures correct behavior when updating activations with stored future dates.
      * 
      * @param startTimeMillis The start time (only hour:minute are used, date is ignored)
      * @param endTimeMillis The end time (only hour:minute are used, date is ignored)

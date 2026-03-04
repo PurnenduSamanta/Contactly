@@ -12,25 +12,25 @@ package com.purnendu.contactly.ui.components
 sealed class ConfirmationDialogState {
     
     /**
-     * Shown when user schedules a contact with a past start time.
-     * The schedule will be saved immediately when confirmed, but the alarm
+     * Shown when user activates a contact with a past start time.
+     * The activation will be saved immediately when confirmed, but the alarm
      * won't trigger until the next occurrence of that time.
      */
-    data class PastTimeSchedule(
+    data class PastTimeActivation(
         val onConfirm: () -> Unit
     ) : ConfirmationDialogState()
     
     // Add more confirmation scenarios below as needed:
     // 
-    // Example: Confirm before deleting multiple schedules
+    // Example: Confirm before deleting multiple activations
     // data class BulkDelete(
     //     val count: Int,
     //     val onConfirm: () -> Unit
     // ) : ConfirmationDialogState()
     //
-    // Example: Confirm before overwriting an existing schedule
-    // data class OverwriteSchedule(
-    //     val existingScheduleName: String,
+    // Example: Confirm before overwriting an existing activation
+    // data class OverwriteActivation(
+    //     val existingActivationName: String,
     //     val onConfirm: () -> Unit
     // ) : ConfirmationDialogState()
 }
@@ -41,9 +41,9 @@ sealed class ConfirmationDialogState {
  */
 fun ConfirmationDialogState.getDialogProperties(): ConfirmationDialogProperties {
     return when (this) {
-        is ConfirmationDialogState.PastTimeSchedule -> ConfirmationDialogProperties(
+        is ConfirmationDialogState.PastTimeActivation -> ConfirmationDialogProperties(
             title = "Confirmation",
-            message = "The selected time has already passed. We can schedule this for next week instead. Would you like to proceed?",
+            message = "The selected time has already passed. We can activate this for next week instead. Would you like to proceed?",
             confirmButtonText = "Continue",
             dismissButtonText = "Cancel"
         )

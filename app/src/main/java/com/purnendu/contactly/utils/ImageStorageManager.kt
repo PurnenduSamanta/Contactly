@@ -11,8 +11,8 @@ import androidx.core.net.toUri
  * Utility class to manage contact images stored in app's internal storage.
  * 
  * Images are stored with naming convention:
- * - Temporary images: temp_image_{scheduleId}.jpg
- * - Original images: original_image_{scheduleId}.jpg
+ * - Temporary images: temp_image_{activationId}.jpg
+ * - Original images: original_image_{activationId}.jpg
  * 
  * This approach is more efficient than storing Base64 in the database.
  */
@@ -36,7 +36,7 @@ class ImageStorageManager(private val context: Context,) {
      * Save temporary image from gallery URI to internal storage
      * @return Internal storage file path, or null if failed
      */
-    fun saveTemporaryImage(scheduleId: Long, image: String): String? {
+    fun saveTemporaryImage(activationId: Long, image: String): String? {
         return try {
             val uri = image.toUri()
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -51,7 +51,7 @@ class ImageStorageManager(private val context: Context,) {
                 return null
             }
             
-            val file = File(getImagesDir(), "temp_image_$scheduleId.jpg")
+            val file = File(getImagesDir(), "temp_image_$activationId.jpg")
             FileOutputStream(file).use { it.write(bytes) }
             
             Log.d(TAG, "Saved temporary image: ${file.absolutePath}, size: ${bytes.size}")
@@ -66,7 +66,7 @@ class ImageStorageManager(private val context: Context,) {
      * Save original contact photo to internal storage
      * @return Internal storage file path, or null if no photo or failed
      */
-    fun saveOriginalImage(scheduleId: Long, contactId: Long): String? {
+    fun saveOriginalImage(activationId: Long, contactId: Long): String? {
         return try {
             val contactUri = ContactsContract.Contacts.CONTENT_URI.buildUpon()
                 .appendPath(contactId.toString())
@@ -89,7 +89,7 @@ class ImageStorageManager(private val context: Context,) {
                 return null
             }
             
-            val file = File(getImagesDir(), "original_image_$scheduleId.jpg")
+            val file = File(getImagesDir(), "original_image_$activationId.jpg")
             FileOutputStream(file).use { it.write(bytes) }
             
             Log.d(TAG, "Saved original image: ${file.absolutePath}, size: ${bytes.size}")
@@ -101,13 +101,13 @@ class ImageStorageManager(private val context: Context,) {
     }
 
     /**
-     * Delete images for a schedule (cleanup when schedule is deleted)
+     * Delete images for an activation (cleanup when activation is deleted)
      */
-    fun deleteImagesForSchedule(scheduleId: Long) {
+    fun deleteImagesFromActivation(activationId: Long) {
         try {
             val dir = getImagesDir()
-            val tempFile = File(dir, "temp_image_$scheduleId.jpg")
-            val originalFile = File(dir, "original_image_$scheduleId.jpg")
+            val tempFile = File(dir, "temp_image_$activationId.jpg")
+            val originalFile = File(dir, "original_image_$activationId.jpg")
             
             if (tempFile.exists()) {
                 tempFile.delete()
@@ -118,7 +118,7 @@ class ImageStorageManager(private val context: Context,) {
                 Log.d(TAG, "Deleted original image: ${originalFile.absolutePath}")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to delete images for schedule: $scheduleId", e)
+            Log.e(TAG, "Failed to delete images for activation: $activationId", e)
         }
     }
 }
