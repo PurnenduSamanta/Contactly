@@ -536,12 +536,12 @@ fun SettingsScreen(
                                 ) {
                                     // Activation header
                                     Text(
-                                        statusInfo.activation.temporaryName,
+                                        statusInfo.temporaryName,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        "Type: ${when (statusInfo.activation.activationMode) { 0 -> "One-Time"; 1 -> "Repeat"; 2 -> "Instant"; 3 -> "Nearby"; else -> "Unknown" }}",
+                                        "Type: ${when (statusInfo.activationMode) { 0 -> "One-Time"; 1 -> "Repeat"; 2 -> "Instant"; 3 -> "Nearby"; else -> "Unknown" }}",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )

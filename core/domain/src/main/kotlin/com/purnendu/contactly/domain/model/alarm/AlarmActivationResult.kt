@@ -1,5 +1,4 @@
-package com.purnendu.contactly.model.alarm
-
+package com.purnendu.contactly.domain.model.alarm
 
 /**
  * Result of alarm activating operation.

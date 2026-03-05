@@ -79,8 +79,8 @@ import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.purnendu.contactly.R
-import com.purnendu.contactly.model.Contact
-import com.purnendu.contactly.model.Activation
+import com.purnendu.contactly.domain.model.Contact
+import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.ui.screens.home.components.ActivationTypeFilter
 import com.purnendu.contactly.ui.screens.home.components.ActivationsFilterChips
 import com.purnendu.contactly.ui.screens.home.components.ActivatedItem

@@ -7,7 +7,7 @@ import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.purnendu.contactly.common.StatusEventBus
-import com.purnendu.contactly.data.local.preferences.AppPreferences
+import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.notification.NotificationHelper

@@ -8,9 +8,9 @@ import com.purnendu.contactly.receiver.AliasAlarmReceiver.Companion.OP_REVERT
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.room.ActivationEntity
-import com.purnendu.contactly.data.local.preferences.AppPreferences
-import com.purnendu.contactly.model.Contact
-import com.purnendu.contactly.model.Activation
+import com.purnendu.contactly.domain.repository.AppPreferences
+import com.purnendu.contactly.domain.model.Contact
+import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.manager.ContactlyGeofenceManager
 import com.purnendu.contactly.common.PermissionChecker

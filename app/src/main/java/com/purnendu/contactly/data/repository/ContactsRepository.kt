@@ -6,7 +6,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
-import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.domain.model.Contact
 
 /**
  * Repository for accessing and modifying device contacts.

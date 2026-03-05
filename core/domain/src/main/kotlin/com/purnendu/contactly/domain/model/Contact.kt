@@ -1,4 +1,4 @@
-package com.purnendu.contactly.model
+package com.purnendu.contactly.domain.model
 
 data class Contact(
     val name: String?,  // Nullable: null if contact has no actual name (only phone/email)

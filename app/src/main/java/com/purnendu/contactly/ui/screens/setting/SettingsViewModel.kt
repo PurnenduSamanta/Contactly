@@ -2,12 +2,12 @@ package com.purnendu.contactly.ui.screens.setting
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.model.alarm.AlarmCheckResult
-import com.purnendu.contactly.model.alarm.AlarmStatusInfo
+import com.purnendu.contactly.domain.model.alarm.AlarmCheckResult
+import com.purnendu.contactly.domain.model.alarm.AlarmStatusInfo
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.receiver.AliasAlarmReceiver
 import com.purnendu.contactly.data.repository.ActivationsRepository
-import com.purnendu.contactly.data.local.preferences.AppPreferences
+import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.common.AppThemeMode
 import com.purnendu.contactly.common.ActivationMode
 import com.purnendu.contactly.common.ViewMode
@@ -97,7 +97,12 @@ class SettingsViewModel(
                             name = displayName
                         )
                     }
-                    AlarmStatusInfo(activation = activation, alarms = alarmResults)
+                    AlarmStatusInfo(
+                        activationId = activation.activationId,
+                        temporaryName = activation.temporaryName,
+                        activationMode = activation.activationMode,
+                        alarms = alarmResults
+                    )
                 }
                 _alarmStatusList.value = statusList
         }

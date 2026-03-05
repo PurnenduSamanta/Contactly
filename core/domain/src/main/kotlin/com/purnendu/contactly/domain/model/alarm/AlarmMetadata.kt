@@ -1,4 +1,4 @@
-package com.purnendu.contactly.model.alarm
+package com.purnendu.contactly.domain.model.alarm
 
 /**
  * Metadata for a single activated alarm

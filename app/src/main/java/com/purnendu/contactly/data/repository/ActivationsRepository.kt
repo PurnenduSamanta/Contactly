@@ -4,10 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.purnendu.contactly.receiver.AliasAlarmReceiver.Companion.OP_APPLY
 import com.purnendu.contactly.receiver.AliasAlarmReceiver.Companion.OP_REVERT
-import com.purnendu.contactly.model.alarm.AlarmMetadata
+import com.purnendu.contactly.domain.model.alarm.AlarmMetadata
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ActivationEntity
-import com.purnendu.contactly.model.Activation
+import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.common.ActivationMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

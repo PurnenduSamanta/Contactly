@@ -11,30 +11,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AppThemeMode
 import com.purnendu.contactly.common.ViewMode
+import com.purnendu.contactly.domain.repository.AppPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 // Single DataStore instance for all preferences (extension property)
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
-/**
- * Interface for app preferences.
- * Abstracts DataStore operations to make ViewModels testable.
- */
-interface AppPreferences {
-    val themeFlow: Flow<AppThemeMode>
-    val viewModeFlow: Flow<ViewMode>
-    val notificationsEnabledFlow: Flow<Boolean>
-    val lastSyncTimestampFlow: Flow<Long>
-
-    suspend fun setTheme(mode: AppThemeMode)
-    suspend fun setViewMode(mode: ViewMode)
-    suspend fun setNotificationsEnabled(enabled: Boolean)
-    suspend fun updateLastSyncTimestamp()
-    
-    val biometricEnabledFlow: Flow<Boolean>
-    suspend fun setBiometricEnabled(enabled: Boolean)
-}
 
 /**
  * Android implementation of AppPreferences using DataStore.

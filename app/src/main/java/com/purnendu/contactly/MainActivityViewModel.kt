@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.manager.ContactlyGeofenceManager
-import com.purnendu.contactly.data.local.preferences.AppPreferences
+import com.purnendu.contactly.domain.repository.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

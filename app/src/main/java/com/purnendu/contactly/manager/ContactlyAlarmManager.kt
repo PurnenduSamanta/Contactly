@@ -8,13 +8,13 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.purnendu.contactly.receiver.AliasAlarmReceiver
-import com.purnendu.contactly.model.alarm.AlarmMetadata
-import com.purnendu.contactly.model.alarm.AlarmActivationResult
-import com.purnendu.contactly.model.alarm.SyncResult
+import com.purnendu.contactly.domain.model.alarm.AlarmMetadata
+import com.purnendu.contactly.domain.model.alarm.AlarmActivationResult
+import com.purnendu.contactly.domain.model.alarm.SyncResult
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.data.local.room.ActivationEntity
-import com.purnendu.contactly.model.Contact
+import com.purnendu.contactly.domain.model.Contact
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
 import com.purnendu.contactly.common.DayUtils
 import com.purnendu.contactly.common.ActivationMode

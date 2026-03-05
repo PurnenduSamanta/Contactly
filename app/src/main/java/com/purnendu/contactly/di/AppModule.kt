@@ -3,7 +3,7 @@ package com.purnendu.contactly.di
 import com.purnendu.contactly.MainActivityViewModel
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.manager.ContactlyGeofenceManager
-import com.purnendu.contactly.data.local.preferences.AppPreferences
+import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.repository.ContactsRepository

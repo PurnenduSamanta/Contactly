@@ -1,13 +1,12 @@
-package com.purnendu.contactly.model
+package com.purnendu.contactly.domain.model
 
-import androidx.annotation.DrawableRes
 import com.purnendu.contactly.common.ActivationMode
 
 data class Activation(
     val id: String,
     val name: String,
     val originalName: String,
-    @DrawableRes val avatarResId: Int?,
+    val avatarResId: Int?,
     val contactId: Long?,
     val selectedDays: Int?,
     val startAtMillis: Long?,

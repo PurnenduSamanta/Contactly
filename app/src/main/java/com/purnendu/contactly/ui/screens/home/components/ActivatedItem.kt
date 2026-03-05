@@ -50,7 +50,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.IntSize
 import com.purnendu.contactly.R
-import com.purnendu.contactly.model.Activation
+import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.ui.components.SlidingImageCarousel
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.common.ViewMode
@@ -231,7 +231,10 @@ private fun ListActivatedItem(
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                    } else if (item.startAtMillis != null && item.startAtMillis > 0 && item.endAtMillis != null && item.endAtMillis > 0) {
+                    } else {
+                        val startMillis = item.startAtMillis
+                        val endMillis = item.endAtMillis
+                        if (startMillis != null && startMillis > 0 && endMillis != null && endMillis > 0) {
                         if (item.isCurrentlyActive) {
                             // Show "Active" when activation is currently running
                             Text(
@@ -243,12 +246,12 @@ private fun ListActivatedItem(
                             )
                         } else {
                             val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                            val startTime = formatter.format(Date(item.startAtMillis))
-                            val endTime = formatter.format(Date(item.endAtMillis))
+                            val startTime = formatter.format(Date(startMillis))
+                            val endTime = formatter.format(Date(endMillis))
 
                             val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                            val startDate = dateFormatter.format(Date(item.startAtMillis))
-                            val endDate = dateFormatter.format(Date(item.endAtMillis))
+                            val startDate = dateFormatter.format(Date(startMillis))
+                            val endDate = dateFormatter.format(Date(endMillis))
                             if (startDate != null && endDate != null) {
                                 if (startDate == endDate) {
                                     Text(
@@ -262,6 +265,7 @@ private fun ListActivatedItem(
                             }
                         }
                         Spacer(modifier = Modifier.height(6.dp))
+                    }
                     }
 
                     // Day chips - only for time-based activations
@@ -469,7 +473,10 @@ private fun GridActivatedItem(
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
-                } else if (item.startAtMillis != null && item.startAtMillis > 0 && item.endAtMillis != null && item.endAtMillis > 0) {
+                } else {
+                    val startMillis = item.startAtMillis
+                    val endMillis = item.endAtMillis
+                    if (startMillis != null && startMillis > 0 && endMillis != null && endMillis > 0) {
                     if (item.isCurrentlyActive) {
                         // Show "Active" when activation is currently running
                         Text(
@@ -481,12 +488,12 @@ private fun GridActivatedItem(
                         )
                     } else {
                         val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
-                        val startTime = formatter.format(Date(item.startAtMillis))
-                        val endTime = formatter.format(Date(item.endAtMillis))
+                        val startTime = formatter.format(Date(startMillis))
+                        val endTime = formatter.format(Date(endMillis))
 
                         val dateFormatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                        val startDate = dateFormatter.format(Date(item.startAtMillis))
-                        val endDate = dateFormatter.format(Date(item.endAtMillis))
+                        val startDate = dateFormatter.format(Date(startMillis))
+                        val endDate = dateFormatter.format(Date(endMillis))
                         if (startDate != null && endDate != null) {
                             if (startDate == endDate) {
                                 Text(
@@ -500,6 +507,7 @@ private fun GridActivatedItem(
                         }
                     }
                     Spacer(modifier = Modifier.height(6.dp))
+                }
                 }
 
                 // Day chips - only for time-based activations

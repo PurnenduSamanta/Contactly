@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import com.purnendu.contactly.common.StatusEventBus
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
-import com.purnendu.contactly.data.local.preferences.AppPreferences
+import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
