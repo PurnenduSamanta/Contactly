@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
  * - ContactlyGeofenceManager: Handles geofence registration for NEARBY activations
  * - AppPreferences: Abstracts DataStore preferences
  */
-import com.purnendu.contactly.utils.ImageStorageManager
+import com.purnendu.contactly.data.utils.ImageStorageManager
 
 // ...
 

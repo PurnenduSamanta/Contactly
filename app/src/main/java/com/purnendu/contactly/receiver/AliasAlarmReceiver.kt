@@ -16,7 +16,7 @@ import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.manager.ContactlyAlarmManager
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
-import com.purnendu.contactly.utils.ImageStorageManager
+import com.purnendu.contactly.data.utils.ImageStorageManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers

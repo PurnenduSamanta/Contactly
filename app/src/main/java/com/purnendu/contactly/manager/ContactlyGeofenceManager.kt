@@ -156,15 +156,16 @@ class ContactlyGeofenceManager(
 
         var registeredCount = 0
         nearbyActivations.forEach { activation ->
-            if (activation.latitude != null && activation.longitude != null
-                && activation.radiusMeters != null
-            ) {
+            val lat = activation.latitude
+            val lng = activation.longitude
+            val radius = activation.radiusMeters
+            if (lat != null && lng != null && radius != null) {
                 try {
                     val success = registerGeofence(
                         activationId = activation.activationId,
-                        latitude = activation.latitude,
-                        longitude = activation.longitude,
-                        radiusMeters = activation.radiusMeters
+                        latitude = lat,
+                        longitude = lng,
+                        radiusMeters = radius
                     )
                     if (success) registeredCount++
                 } catch (e: Exception) {

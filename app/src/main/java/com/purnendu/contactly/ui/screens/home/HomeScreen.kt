@@ -103,7 +103,7 @@ import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
 import com.purnendu.contactly.MainActivityViewModel
-import com.purnendu.contactly.utils.GoogleMapsUrlParser
+import com.purnendu.contactly.data.utils.GoogleMapsUrlParser
 import com.purnendu.contactly.utils.validateDeviceTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)

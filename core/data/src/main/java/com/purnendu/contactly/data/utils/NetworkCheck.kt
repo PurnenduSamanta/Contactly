@@ -1,4 +1,4 @@
-package com.purnendu.contactly.utils
+package com.purnendu.contactly.data.utils
 
 import android.content.Context
 import android.net.ConnectivityManager

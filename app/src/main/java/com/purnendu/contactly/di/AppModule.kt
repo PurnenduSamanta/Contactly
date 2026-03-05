@@ -10,8 +10,8 @@ import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.ui.screens.home.HomeViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
-import com.purnendu.contactly.utils.AndroidPermissionChecker
-import com.purnendu.contactly.utils.ImageStorageManager
+import com.purnendu.contactly.data.utils.AndroidPermissionChecker
+import com.purnendu.contactly.data.utils.ImageStorageManager
 import com.purnendu.contactly.common.PermissionChecker
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel

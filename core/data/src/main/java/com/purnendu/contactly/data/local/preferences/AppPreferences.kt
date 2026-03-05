@@ -8,7 +8,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.purnendu.contactly.notification.NotificationHelper
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import com.purnendu.contactly.common.AppThemeMode
 import com.purnendu.contactly.common.ViewMode
 import com.purnendu.contactly.domain.repository.AppPreferences
@@ -80,7 +83,9 @@ class AppPreferencesImpl(private val context: Context) : AppPreferences {
     // ========== Notification Preferences ==========
 
     override val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_NOTIFICATIONS_ENABLED] ?: NotificationHelper.hasNotificationPermission(context)
+        prefs[KEY_NOTIFICATIONS_ENABLED] ?: if (Build.VERSION.SDK_INT >= 33) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else true
     }
 
     override suspend fun setNotificationsEnabled(enabled: Boolean) {

@@ -1,6 +1,7 @@
 package com.purnendu.contactly.utils
 
 import android.content.Context
+import com.purnendu.contactly.data.utils.isNetworkAvailable
 import com.purnendu.contactly.networking.ApiInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

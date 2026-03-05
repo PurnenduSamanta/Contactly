@@ -66,7 +66,7 @@ import com.purnendu.contactly.ui.screens.setting.SettingsScreen
 import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
 import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
 import com.purnendu.contactly.utils.BiometricHelper
-import com.purnendu.contactly.utils.isNetworkAvailable
+import com.purnendu.contactly.data.utils.isNetworkAvailable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
