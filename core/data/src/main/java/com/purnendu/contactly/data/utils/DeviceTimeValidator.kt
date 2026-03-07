@@ -1,7 +1,6 @@
-package com.purnendu.contactly.utils
+package com.purnendu.contactly.data.utils
 
 import android.content.Context
-import com.purnendu.contactly.data.utils.isNetworkAvailable
 import com.purnendu.contactly.networking.ApiInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -63,4 +62,3 @@ suspend fun validateDeviceTime(
 
     return TimeValidationResult(isValid = true)
 }
-

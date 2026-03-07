@@ -19,7 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import com.purnendu.contactly.R
+import com.purnendu.contactly.feature.home.R
 
 @Composable
 fun LabeledTimeInput(

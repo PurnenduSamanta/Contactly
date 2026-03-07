@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.IntSize
-import com.purnendu.contactly.R
+import com.purnendu.contactly.feature.home.R
 import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.ui.components.SlidingImageCarousel
 import com.purnendu.contactly.ui.theme.ContactlyTheme

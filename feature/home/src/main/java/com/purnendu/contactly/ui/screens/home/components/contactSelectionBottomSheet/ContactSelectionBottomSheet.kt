@@ -31,8 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.purnendu.contactly.R
 import com.purnendu.contactly.domain.model.Contact
+import com.purnendu.contactly.feature.home.R
 import com.purnendu.contactly.ui.screens.home.components.ErrorMessageCard
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 

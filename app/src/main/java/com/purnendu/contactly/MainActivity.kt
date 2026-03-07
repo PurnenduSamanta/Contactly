@@ -209,6 +209,7 @@ class MainActivity : FragmentActivity() {
         
         // Track whether activations exist (for conditional FAB display)
         val hasActivations by mainActivityViewModel.hasActivations.collectAsStateWithLifecycle()
+        val sharedLocationText by mainActivityViewModel.sharedLocationText.collectAsStateWithLifecycle()
 
         Scaffold(
             topBar = {
@@ -286,9 +287,11 @@ class MainActivity : FragmentActivity() {
             ) {
                 composable<Screen.Home> {
                     HomeScreen(
-                        navController = navController,
                         contentPadding = PaddingValues(), // No extra padding needed
-                        mainActivityViewModel = mainActivityViewModel
+                        addActivationEvents = mainActivityViewModel.addActivationEvent,
+                        sharedLocationText = sharedLocationText,
+                        onSharedLocationConsumed = mainActivityViewModel::clearSharedLocation,
+                        onHasActivationsChanged = mainActivityViewModel::setHasActivations
                     ) 
                 }
                 composable<Screen.Settings> { 

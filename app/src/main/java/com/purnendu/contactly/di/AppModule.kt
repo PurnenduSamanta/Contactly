@@ -8,7 +8,6 @@ import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
-import com.purnendu.contactly.ui.screens.home.HomeViewModel
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import com.purnendu.contactly.data.utils.AndroidPermissionChecker
 import com.purnendu.contactly.data.utils.ImageStorageManager
@@ -61,7 +60,5 @@ val appModule = module {
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes
     viewModel { MainActivityViewModel(get(), get(), get()) }
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get()) }
 }
-

@@ -75,12 +75,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.navigation.NavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.purnendu.contactly.R
+import com.purnendu.contactly.data.utils.validateDeviceTime
 import com.purnendu.contactly.domain.model.Contact
 import com.purnendu.contactly.domain.model.Activation
+import com.purnendu.contactly.feature.home.R
 import com.purnendu.contactly.ui.screens.home.components.ActivationTypeFilter
 import com.purnendu.contactly.ui.screens.home.components.ActivationsFilterChips
 import com.purnendu.contactly.ui.screens.home.components.ActivatedItem
@@ -102,18 +102,21 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
-import com.purnendu.contactly.MainActivityViewModel
 import com.purnendu.contactly.geofence.GoogleMapsUrlParser
-import com.purnendu.contactly.utils.validateDeviceTime
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
-    navController: NavController? = null,
     homeViewModel: HomeViewModel = koinViewModel(),
-    mainActivityViewModel: MainActivityViewModel? = null
+    addActivationEvents: Flow<Unit> = emptyFlow(),
+    sharedLocationText: String? = null,
+    onSharedLocationConsumed: () -> Unit = {},
+    onHasActivationsChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val activations by homeViewModel.activations.collectAsStateWithLifecycle()
@@ -340,55 +343,47 @@ fun HomeScreen(
 
 
 
-    // Notify MainActivityViewModel when activations list changes
-    LaunchedEffect(activations) { mainActivityViewModel?.setHasActivations(activations.isNotEmpty()) }
+    LaunchedEffect(activations) {
+        onHasActivationsChanged(activations.isNotEmpty())
+    }
 
-    // Listen for add activation events from center FAB in bottom nav
-    mainActivityViewModel?.let { viewModel ->
-        LaunchedEffect(Unit) {
-            viewModel.addActivationEvent.collect {
-                showContactSheet = true
-            }
+    LaunchedEffect(addActivationEvents) {
+        addActivationEvents.collect {
+            showContactSheet = true
+        }
+    }
+
+    LaunchedEffect(sharedLocationText, showEditSheet) {
+        val text = sharedLocationText ?: return@LaunchedEffect
+
+        if (!showEditSheet) {
+            onSharedLocationConsumed()
+            return@LaunchedEffect
         }
 
-        // Observe shared location state — persists until consumed
-        val sharedLocationText by viewModel.sharedLocationText.collectAsStateWithLifecycle()
-        LaunchedEffect(sharedLocationText) {
-            val text = sharedLocationText ?: return@LaunchedEffect
+        isSaving = true
 
-            if(!showEditSheet) {
-                viewModel.clearSharedLocation()
-                return@LaunchedEffect
-            }
-
-            // Show loader and disable all inputs while parsing
-            isSaving = true
-
-            // Try parsing (with context for geocoding fallback), retry once if first attempt fails
-            var latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
-            if (latLng == null) {
-                kotlinx.coroutines.delay(2000L)
-                latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
-            }
-
-            if (latLng != null) {
-                nearbyLatitude = "%.7f".format(latLng.latitude).trimEnd('0').trimEnd('.')
-                nearbyLongitude = "%.7f".format(latLng.longitude).trimEnd('0').trimEnd('.')
-                nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(text)
-                activationMode = ActivationMode.NEARBY
-
-                // If EditSheet is already open (returned from Maps), fields are updated in-place
-            } else {
-                Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
-                nearbyLatitude = ""
-                nearbyLongitude = ""
-                nearbyRadius = "200"
-                nearbyLocationLabel = null
-            }
-
-            isSaving = false
-            viewModel.clearSharedLocation()
+        var latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
+        if (latLng == null) {
+            delay(2000L)
+            latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
         }
+
+        if (latLng != null) {
+            nearbyLatitude = "%.7f".format(latLng.latitude).trimEnd('0').trimEnd('.')
+            nearbyLongitude = "%.7f".format(latLng.longitude).trimEnd('0').trimEnd('.')
+            nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(text)
+            activationMode = ActivationMode.NEARBY
+        } else {
+            Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
+            nearbyLatitude = ""
+            nearbyLongitude = ""
+            nearbyRadius = "200"
+            nearbyLocationLabel = null
+        }
+
+        isSaving = false
+        onSharedLocationConsumed()
     }
 
     LaunchedEffect(key1 = combinedPermissionKey)
@@ -839,9 +834,10 @@ fun HomeScreen(
                             return@launch
                         }
 
-                        if(!validateDeviceTime(context).isValid)
+                        val timeValidationResult = validateDeviceTime(context)
+                        if(!timeValidationResult.isValid)
                         {
-                            homeViewModel.showError(validateDeviceTime(context).errorMessage.toString())
+                            homeViewModel.showError(timeValidationResult.errorMessage.toString())
                             isSaving=false
                             return@launch
                         }
@@ -1021,5 +1017,3 @@ fun HomeScreenPreview() {
         )
     }
 }
-
-

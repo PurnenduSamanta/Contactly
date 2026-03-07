@@ -65,8 +65,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.purnendu.contactly.R
 import com.purnendu.contactly.domain.model.Contact
+import com.purnendu.contactly.feature.home.R
 import com.purnendu.contactly.ui.screens.home.components.ErrorMessageCard
 import com.purnendu.contactly.common.ActivationMode
 import androidx.compose.foundation.text.KeyboardOptions

@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">Contactly</string>
+    <string name="action_add_activation">Add Activation</string>
+    <string name="empty_no_activations">No Activations yet!</string>
+    <string name="empty_get_started">Get started by creating your first activation</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_exit">Exit</string>
+    <string name="label_quick_edit">Quick Edit Activation</string>
+    <string name="label_temp_name">Temporary Name</string>
+    <string name="label_start_time">Start Time</string>
+    <string name="label_end_time">End Time</string>
+    <string name="label_select">Select %1$s</string>
+    <string name="original_name">Original name: %1$s</string>
+    <string name="dialog_contacts_title">Contacts Permission Required</string>
+    <string name="dialog_contacts_message">This app needs permission to read and write contacts to rename them for your activations. Please enable these permissions in settings.</string>
+    <string name="duplicate_contact_alert">You can not create duplicate activations for a contact</string>
+    <string name="cd_back">Back</string>
+    <string name="ActivationUpdated">Activation updated</string>
+    <string name="action_instant_switch">Instant Switch</string>
+    <string name="toast_enable_exact_alarm">Enable exact alarms for precise scheduling</string>
+    <string name="toast_activation_saved">Activation saved</string>
+    <string name="toast_instant_saved">Instant activation saved! Toggle it anytime from the card.</string>
+    <string name="toast_instant_updated">Instant activation updated!</string>
+    <string name="toast_nearby_saved">Nearby activation saved! It will trigger when you enter the location.</string>
+    <string name="toast_nearby_updated">Nearby activation updated!</string>
+</resources>
