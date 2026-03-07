@@ -302,7 +302,7 @@ graph TD
 |---|---|---|
 | [manager/ContactlyAlarmManager.kt](file:///Users/purnendusamanta/Android%20Studio%20Projects/Contactly/app/src/main/java/com/purnendu/contactly/manager/ContactlyAlarmManager.kt) | `android.app.AlarmManager`, `android.app.PendingIntent` | 503 lines |
 | [receiver/AliasAlarmReceiver.kt](file:///Users/purnendusamanta/Android%20Studio%20Projects/Contactly/app/src/main/java/com/purnendu/contactly/receiver/AliasAlarmReceiver.kt) | `android.content.BroadcastReceiver` | Fires on alarm trigger |
-| [receiver/ReActivationReceiver.kt](file:///Users/purnendusamanta/Android%20Studio%20Projects/Contactly/app/src/main/java/com/purnendu/contactly/receiver/ReActivationReceiver.kt) | `android.content.BroadcastReceiver` | Re-registers after boot |
+| [alarm/AlarmReActivationReceiver.kt](file:///Users/purnendusamanta/Android%20Studio%20Projects/Contactly/platform/alarm/src/main/java/com/purnendu/contactly/alarm/AlarmReActivationReceiver.kt) | `android.content.BroadcastReceiver` | Re-registers after boot |
 
 #### `:platform:geofence` — Google Play Services
 

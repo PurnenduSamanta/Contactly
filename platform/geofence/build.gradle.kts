@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.purnendu.contactly.platform.geofence"
+    namespace = "com.purnendu.contactly.geofence"
     compileSdk = 36
 
     defaultConfig {
@@ -22,6 +22,11 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":platform:notification"))
+
+    implementation(libs.androidx.core.ktx)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 
     // Google Play Services - Location (Geofencing)
     implementation(libs.play.services.location)

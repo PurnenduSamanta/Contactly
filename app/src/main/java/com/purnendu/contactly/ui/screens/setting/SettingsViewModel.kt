@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.purnendu.contactly.domain.model.alarm.AlarmCheckResult
 import com.purnendu.contactly.domain.model.alarm.AlarmStatusInfo
-import com.purnendu.contactly.manager.ContactlyAlarmManager
-import com.purnendu.contactly.receiver.AliasAlarmReceiver
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.common.AlarmOperations
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.common.AppThemeMode
@@ -74,7 +74,7 @@ class SettingsViewModel(
                 val statusList = activations.map { activation ->
                     val metadata = contactlyAlarmManager.parseAlarmMetadata(activation.activatedAlarmsMetadata)
                     val alarmResults = metadata.map { meta ->
-                        val displayName = if (meta.operation == AliasAlarmReceiver.OP_APPLY) {
+                        val displayName = if (meta.operation == AlarmOperations.OP_APPLY) {
                             activation.temporaryName
                         } else {
                             activation.originalName

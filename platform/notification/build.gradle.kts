@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.purnendu.contactly.platform.notification"
+    namespace = "com.purnendu.contactly.notification"
     compileSdk = 36
 
     defaultConfig {

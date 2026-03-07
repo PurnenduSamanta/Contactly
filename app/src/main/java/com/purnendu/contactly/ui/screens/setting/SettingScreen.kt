@@ -65,7 +65,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.purnendu.contactly.BuildConfig
 import com.purnendu.contactly.R
-import com.purnendu.contactly.receiver.AliasAlarmReceiver
+import com.purnendu.contactly.common.AlarmOperations
 import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -582,7 +582,7 @@ fun SettingsScreen(
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 
                                                 Column {
-                                                    val opLabel = if (alarmResult.metadata.operation == AliasAlarmReceiver.OP_APPLY) 
+                                                    val opLabel = if (alarmResult.metadata.operation == AlarmOperations.OP_APPLY) 
                                                         "APPLY" else "REVERT"
                                                     val dayName = if (alarmResult.metadata.dayOfWeek in 0..6) 
                                                         dayNames[alarmResult.metadata.dayOfWeek] else "?"

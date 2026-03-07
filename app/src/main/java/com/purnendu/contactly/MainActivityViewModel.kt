@@ -3,8 +3,8 @@ package com.purnendu.contactly
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.manager.ContactlyAlarmManager
-import com.purnendu.contactly.manager.ContactlyGeofenceManager
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.geofence.ContactlyGeofenceManager
 import com.purnendu.contactly.domain.repository.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow

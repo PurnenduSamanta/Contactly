@@ -1,4 +1,4 @@
-package com.purnendu.contactly.manager
+package com.purnendu.contactly.geofence
 
 import android.Manifest
 import android.app.PendingIntent
@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
-import com.purnendu.contactly.receiver.GeofenceBroadcastReceiver
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.common.ActivationMode
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -21,11 +20,15 @@ import kotlin.coroutines.resume
  * Manages geofence registration/unregistration for NEARBY activations.
  *
  * Uses Google Play Services GeofencingClient — no Maps SDK or API key needed.
- * Geofences trigger GeofenceBroadcastReceiver on ENTER/EXIT transitions.
+ * Geofences trigger the supplied [geofenceReceiverClass] on ENTER/EXIT transitions.
+ *
+ * @param geofenceReceiverClass The BroadcastReceiver class that handles geofence transitions.
+ *   Injected from :app to avoid a dependency on the receiver module.
  */
 class ContactlyGeofenceManager(
     private val context: Context,
-    private val activationsRepo: ActivationsRepository
+    private val activationsRepo: ActivationsRepository,
+    private val geofenceReceiverClass: Class<*>
 ) {
     private val geofencingClient = LocationServices.getGeofencingClient(context)
 
@@ -177,7 +180,7 @@ class ContactlyGeofenceManager(
     }
 
     private fun getGeofencePendingIntent(): PendingIntent {
-        val intent = Intent(context, GeofenceBroadcastReceiver::class.java)
+        val intent = Intent(context, geofenceReceiverClass)
         return PendingIntent.getBroadcast(
             context,
             GEOFENCE_PENDING_INTENT_CODE,

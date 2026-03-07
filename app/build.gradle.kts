@@ -62,6 +62,10 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":core:network"))
+    implementation(project(":platform:geofence"))
+    implementation(project(":platform:alarm"))
+    implementation(project(":platform:notification"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
@@ -113,11 +117,4 @@ dependencies {
 
     // Google Play Services - Location (Geofencing)
     implementation(libs.play.services.location)
-
-    // Ktor
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
 }

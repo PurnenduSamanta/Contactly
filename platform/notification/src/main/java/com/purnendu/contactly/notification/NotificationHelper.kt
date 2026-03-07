@@ -12,11 +12,13 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.purnendu.contactly.R
 import kotlin.random.Random
 
 /**
- * Helper class to show fun notifications when alarms trigger
+ * Helper class to show fun notifications when alarms trigger.
+ *
+ * Uses the app's launcher icon as the notification small icon,
+ * resolved dynamically to avoid depending on :app's R class.
  */
 object NotificationHelper {
 
@@ -152,8 +154,11 @@ object NotificationHelper {
         // Try to load contact image for large icon
         val largeIcon = loadContactImage(contactImage)
 
+        // Resolve the app's launcher icon dynamically (avoids dependency on :app's R class)
+        val appIcon = context.applicationInfo.icon
+
         val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher_foreground)
+            .setSmallIcon(appIcon)
             .setContentTitle(funnyMessage)
             .setContentText(content)
             .setStyle(NotificationCompat.BigTextStyle().bigText(expandedText))

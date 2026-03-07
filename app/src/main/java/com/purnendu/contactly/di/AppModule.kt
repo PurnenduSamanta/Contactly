@@ -1,8 +1,8 @@
 package com.purnendu.contactly.di
 
 import com.purnendu.contactly.MainActivityViewModel
-import com.purnendu.contactly.manager.ContactlyAlarmManager
-import com.purnendu.contactly.manager.ContactlyGeofenceManager
+import com.purnendu.contactly.alarm.ContactlyAlarmManager
+import com.purnendu.contactly.geofence.ContactlyGeofenceManager
 import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.data.local.preferences.AppPreferencesImpl
 import com.purnendu.contactly.data.local.room.AppDatabase
@@ -13,6 +13,7 @@ import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import com.purnendu.contactly.data.utils.AndroidPermissionChecker
 import com.purnendu.contactly.data.utils.ImageStorageManager
 import com.purnendu.contactly.common.PermissionChecker
+import com.purnendu.contactly.geofence.GeofenceBroadcastReceiver
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -55,7 +56,7 @@ val appModule = module {
     // ContactlyAlarmManager handles all alarm-related operations
     single { ContactlyAlarmManager(androidContext(), get(), get()) }
     single { ImageStorageManager(androidContext()) }
-    single { ContactlyGeofenceManager(androidContext(), get()) }
+    single { ContactlyGeofenceManager(androidContext(), get(), GeofenceBroadcastReceiver::class.java) }
     
     // ========== ViewModels ==========
     // ViewModels now depend on interfaces, not Android classes

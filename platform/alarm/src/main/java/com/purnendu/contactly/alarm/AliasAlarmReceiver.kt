@@ -1,4 +1,4 @@
-package com.purnendu.contactly.receiver
+package com.purnendu.contactly.alarm
 
 import android.Manifest
 import android.app.AlarmManager
@@ -13,7 +13,9 @@ import com.purnendu.contactly.common.StatusEventBus
 import com.purnendu.contactly.data.repository.ContactsRepository
 import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.domain.repository.AppPreferences
-import com.purnendu.contactly.manager.ContactlyAlarmManager
+
+import com.purnendu.contactly.common.AlarmOperations.OP_APPLY
+import com.purnendu.contactly.common.AlarmOperations.OP_REVERT
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
 import com.purnendu.contactly.data.utils.ImageStorageManager
@@ -270,7 +272,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
 
 
 
-    companion object {
+    internal companion object {
         const val ACTION_ALIAS = "com.purnendu.contactly.action.ALIAS"
         const val EXTRA_OPERATION = "operation"
         const val EXTRA_CONTACT_ID = "contactId"
@@ -282,7 +284,5 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         const val EXTRA_ACTIVATION_ID = "scheduleId"
         const val EXTRA_DAY_OF_WEEK = "dayOfWeek"
         const val EXTRA_ACTIVATION_TYPE = "scheduleType"
-        const val OP_APPLY = "apply"
-        const val OP_REVERT = "revert"
     }
 }

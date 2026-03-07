@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.purnendu.contactly.platform.alarm"
+    namespace = "com.purnendu.contactly.alarm"
     compileSdk = 36
 
     defaultConfig {
@@ -29,4 +29,11 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
+
+    // AndroidX Core (for ContextCompat)
+    implementation(libs.androidx.core.ktx)
+
+    // Koin (for KoinComponent in receivers)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 }

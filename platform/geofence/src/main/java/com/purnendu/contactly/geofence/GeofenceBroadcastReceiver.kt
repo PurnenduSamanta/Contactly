@@ -1,4 +1,4 @@
-package com.purnendu.contactly.receiver
+package com.purnendu.contactly.geofence
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -65,7 +65,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver(), KoinComponent {
         }
 
         val isEnter = transitionType == Geofence.GEOFENCE_TRANSITION_ENTER
-        val op = if (isEnter) AliasAlarmReceiver.Companion.OP_APPLY else AliasAlarmReceiver.Companion.OP_REVERT
+        val op = if (isEnter) com.purnendu.contactly.common.AlarmOperations.OP_APPLY else com.purnendu.contactly.common.AlarmOperations.OP_REVERT
         val pendingResult = goAsync()
 
         CoroutineScope(Dispatchers.IO).launch {

@@ -1,11 +1,9 @@
-package com.purnendu.contactly.receiver
+package com.purnendu.contactly.geofence
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.purnendu.contactly.manager.ContactlyAlarmManager
-import com.purnendu.contactly.manager.ContactlyGeofenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -13,16 +11,15 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 /**
- * BroadcastReceiver that re-registers all alarms and geofences after device boot.
+ * BroadcastReceiver that re-registers all geofences after device boot.
  *
  * Uses Koin for dependency injection via KoinComponent interface.
  *
- * After a reboot, both AlarmManager alarms and geofences are cleared by the system.
+ * After a reboot, geofences are cleared by the system.
  * This receiver re-registers them using the same synchronization logic used during app startup.
  */
-class ReActivationReceiver : BroadcastReceiver(), KoinComponent {
+class GeofenceReActivationReceiver : BroadcastReceiver(), KoinComponent {
 
-    private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val geofenceManager: ContactlyGeofenceManager by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -32,14 +29,10 @@ class ReActivationReceiver : BroadcastReceiver(), KoinComponent {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Re-register time-based alarms (ONE_TIME / REPEAT)
-                val syncResult = contactlyAlarmManager.syncAllActivations()
-                Log.d(TAG, "Boot alarm sync: $syncResult")
-
                 // Re-register NEARBY geofences
                 geofenceManager.syncAllGeofences()
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to sync on boot", e)
+                Log.e(TAG, "Failed to sync geofences on boot", e)
             } finally {
                 pendingResult.finish()
             }
@@ -47,6 +40,6 @@ class ReActivationReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     companion object {
-        private const val TAG = "ReActivationReceiver"
+        private const val TAG = "GeofenceReActivate"
     }
 }
