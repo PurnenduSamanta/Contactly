@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
-import com.purnendu.contactly.R
+import com.purnendu.contactly.core.ui.R
 import kotlinx.coroutines.delay
 
 /**
@@ -96,8 +96,6 @@ fun SlidingImageCarousel(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        val (imageUri, imageType) = images[currentIndex]
-        
         AnimatedContent(
             targetState = currentIndex,
             transitionSpec = {

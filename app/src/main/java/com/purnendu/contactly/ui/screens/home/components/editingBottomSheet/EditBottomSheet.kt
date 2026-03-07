@@ -532,7 +532,7 @@ private fun TemporaryImagePicker(
                             .size(74.dp)
                             .clip(RoundedCornerShape(17.dp)),
                         contentScale = ContentScale.Crop,
-                        error = painterResource(id = R.drawable.avatar_placeholder)
+                        error = painterResource(id = com.purnendu.contactly.core.ui.R.drawable.avatar_placeholder)
                     )
                 } else {
                     Box(

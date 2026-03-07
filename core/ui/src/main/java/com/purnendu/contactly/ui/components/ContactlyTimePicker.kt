@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.purnendu.contactly.R
+import com.purnendu.contactly.core.ui.R
 import java.util.Calendar
 
 /**
@@ -76,14 +76,14 @@ fun ContactlyTimePicker(
                 {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.app_name),
+                            text = stringResource(R.string.contactly_time_picker_header_title),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Select Time",
+                            text = stringResource(R.string.contactly_time_picker_header_subtitle),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
@@ -130,7 +130,7 @@ fun ContactlyTimePicker(
                         )
                     ) {
                         Text(
-                            "Cancel",
+                            text = stringResource(R.string.contactly_time_picker_cancel),
                             fontWeight = FontWeight.Medium,
                             fontSize = 14.sp
                         )
@@ -150,7 +150,7 @@ fun ContactlyTimePicker(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            "OK",
+                            text = stringResource(R.string.contactly_time_picker_ok),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )

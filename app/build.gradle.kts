@@ -63,6 +63,7 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:network"))
+    implementation(project(":core:ui"))
     implementation(project(":platform:geofence"))
     implementation(project(":platform:alarm"))
     implementation(project(":platform:notification"))
