@@ -3,6 +3,7 @@ package com.purnendu.contactly
 import android.app.Application
 import com.purnendu.contactly.di.appModule
 import com.purnendu.contactly.feature.home.di.homeModule
+import com.purnendu.contactly.feature.settings.di.settingsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -26,7 +27,7 @@ class ContactlyApplication : Application() {
             androidContext(this@ContactlyApplication)
             
             // Load all modules
-            modules(appModule, homeModule)
+            modules(appModule, homeModule, settingsModule)
         }
     }
 }

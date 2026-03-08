@@ -1,10 +1,12 @@
 package com.purnendu.contactly.ui.screens.setting
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.biometric.BiometricManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -63,9 +65,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
-import com.purnendu.contactly.BuildConfig
-import com.purnendu.contactly.R
 import com.purnendu.contactly.common.AlarmOperations
+import com.purnendu.contactly.feature.settings.R
 import com.purnendu.contactly.ui.components.ContactlyDialog
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
@@ -78,6 +79,8 @@ import androidx.core.net.toUri
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel= koinViewModel(),
+    versionName: String = "",
+    isDebugMode: Boolean = false,
     onNavigateToFeedback: () -> Unit = {},
     onNavigateToPrivacyPolicy: () -> Unit = {}
 ) {
@@ -91,6 +94,9 @@ fun SettingsScreen(
     var showAlarmsDialog by remember { mutableStateOf(false) }
     val showPermissionDialog = remember { mutableStateOf(false) }
     val isNotificationSwitchTryToOn = remember { mutableIntStateOf(-1) }
+
+    val biometricEnabled by settingsViewModel.biometricEnabled.collectAsStateWithLifecycle()
+    var showBiometricError by remember { mutableStateOf(false) }
     
     // Permission launcher for POST_NOTIFICATIONS (Android 13+)
     val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -302,9 +308,6 @@ fun SettingsScreen(
 
             // Biometric Auth Row
             item {
-                val biometricEnabled by settingsViewModel.biometricEnabled.collectAsStateWithLifecycle()
-                var showBiometricError by remember { mutableStateOf(false) }
-
                 if (showBiometricError) {
                     ContactlyDialog(
                         title = stringResource(R.string.dialog_biometric_unavailable_title),
@@ -341,7 +344,7 @@ fun SettingsScreen(
                         checked = biometricEnabled == true,
                         onCheckedChange = { enabled ->
                             if (enabled) {
-                                if (com.purnendu.contactly.utils.BiometricHelper.isBiometricAvailable(context)) {
+                                if (isBiometricAvailable(context)) {
                                     settingsViewModel.setBiometricEnabled(true)
                                 } else {
                                     showBiometricError = true
@@ -369,7 +372,7 @@ fun SettingsScreen(
             item {
                 SettingsRow(
                     name = stringResource(id = R.string.row_version),
-                    value = BuildConfig.VERSION_NAME,
+                    value = versionName,
                     onClick = null
                 )
             }
@@ -457,7 +460,7 @@ fun SettingsScreen(
                 }
             }
 
-            if(BuildConfig.DEBUG)
+            if(isDebugMode)
             {
                 // Debug Section
                 item {
@@ -626,5 +629,11 @@ fun SettingsScreen(
 @Preview
 @Composable
 fun SettingsScreenPreview() {
-    ContactlyTheme {SettingsScreen()}
+    ContactlyTheme { SettingsScreen(versionName = "3.5") }
+}
+
+private fun isBiometricAvailable(context: Context): Boolean {
+    val biometricManager = BiometricManager.from(context)
+    return biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+        BiometricManager.BIOMETRIC_SUCCESS
 }

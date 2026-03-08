@@ -296,6 +296,8 @@ class MainActivity : FragmentActivity() {
                 }
                 composable<Screen.Settings> { 
                     SettingsScreen(
+                        versionName = BuildConfig.VERSION_NAME,
+                        isDebugMode = BuildConfig.DEBUG,
                         onNavigateToFeedback = {
                             if(isNetworkAvailable(context = this@MainActivity))
                             navController.navigate(Screen.Feedback)

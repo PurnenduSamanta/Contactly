@@ -65,6 +65,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:ui"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:settings"))
     implementation(project(":platform:geofence"))
     implementation(project(":platform:alarm"))
     implementation(project(":platform:notification"))
