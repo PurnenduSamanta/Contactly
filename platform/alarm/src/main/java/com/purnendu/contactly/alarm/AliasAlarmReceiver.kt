@@ -1,14 +1,11 @@
 package com.purnendu.contactly.alarm
 
-import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.util.Log
-import androidx.core.content.ContextCompat
 import com.purnendu.contactly.common.StatusEventBus
 import com.purnendu.contactly.domain.repository.AppPreferences
 import com.purnendu.contactly.domain.repository.ContactsRepository
@@ -18,6 +15,7 @@ import com.purnendu.contactly.common.AlarmOperations.OP_APPLY
 import com.purnendu.contactly.common.AlarmOperations.OP_REVERT
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
+import com.purnendu.contactly.common.PermissionChecker
 import com.purnendu.contactly.domain.repository.ImageStorageRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -41,23 +39,24 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
     private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val appPreferences: AppPreferences by inject()
     private val imageStorageManager: ImageStorageRepository by inject()
+    private val permissionChecker: PermissionChecker by inject()
     
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
-        val op = intent.getStringExtra(EXTRA_OPERATION) ?: return
-        val contactId = intent.getLongExtra(EXTRA_CONTACT_ID, -1L)
-        val originalName = intent.getStringExtra(EXTRA_ORIGINAL_NAME) ?: return
-        val temporaryName = intent.getStringExtra(EXTRA_TEMPORARY_NAME) ?: return
-        val tempImage = intent.getStringExtra(EXTRA_TEMPORARY_IMAGE)
-        val originalImage = intent.getStringExtra(EXTRA_ORIGINAL_IMAGE)
-        val activationId = intent.getLongExtra(EXTRA_ACTIVATION_ID, -1L)
-        val dayOfWeek = intent.getIntExtra(EXTRA_DAY_OF_WEEK, -1)
-        val activationMode = intent.getIntExtra(EXTRA_ACTIVATION_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
+        val op = intent.getStringExtra(AlarmConstants.EXTRA_OPERATION) ?: return
+        val contactId = intent.getLongExtra(AlarmConstants.EXTRA_CONTACT_ID, -1L)
+        val originalName = intent.getStringExtra(AlarmConstants.EXTRA_ORIGINAL_NAME) ?: return
+        val temporaryName = intent.getStringExtra(AlarmConstants.EXTRA_TEMPORARY_NAME) ?: return
+        val tempImage = intent.getStringExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE)
+        val originalImage = intent.getStringExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE)
+        val activationId = intent.getLongExtra(AlarmConstants.EXTRA_ACTIVATION_ID, -1L)
+        val dayOfWeek = intent.getIntExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, -1)
+        val activationMode = intent.getIntExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, 0) // 0 = ONE_TIME, 1 = REPEAT
         if (contactId <= 0) return
 
         val pendingResult = goAsync()
 
-        if (!hasWriteContactsPermission(context)) return
+        if (!permissionChecker.hasWriteContactsPermission()) return
 
         CoroutineScope(Dispatchers.IO).launch{
             try {
@@ -136,13 +135,6 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         }
     }
 
-    private fun hasWriteContactsPermission(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.WRITE_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
     private suspend fun reActivateForNextWeek(context: Context, originalIntent: Intent, dayOfWeek: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         
@@ -162,21 +154,21 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         // Create a new intent with same extras
         val newIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
             action = originalIntent.action
-            putExtra(EXTRA_OPERATION, originalIntent.getStringExtra(EXTRA_OPERATION))
-            putExtra(EXTRA_CONTACT_ID, originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L))
-            putExtra(EXTRA_ORIGINAL_NAME, originalIntent.getStringExtra(EXTRA_ORIGINAL_NAME))
-            putExtra(EXTRA_TEMPORARY_NAME, originalIntent.getStringExtra(EXTRA_TEMPORARY_NAME))
-            putExtra(EXTRA_ORIGINAL_IMAGE, originalIntent.getStringExtra(EXTRA_ORIGINAL_IMAGE))
-            putExtra(EXTRA_TEMPORARY_IMAGE, originalIntent.getStringExtra(EXTRA_TEMPORARY_IMAGE))
-            putExtra(EXTRA_ACTIVATION_ID, originalIntent.getLongExtra(EXTRA_ACTIVATION_ID, -1L))
-            putExtra(EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(EXTRA_ACTIVATION_TYPE, originalIntent.getIntExtra(EXTRA_ACTIVATION_TYPE, 0)) // Default to ONE-TIME
+            putExtra(AlarmConstants.EXTRA_OPERATION, originalIntent.getStringExtra(AlarmConstants.EXTRA_OPERATION))
+            putExtra(AlarmConstants.EXTRA_CONTACT_ID, originalIntent.getLongExtra(AlarmConstants.EXTRA_CONTACT_ID, -1L))
+            putExtra(AlarmConstants.EXTRA_ORIGINAL_NAME, originalIntent.getStringExtra(AlarmConstants.EXTRA_ORIGINAL_NAME))
+            putExtra(AlarmConstants.EXTRA_TEMPORARY_NAME, originalIntent.getStringExtra(AlarmConstants.EXTRA_TEMPORARY_NAME))
+            putExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE, originalIntent.getStringExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE))
+            putExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE, originalIntent.getStringExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE))
+            putExtra(AlarmConstants.EXTRA_ACTIVATION_ID, originalIntent.getLongExtra(AlarmConstants.EXTRA_ACTIVATION_ID, -1L))
+            putExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, originalIntent.getIntExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, 0)) // Default to ONE-TIME
         }
 
         // Generate request code using centralized utility
-        val contactId = originalIntent.getLongExtra(EXTRA_CONTACT_ID, -1L)
-        val activationId = originalIntent.getLongExtra(EXTRA_ACTIVATION_ID, -1L)
-        val op = originalIntent.getStringExtra(EXTRA_OPERATION) ?: return
+        val contactId = originalIntent.getLongExtra(AlarmConstants.EXTRA_CONTACT_ID, -1L)
+        val activationId = originalIntent.getLongExtra(AlarmConstants.EXTRA_ACTIVATION_ID, -1L)
+        val op = originalIntent.getStringExtra(AlarmConstants.EXTRA_OPERATION) ?: return
         val reqCode = if (op == OP_APPLY) {
             AlarmRequestCodeUtils.generateApplyRequestCode(contactId, dayOfWeek)
         } else {
@@ -266,23 +258,5 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
         } catch (e: Exception) {
             Log.e("AliasAlarmReceiver", "Failed to update activation metadata: $activationId", e)
         }
-    }
-
-
-
-
-
-    internal companion object {
-        const val ACTION_ALIAS = "com.purnendu.contactly.action.ALIAS"
-        const val EXTRA_OPERATION = "operation"
-        const val EXTRA_CONTACT_ID = "contactId"
-        const val EXTRA_ORIGINAL_NAME = "originalName"
-        const val EXTRA_TEMPORARY_NAME = "temporaryName"
-        const val EXTRA_TEMPORARY_IMAGE = "temporaryImage"
-
-        const val EXTRA_ORIGINAL_IMAGE = "originalImage"
-        const val EXTRA_ACTIVATION_ID = "scheduleId"
-        const val EXTRA_DAY_OF_WEEK = "dayOfWeek"
-        const val EXTRA_ACTIVATION_TYPE = "scheduleType"
     }
 }

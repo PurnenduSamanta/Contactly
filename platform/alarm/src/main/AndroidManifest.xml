@@ -5,6 +5,7 @@
     <application>
         <receiver
             android:name="com.purnendu.contactly.alarm.AliasAlarmReceiver"
+            android:enabled="true"
             android:exported="false" />
         <receiver
             android:name="com.purnendu.contactly.alarm.AlarmReActivationReceiver"

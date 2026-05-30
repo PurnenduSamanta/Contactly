@@ -93,28 +93,28 @@ class ContactlyAlarmManager(
             )
 
             val applyIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-                action = AliasAlarmReceiver.ACTION_ALIAS
-                putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AlarmOperations.OP_APPLY)
-                putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
-                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
-                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
-                putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_ID, activationId)
-                putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(activationMode))
+                action = AlarmConstants.ACTION_ALIAS
+                putExtra(AlarmConstants.EXTRA_OPERATION, AlarmOperations.OP_APPLY)
+                putExtra(AlarmConstants.EXTRA_CONTACT_ID, contact.id)
+                putExtra(AlarmConstants.EXTRA_ORIGINAL_NAME, originalName)
+                putExtra(AlarmConstants.EXTRA_TEMPORARY_NAME, temporaryName)
+                putExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE, tempImage)
+                putExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE, originalImage)
+                putExtra(AlarmConstants.EXTRA_ACTIVATION_ID, activationId)
+                putExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, dayOfWeek)
+                putExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(activationMode))
             }
             val revertIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-                action = AliasAlarmReceiver.ACTION_ALIAS
-                putExtra(AliasAlarmReceiver.EXTRA_OPERATION, AlarmOperations.OP_REVERT)
-                putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contact.id)
-                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
-                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-                putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
-                putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
-                putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_ID, activationId)
-                putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-                putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(activationMode))
+                action = AlarmConstants.ACTION_ALIAS
+                putExtra(AlarmConstants.EXTRA_OPERATION, AlarmOperations.OP_REVERT)
+                putExtra(AlarmConstants.EXTRA_CONTACT_ID, contact.id)
+                putExtra(AlarmConstants.EXTRA_ORIGINAL_NAME, originalName)
+                putExtra(AlarmConstants.EXTRA_TEMPORARY_NAME, temporaryName)
+                putExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE, tempImage)
+                putExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE, originalImage)
+                putExtra(AlarmConstants.EXTRA_ACTIVATION_ID, activationId)
+                putExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, dayOfWeek)
+                putExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(activationMode))
             }
 
             val applyPending = PendingIntent.getBroadcast(
@@ -213,16 +213,16 @@ class ContactlyAlarmManager(
         activationMode: Int
     ): Intent {
         return Intent(context, AliasAlarmReceiver::class.java).apply {
-            action = AliasAlarmReceiver.ACTION_ALIAS
-            putExtra(AliasAlarmReceiver.EXTRA_OPERATION, operation)
-            putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, contactId)
-            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, originalName)
-            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, temporaryName)
-            putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, tempImage)
-            putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, originalImage)
-            putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_ID, activationId)
-            putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, dayOfWeek)
-            putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, activationMode)
+            action = AlarmConstants.ACTION_ALIAS
+            putExtra(AlarmConstants.EXTRA_OPERATION, operation)
+            putExtra(AlarmConstants.EXTRA_CONTACT_ID, contactId)
+            putExtra(AlarmConstants.EXTRA_ORIGINAL_NAME, originalName)
+            putExtra(AlarmConstants.EXTRA_TEMPORARY_NAME, temporaryName)
+            putExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE, tempImage)
+            putExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE, originalImage)
+            putExtra(AlarmConstants.EXTRA_ACTIVATION_ID, activationId)
+            putExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, dayOfWeek)
+            putExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, activationMode)
         }
     }
 
@@ -446,16 +446,16 @@ class ContactlyAlarmManager(
             // Cancel all old alarms
             oldAlarms.forEach { oldAlarm ->
                 val oldIntent = Intent(context, AliasAlarmReceiver::class.java).apply {
-                    action = AliasAlarmReceiver.ACTION_ALIAS
-                    putExtra(AliasAlarmReceiver.EXTRA_OPERATION, oldAlarm.operation)
-                    putExtra(AliasAlarmReceiver.EXTRA_CONTACT_ID, existingActivation.contactId)
-                    putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_NAME, existingActivation.originalName)
-                    putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_NAME, existingActivation.temporaryName)
-                    putExtra(AliasAlarmReceiver.EXTRA_ORIGINAL_IMAGE, existingActivation.originalImage)
-                    putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, existingActivation.temporaryImage)
-                    putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_ID, activationId)
-                    putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
-                    putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(existingActivation.activationMode))
+                    action = AlarmConstants.ACTION_ALIAS
+                    putExtra(AlarmConstants.EXTRA_OPERATION, oldAlarm.operation)
+                    putExtra(AlarmConstants.EXTRA_CONTACT_ID, existingActivation.contactId)
+                    putExtra(AlarmConstants.EXTRA_ORIGINAL_NAME, existingActivation.originalName)
+                    putExtra(AlarmConstants.EXTRA_TEMPORARY_NAME, existingActivation.temporaryName)
+                    putExtra(AlarmConstants.EXTRA_ORIGINAL_IMAGE, existingActivation.originalImage)
+                    putExtra(AlarmConstants.EXTRA_TEMPORARY_IMAGE, existingActivation.temporaryImage)
+                    putExtra(AlarmConstants.EXTRA_ACTIVATION_ID, activationId)
+                    putExtra(AlarmConstants.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
+                    putExtra(AlarmConstants.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(existingActivation.activationMode))
                 }
 
                 val oldPending = PendingIntent.getBroadcast(
@@ -487,7 +487,7 @@ class ContactlyAlarmManager(
         }
 
         val intent = Intent(context, AliasAlarmReceiver::class.java).apply {
-            action = AliasAlarmReceiver.ACTION_ALIAS
+            action = AlarmConstants.ACTION_ALIAS
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
