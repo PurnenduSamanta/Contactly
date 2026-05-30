@@ -77,7 +77,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.purnendu.contactly.data.utils.validateDeviceTime
 import com.purnendu.contactly.domain.model.Contact
 import com.purnendu.contactly.domain.model.Activation
 import com.purnendu.contactly.feature.home.R
@@ -102,7 +101,6 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.abs
 import androidx.core.net.toUri
-import com.purnendu.contactly.geofence.GoogleMapsUrlParser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -363,16 +361,16 @@ fun HomeScreen(
 
         isSaving = true
 
-        var latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
+        var latLng = homeViewModel.parseSharedLocation(text)
         if (latLng == null) {
             delay(2000L)
-            latLng = GoogleMapsUrlParser.parseFromSharedText(text, context)
+            latLng = homeViewModel.parseSharedLocation(text)
         }
 
         if (latLng != null) {
             nearbyLatitude = "%.7f".format(latLng.latitude).trimEnd('0').trimEnd('.')
             nearbyLongitude = "%.7f".format(latLng.longitude).trimEnd('0').trimEnd('.')
-            nearbyLocationLabel = GoogleMapsUrlParser.extractLabel(text)
+            nearbyLocationLabel = homeViewModel.extractSharedLocationLabel(text)
             activationMode = ActivationMode.NEARBY
         } else {
             Toast.makeText(context, "Could not parse location from shared text", Toast.LENGTH_SHORT).show()
@@ -418,23 +416,16 @@ fun HomeScreen(
             if (contact != null) {
                 selectedContact = contact
                 temporaryName = sched.name
-                val sid = sched.id.toLongOrNull()
-                if (sid != null) {
-                    coroutineScope.launch {
-                        val entity = homeViewModel.loadActivationEntity(sid)
-                        startMillis = entity?.startAtMillis ?: 0L
-                        endMillis = entity?.endAtMillis ?: 0L
-                        selectedDays = DayUtils.extractDaysFromBitmask(entity?.selectedDays ?: 127).toSet()
-                        temporaryImage = entity?.temporaryImage
-                        activationMode = ActivationMode.fromInt(entity?.activationMode ?: 0)
-                        // Pre-fill location data for NEARBY
-                        nearbyLatitude = entity?.latitude?.toString() ?: ""
-                        nearbyLongitude = entity?.longitude?.toString() ?: ""
-                        nearbyRadius = entity?.radiusMeters?.toInt()?.toString() ?: "200"
-                        nearbyLocationLabel = entity?.locationLabel
-                        showEditSheet = true
-                    }
-                }
+                startMillis = sched.startAtMillis ?: 0L
+                endMillis = sched.endAtMillis ?: 0L
+                selectedDays = DayUtils.extractDaysFromBitmask(sched.selectedDays ?: 127).toSet()
+                temporaryImage = sched.temporaryImageUri
+                activationMode = sched.activationMode
+                nearbyLatitude = sched.latitude?.toString() ?: ""
+                nearbyLongitude = sched.longitude?.toString() ?: ""
+                nearbyRadius = sched.radiusMeters?.toInt()?.toString() ?: "200"
+                nearbyLocationLabel = sched.locationLabel
+                showEditSheet = true
             }
         }
     }
@@ -834,7 +825,7 @@ fun HomeScreen(
                             return@launch
                         }
 
-                        val timeValidationResult = validateDeviceTime(context)
+                        val timeValidationResult = homeViewModel.validateDeviceTime()
                         if(!timeValidationResult.isValid)
                         {
                             homeViewModel.showError(timeValidationResult.errorMessage.toString())

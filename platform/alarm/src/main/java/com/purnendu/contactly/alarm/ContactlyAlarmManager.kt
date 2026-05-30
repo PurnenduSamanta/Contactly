@@ -11,14 +11,15 @@ import com.google.gson.reflect.TypeToken
 import com.purnendu.contactly.domain.model.alarm.AlarmMetadata
 import com.purnendu.contactly.domain.model.alarm.AlarmActivationResult
 import com.purnendu.contactly.domain.model.alarm.SyncResult
-import com.purnendu.contactly.data.repository.ContactsRepository
-import com.purnendu.contactly.data.repository.ActivationsRepository
-import com.purnendu.contactly.data.local.room.ActivationEntity
+import com.purnendu.contactly.domain.model.ActivationRecord
 import com.purnendu.contactly.domain.model.Contact
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
 import com.purnendu.contactly.common.DayUtils
 import com.purnendu.contactly.common.ActivationMode
 import com.purnendu.contactly.common.AlarmOperations
+import com.purnendu.contactly.domain.repository.ActivationsRepository
+import com.purnendu.contactly.domain.repository.AlarmSchedulerRepository
+import com.purnendu.contactly.domain.repository.ContactsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -32,7 +33,7 @@ class ContactlyAlarmManager(
     private val context: Context,
     val activationsRepo: ActivationsRepository,
     val contactsRepo: ContactsRepository
-) {
+) : AlarmSchedulerRepository {
     val alarmManager: AlarmManager? = context.getSystemService(AlarmManager::class.java)
     private val gson = Gson()
     private val TAG = "ContactlyAlarmManager"
@@ -41,7 +42,7 @@ class ContactlyAlarmManager(
      * Activate alarms for a contact with the given parameters.
      * @return AlarmActivationResult containing success status and alarm metadata
      */
-    fun activateAlarms(
+    override fun activateAlarms(
         contact: Contact,
         activationId: Long,
         originalName: String,
@@ -158,7 +159,7 @@ class ContactlyAlarmManager(
     /**
      * Check if a specific alarm is activated in AlarmManager
      */
-    fun isAlarmActivated(
+    override fun isAlarmActivated(
         requestCode: Int,
         contactId: Long,
         originalName: String,
@@ -228,7 +229,7 @@ class ContactlyAlarmManager(
     /**
      * Parse alarm metadata from JSON string
      */
-    fun parseAlarmMetadata(json: String?): List<AlarmMetadata> {
+    override fun parseAlarmMetadata(json: String?): List<AlarmMetadata> {
         if (json.isNullOrBlank()) return emptyList()
         return try {
             val type = object : TypeToken<List<AlarmMetadata>>() {}.type
@@ -242,7 +243,7 @@ class ContactlyAlarmManager(
     /**
      * Convert alarm metadata list to JSON string
      */
-    fun toJson(metadata: List<AlarmMetadata>): String {
+    override fun toJson(metadata: List<AlarmMetadata>): String {
         return gson.toJson(metadata)
     }
 
@@ -250,7 +251,7 @@ class ContactlyAlarmManager(
      * Generate alarm metadata for an activation
      */
     fun generateAlarmMetadata(
-        activation: ActivationEntity,
+        activation: ActivationRecord,
         selectedDays: List<Int>
     ): List<AlarmMetadata> {
         val startAt = activation.startAtMillis ?: return emptyList()
@@ -290,7 +291,7 @@ class ContactlyAlarmManager(
      * Activate a single alarm based on metadata
      */
     private fun activateAlarm(
-        activation: ActivationEntity,
+        activation: ActivationRecord,
         metadata: AlarmMetadata
     ) {
         val intent = buildAlarmIntent(
@@ -303,7 +304,7 @@ class ContactlyAlarmManager(
             operation = metadata.operation,
             dayOfWeek = metadata.dayOfWeek,
             activationId = activation.activationId,
-            activationMode = activation.activationMode
+            activationMode = ActivationMode.toInt(activation.activationMode)
         )
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -329,11 +330,10 @@ class ContactlyAlarmManager(
      * Sync all activations from database to AlarmManager
      * This is the main sync function called on app startup
      */
-    suspend fun syncAllActivations(): SyncResult = withContext(Dispatchers.IO) {
+    override suspend fun syncAllActivations(): SyncResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "Starting alarm sync...")
-        val allActivations = activationsRepo.getAllEntities().filter {
-            val mode = ActivationMode.fromInt(it.activationMode)
-            mode != ActivationMode.INSTANT && mode != ActivationMode.NEARBY
+        val allActivations = activationsRepo.getAllRecords().filter {
+            it.activationMode != ActivationMode.INSTANT && it.activationMode != ActivationMode.NEARBY
         }
         var activatedCount = 0
         var skippedCount = 0
@@ -404,7 +404,7 @@ class ContactlyAlarmManager(
                             operation = metadata.operation,
                             dayOfWeek = metadata.dayOfWeek,
                             activationId = activation.activationId,
-                            activationMode = activation.activationMode
+                            activationMode = ActivationMode.toInt(activation.activationMode)
                         )
 
                         if (!exists) {
@@ -434,7 +434,7 @@ class ContactlyAlarmManager(
         result
     }
 
-     suspend fun cancelActivatedAlarms(activationId: Long) {
+    override suspend fun cancelActivatedAlarms(activationId: Long) {
         withContext(Dispatchers.IO) {
             val existingActivation = activationsRepo.getById(activationId) ?: return@withContext
             val metadataJson = existingActivation.activatedAlarmsMetadata
@@ -455,7 +455,7 @@ class ContactlyAlarmManager(
                     putExtra(AliasAlarmReceiver.EXTRA_TEMPORARY_IMAGE, existingActivation.temporaryImage)
                     putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_ID, activationId)
                     putExtra(AliasAlarmReceiver.EXTRA_DAY_OF_WEEK, oldAlarm.dayOfWeek)
-                    putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, existingActivation.activationMode)
+                    putExtra(AliasAlarmReceiver.EXTRA_ACTIVATION_TYPE, ActivationMode.toInt(existingActivation.activationMode))
                 }
 
                 val oldPending = PendingIntent.getBroadcast(

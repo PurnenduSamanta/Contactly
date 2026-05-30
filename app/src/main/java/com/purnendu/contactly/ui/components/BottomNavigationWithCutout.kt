@@ -65,7 +65,6 @@ fun BottomNavigationWithCutout(
         modifier = modifier
             .fillMaxWidth()
             .height(navBarHeight)
-            .windowInsetsPadding(WindowInsets.navigationBars)
             .drawWithCache {
                 val width = size.width
                 val height = size.height

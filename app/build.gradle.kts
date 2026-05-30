@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
@@ -62,7 +61,6 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
-    implementation(project(":core:network"))
     implementation(project(":core:ui"))
     implementation(project(":feature:home"))
     implementation(project(":feature:settings"))
@@ -82,10 +80,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.material.icons.core)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -95,13 +89,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation(libs.coil.compose)
-
-    implementation(libs.accompanist.permissions)
-    
-    // Gson for alarm metadata JSON serialization
-    implementation(libs.gson)
-    
     // Koin for Dependency Injection
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
@@ -117,7 +104,4 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
-
-    // Google Play Services - Location (Geofencing)
-    implementation(libs.play.services.location)
 }

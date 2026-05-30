@@ -7,9 +7,10 @@ import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.purnendu.contactly.common.StatusEventBus
+import com.purnendu.contactly.common.ActivationMode
 import com.purnendu.contactly.domain.repository.AppPreferences
-import com.purnendu.contactly.data.repository.ContactsRepository
-import com.purnendu.contactly.data.repository.ActivationsRepository
+import com.purnendu.contactly.domain.repository.ContactsRepository
+import com.purnendu.contactly.domain.repository.ActivationsRepository
 import com.purnendu.contactly.notification.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,7 +112,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                                     originalName = activation.originalName,
                                     temporaryName = activation.temporaryName,
                                     isApply = isEnter,
-                                    activationMode = activation.activationMode,
+                                    activationMode = ActivationMode.toInt(activation.activationMode),
                                     contactImage = if (isEnter) activation.temporaryImage
                                                    else activation.originalImage
                                 )
@@ -132,4 +133,3 @@ class GeofenceBroadcastReceiver : BroadcastReceiver(), KoinComponent {
         }
     }
 }
-

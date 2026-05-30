@@ -18,8 +18,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":core:common"))
-
     // Ktor (CIO engine — pure Kotlin, no Android dependency)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

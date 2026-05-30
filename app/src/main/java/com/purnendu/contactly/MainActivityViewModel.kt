@@ -3,9 +3,8 @@ package com.purnendu.contactly
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.purnendu.contactly.alarm.ContactlyAlarmManager
-import com.purnendu.contactly.geofence.ContactlyGeofenceManager
-import com.purnendu.contactly.domain.repository.AppPreferences
+import com.purnendu.contactly.domain.usecase.ManageAppPreferencesUseCase
+import com.purnendu.contactly.domain.usecase.SyncAlarmsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,9 +23,8 @@ import java.util.concurrent.TimeUnit
  * Dependencies are injected via Koin.
  */
 class MainActivityViewModel(
-    private val contactlyAlarmManager: ContactlyAlarmManager,
-    private val geofenceManager: ContactlyGeofenceManager,
-    private val appPreferences: AppPreferences
+    private val syncAlarmsUseCase: SyncAlarmsUseCase,
+    private val manageAppPreferencesUseCase: ManageAppPreferencesUseCase
 ) : ViewModel() {
 
     private val _isAppReady = MutableStateFlow(false)
@@ -79,9 +77,8 @@ class MainActivityViewModel(
                 // Sync alarms and geofences, but only if it's been more than 12 hours
                 if (shouldSyncNow()) {
                     Log.d("MainActivityViewModel", "Syncing alarms and geofences...")
-                    syncAlarms()
-                    syncGeofences()
-                    appPreferences.updateLastSyncTimestamp()
+                    syncAlarmsAndGeofences()
+                    manageAppPreferencesUseCase.updateLastSyncTimestamp()
                 } else {
                     Log.d("MainActivityViewModel", "Sync skipped, not enough time has passed.")
                 }
@@ -101,7 +98,7 @@ class MainActivityViewModel(
      * @return true if it's been more than 12 hours since the last sync.
      */
     private suspend fun shouldSyncNow(): Boolean {
-        val lastSyncTimestamp = appPreferences.lastSyncTimestampFlow.first()
+        val lastSyncTimestamp = manageAppPreferencesUseCase.lastSyncTimestampFlow.first()
         if (lastSyncTimestamp == 0L) {
             // No sync has ever happened, so sync now
             return true
@@ -113,34 +110,18 @@ class MainActivityViewModel(
         return (currentTime - lastSyncTimestamp) > twelveHoursInMillis
     }
 
-    /**
-     * Sync all activated alarms from database to AlarmManager
-     * Runs during splash screen to ensure alarms are properly activation
-     */
-    private suspend fun syncAlarms() {
+    private suspend fun syncAlarmsAndGeofences() {
         try {
-            val result = contactlyAlarmManager.syncAllActivations()
+            val result = syncAlarmsUseCase()
             
             Log.d("MainActivityViewModel", "Alarm sync completed: " +
                     "activated=${result.alarmsActivated}, " +
                     "skipped=${result.alarmsSkipped}, " +
                     "errors=${result.errors}, " +
                     "orphaned=${result.orphanedActivationsRemoved}")
-        } catch (e: Exception) {
-            Log.e("MainActivityViewModel", "Failed to sync alarms", e)
-        }
-    }
-
-    /**
-     * Re-register all NEARBY geofences
-     * Geofences can be lost if the system clears them
-     */
-    private suspend fun syncGeofences() {
-        try {
-            geofenceManager.syncAllGeofences()
             Log.d("MainActivityViewModel", "Geofence sync completed")
         } catch (e: Exception) {
-            Log.e("MainActivityViewModel", "Failed to sync geofences", e)
+            Log.e("MainActivityViewModel", "Failed to sync alarms/geofences", e)
         }
     }
 }

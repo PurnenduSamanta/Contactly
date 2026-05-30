@@ -7,16 +7,17 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
 import com.purnendu.contactly.domain.model.Contact
+import com.purnendu.contactly.domain.repository.ContactsRepository as ContactsRepositoryContract
 
 /**
  * Repository for accessing and modifying device contacts.
  * 
  * Instance is managed by Koin DI as a singleton.
  */
-class ContactsRepository(
+class ContactsRepositoryImpl(
     private val resolver: ContentResolver
-) {
-    fun fetchContacts(): List<Contact> {
+) : ContactsRepositoryContract {
+    override fun fetchContacts(): List<Contact> {
         val contacts = mutableListOf<Contact>()
         val projection = arrayOf(
             ContactsContract.Contacts._ID,
@@ -86,7 +87,7 @@ class ContactsRepository(
         return contacts.sortedWith(compareBy(nullsLast()) { it.name?.lowercase() })
     }
 
-    fun fetchContactById(contactId: Long): Contact? {
+    override fun fetchContactById(contactId: Long): Contact? {
         val projection = arrayOf(
             ContactsContract.Contacts._ID,
             ContactsContract.Contacts.LOOKUP_KEY,
@@ -166,11 +167,11 @@ class ContactsRepository(
      * @param filePath Absolute path to the image file to set, or null to skip photo update
      * @param shouldRemovePhoto If true and filePath is null, explicitly removes the contact's photo
      */
-    fun applyContact(
+    override fun applyContact(
         contactId: Long,
         name: String,
-        filePath: String? = null,
-        shouldRemovePhoto: Boolean = false
+        filePath: String?,
+        shouldRemovePhoto: Boolean
     ) {
         // 1️⃣ Get RAW_CONTACT_ID
         val rawId = resolver.query(

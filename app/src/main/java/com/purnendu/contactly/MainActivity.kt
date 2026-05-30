@@ -30,10 +30,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.result.ActivityResult
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import com.purnendu.contactly.ui.screens.setting.SettingsViewModel
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
@@ -237,7 +243,9 @@ class MainActivity : FragmentActivity() {
             bottomBar = {
                 // Hide bottom navigation bar on Feedback and PrivacyPolicy screens
                 if (currentScreen != Screen.Feedback && currentScreen != Screen.PrivacyPolicy) {
+                    NavigationBar() { }
                     BottomNavigationWithCutout(
+                        modifier = Modifier.windowInsetsPadding(NavigationBarDefaults.windowInsets),
                         screens = bottomNavScreens,
                         currentRoute = currentRoute,
                         onItemClick = { screen ->

@@ -26,11 +26,7 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
-    implementation(project(":core:data"))
     implementation(project(":core:ui"))
-    implementation(project(":core:network"))
-    implementation(project(":platform:alarm"))
-    implementation(project(":platform:notification"))
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))

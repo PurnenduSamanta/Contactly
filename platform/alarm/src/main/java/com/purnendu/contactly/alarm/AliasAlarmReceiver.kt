@@ -10,15 +10,15 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.purnendu.contactly.common.StatusEventBus
-import com.purnendu.contactly.data.repository.ContactsRepository
-import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.domain.repository.AppPreferences
+import com.purnendu.contactly.domain.repository.ContactsRepository
+import com.purnendu.contactly.domain.repository.ActivationsRepository
 
 import com.purnendu.contactly.common.AlarmOperations.OP_APPLY
 import com.purnendu.contactly.common.AlarmOperations.OP_REVERT
 import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.common.AlarmRequestCodeUtils
-import com.purnendu.contactly.data.utils.ImageStorageManager
+import com.purnendu.contactly.domain.repository.ImageStorageRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +40,7 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
     private val contactsRepo: ContactsRepository by inject()
     private val contactlyAlarmManager: ContactlyAlarmManager by inject()
     private val appPreferences: AppPreferences by inject()
-    private val imageStorageManager: ImageStorageManager by inject()
+    private val imageStorageManager: ImageStorageRepository by inject()
     
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
@@ -253,11 +253,11 @@ class AliasAlarmReceiver : BroadcastReceiver(), KoinComponent {
                 ?.triggerTimeMillis ?: activation.endAtMillis
             
             // Update the activation with new metadata and nearest times
-            val updatedActivation = activation.copy(
-                activatedAlarmsMetadata = contactlyAlarmManager.toJson(updatedMetadata),
-                startAtMillis = nearestApplyTime,
-                endAtMillis = nearestRevertTime
-            )
+                val updatedActivation = activation.copy(
+                    activatedAlarmsMetadata = contactlyAlarmManager.toJson(updatedMetadata),
+                    startAtMillis = nearestApplyTime,
+                    endAtMillis = nearestRevertTime
+                )
             
             activationRepo.update(updatedActivation)
             Log.d("AliasAlarmReceiver", "Updated activation metadata: id=$activationId, " +

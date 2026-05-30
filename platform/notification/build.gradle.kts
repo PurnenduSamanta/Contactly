@@ -19,7 +19,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:common"))
+    implementation(project(":core:domain"))
 
     // AndroidX Core (for NotificationCompat)
     implementation(libs.androidx.core.ktx)

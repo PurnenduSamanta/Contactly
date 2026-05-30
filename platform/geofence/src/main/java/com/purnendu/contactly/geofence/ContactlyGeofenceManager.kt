@@ -11,8 +11,9 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
-import com.purnendu.contactly.data.repository.ActivationsRepository
 import com.purnendu.contactly.common.ActivationMode
+import com.purnendu.contactly.domain.repository.ActivationsRepository
+import com.purnendu.contactly.domain.repository.GeofenceRepository
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -29,7 +30,7 @@ class ContactlyGeofenceManager(
     private val context: Context,
     private val activationsRepo: ActivationsRepository,
     private val geofenceReceiverClass: Class<*>
-) {
+) : GeofenceRepository {
     private val geofencingClient = LocationServices.getGeofencingClient(context)
 
     companion object {
@@ -61,7 +62,7 @@ class ContactlyGeofenceManager(
      * Needed separately because foreground and background permissions
      * must be requested in two separate steps on Android 10+.
      */
-    fun hasBackgroundLocationPermission(): Boolean {
+    override fun hasBackgroundLocationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
@@ -77,7 +78,7 @@ class ContactlyGeofenceManager(
      * Dynamically checks location permission — returns false if not granted
      * instead of silently failing.
      */
-    suspend fun registerGeofence(
+    override suspend fun registerGeofence(
         activationId: Long,
         latitude: Double,
         longitude: Double,
@@ -127,7 +128,7 @@ class ContactlyGeofenceManager(
      * Unregister a geofence for a NEARBY activation.
      * Returns true if unregistration succeeds, false otherwise.
      */
-    suspend fun unregisterGeofence(activationId: Long): Boolean {
+    override suspend fun unregisterGeofence(activationId: Long): Boolean {
         return suspendCancellableCoroutine { continuation ->
             geofencingClient.removeGeofences(listOf(activationId.toString()))
                 .addOnSuccessListener {
@@ -146,15 +147,15 @@ class ContactlyGeofenceManager(
      * Called after boot or app update since geofences don't survive restarts.
      * Dynamically checks permission — skips ALL geofences if permission is missing.
      */
-    suspend fun syncAllGeofences() {
+    override suspend fun syncAllGeofences() {
         // Check permission BEFORE iterating — no point trying if permission is gone
         if (!hasLocationPermission()) {
             Log.w(TAG, "Cannot sync geofences: location permission not granted. Skipping all.")
             return
         }
 
-        val nearbyActivations = activationsRepo.getAllEntities().filter {
-            ActivationMode.fromInt(it.activationMode) == ActivationMode.NEARBY
+        val nearbyActivations = activationsRepo.getAllRecords().filter {
+            it.activationMode == ActivationMode.NEARBY
         }
 
         var registeredCount = 0

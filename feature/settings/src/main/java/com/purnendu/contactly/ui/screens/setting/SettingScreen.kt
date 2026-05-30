@@ -68,7 +68,6 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.purnendu.contactly.common.AlarmOperations
 import com.purnendu.contactly.feature.settings.R
 import com.purnendu.contactly.ui.components.ContactlyDialog
-import com.purnendu.contactly.notification.NotificationHelper
 import com.purnendu.contactly.ui.theme.ContactlyTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -153,7 +152,7 @@ fun SettingsScreen(
     DisposableEffect(key1 = lifeCycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                if(!NotificationHelper.hasNotificationPermission(context))
+                if(!settingsViewModel.hasNotificationPermission())
                     settingsViewModel.setNotificationsEnabled(false)
             }
         }
@@ -276,8 +275,8 @@ fun SettingsScreen(
                             if (enabled) {
                                 isNotificationSwitchTryToOn.intValue += 1
                                 // Check if we need to request permission (Android 13+)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
-                                    !NotificationHelper.hasNotificationPermission(context)) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                    !settingsViewModel.hasNotificationPermission()) {
                                     notificationPermissionState?.launchPermissionRequest()
                                 } else {
                                     settingsViewModel.setNotificationsEnabled(true)

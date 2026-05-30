@@ -26,10 +26,7 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
-    implementation(project(":core:data"))
     implementation(project(":core:ui"))
-    implementation(project(":platform:alarm"))
-    implementation(project(":platform:geofence"))
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))

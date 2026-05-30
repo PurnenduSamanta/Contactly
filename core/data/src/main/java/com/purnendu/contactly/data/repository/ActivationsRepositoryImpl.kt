@@ -8,18 +8,20 @@ import com.purnendu.contactly.domain.model.alarm.AlarmMetadata
 import com.purnendu.contactly.data.local.room.AppDatabase
 import com.purnendu.contactly.data.local.room.ActivationEntity
 import com.purnendu.contactly.domain.model.Activation
+import com.purnendu.contactly.domain.model.ActivationRecord
 import com.purnendu.contactly.common.ActivationMode
+import com.purnendu.contactly.domain.repository.ContactsRepository as ContactsRepositoryContract
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class ActivationsRepository(
+class ActivationsRepositoryImpl(
     private val database: AppDatabase,
-    private val contactsRepo: ContactsRepository
-) {
+    private val contactsRepo: ContactsRepositoryContract
+) : com.purnendu.contactly.domain.repository.ActivationsRepository {
     private val gson = Gson()
     
-    fun getActivations(): Flow<List<Activation>> = database.activationDao().getAll().map { list ->
+    override fun getActivations(): Flow<List<Activation>> = database.activationDao().getAll().map { list ->
         val currentTime = System.currentTimeMillis()
         list.map { e ->
             val activationMode = ActivationMode.fromInt(e.activationMode)
@@ -102,57 +104,71 @@ class ActivationsRepository(
         }
     }
 
-    suspend fun create(
-        activationId: Long,
-        contactId: Long,
-        contactLookupKey: String?,
-        originalName: String,
-        temporaryName: String,
-        startAtMillis: Long?,
-        endAtMillis: Long?,
-        selectedDays: Int?,
-        activatedAlarmsMetadata: String? = null,
-        activationMode: ActivationMode,
-        tempImage: String? = null,
-        originalImage: String? = null,
-        instantSwitchStatus: Boolean? = null,
-        latitude: Double? = null,
-        longitude: Double? = null,
-        radiusMeters: Float? = null,
-        locationLabel: String? = null,
-    ): Long {
+    override suspend fun create(record: ActivationRecord): Long {
         return database.activationDao().insert(
-            ActivationEntity(
-                activationId = activationId,
-                contactId = contactId,
-                contactLookupKey = contactLookupKey,
-                originalName = originalName,
-                temporaryName = temporaryName,
-                startAtMillis = startAtMillis,
-                endAtMillis = endAtMillis,
-                selectedDays = selectedDays,
-                activatedAlarmsMetadata = activatedAlarmsMetadata,
-                activationMode = ActivationMode.toInt(activationMode),
-                temporaryImage = tempImage,
-                originalImage = originalImage,
-                instantSwitchStatus = instantSwitchStatus,
-                latitude = latitude,
-                longitude = longitude,
-                radiusMeters = radiusMeters,
-                locationLabel = locationLabel,
-            )
+            record.toEntity()
         )
     }
 
-    suspend fun update(entity: ActivationEntity) = database.activationDao().update(entity)
+    override suspend fun update(record: ActivationRecord) {
+        database.activationDao().update(record.toEntity())
+    }
 
-    suspend fun deleteById(id: Long) = database.activationDao().deleteById(id)
+    override suspend fun deleteById(id: Long) {
+        database.activationDao().deleteById(id)
+    }
 
-    suspend fun getById(id: Long): ActivationEntity? = database.activationDao().getById(id)
+    override suspend fun getById(id: Long): ActivationRecord? =
+        database.activationDao().getById(id)?.toRecord()
 
-    suspend fun getAllEntities(): List<ActivationEntity> = database.activationDao().getAll().first()
+    override suspend fun getAllRecords(): List<ActivationRecord> =
+        database.activationDao().getAll().first().map { it.toRecord() }
 
-    suspend fun deleteByContactId(contactId: Long) = database.activationDao().deleteByContactId(contactId)
+    override suspend fun deleteByContactId(contactId: Long) {
+        database.activationDao().deleteByContactId(contactId)
+    }
+}
 
+private fun ActivationRecord.toEntity(): ActivationEntity {
+    return ActivationEntity(
+        activationId = activationId,
+        contactId = contactId,
+        contactLookupKey = contactLookupKey,
+        originalName = originalName,
+        temporaryName = temporaryName,
+        temporaryImage = temporaryImage,
+        originalImage = originalImage,
+        startAtMillis = startAtMillis,
+        endAtMillis = endAtMillis,
+        selectedDays = selectedDays,
+        activatedAlarmsMetadata = activatedAlarmsMetadata,
+        activationMode = ActivationMode.toInt(activationMode),
+        instantSwitchStatus = instantSwitchStatus,
+        latitude = latitude,
+        longitude = longitude,
+        radiusMeters = radiusMeters,
+        locationLabel = locationLabel
+    )
+}
 
+private fun ActivationEntity.toRecord(): ActivationRecord {
+    return ActivationRecord(
+        activationId = activationId,
+        contactId = contactId,
+        contactLookupKey = contactLookupKey,
+        originalName = originalName,
+        temporaryName = temporaryName,
+        temporaryImage = temporaryImage,
+        originalImage = originalImage,
+        startAtMillis = startAtMillis,
+        endAtMillis = endAtMillis,
+        selectedDays = selectedDays,
+        activatedAlarmsMetadata = activatedAlarmsMetadata,
+        activationMode = ActivationMode.fromInt(activationMode),
+        instantSwitchStatus = instantSwitchStatus,
+        latitude = latitude,
+        longitude = longitude,
+        radiusMeters = radiusMeters,
+        locationLabel = locationLabel
+    )
 }

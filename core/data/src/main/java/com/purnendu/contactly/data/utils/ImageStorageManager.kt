@@ -3,6 +3,7 @@ package com.purnendu.contactly.data.utils
 import android.content.Context
 import android.provider.ContactsContract
 import android.util.Log
+import com.purnendu.contactly.domain.repository.ImageStorageRepository
 import java.io.File
 import java.io.FileOutputStream
 import androidx.core.net.toUri
@@ -16,7 +17,7 @@ import androidx.core.net.toUri
  * 
  * This approach is more efficient than storing Base64 in the database.
  */
-class ImageStorageManager(private val context: Context,) {
+class ImageStorageManager(private val context: Context) : ImageStorageRepository {
     
     private val TAG = "ImageStorageHelper"
     private val IMAGES_DIR = "contact_images"
@@ -36,7 +37,7 @@ class ImageStorageManager(private val context: Context,) {
      * Save temporary image from gallery URI to internal storage
      * @return Internal storage file path, or null if failed
      */
-    fun saveTemporaryImage(activationId: Long, image: String): String? {
+    override fun saveTemporaryImage(activationId: Long, image: String): String? {
         return try {
             val uri = image.toUri()
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -66,7 +67,7 @@ class ImageStorageManager(private val context: Context,) {
      * Save original contact photo to internal storage
      * @return Internal storage file path, or null if no photo or failed
      */
-    fun saveOriginalImage(activationId: Long, contactId: Long): String? {
+    override fun saveOriginalImage(activationId: Long, contactId: Long): String? {
         return try {
             val contactUri = ContactsContract.Contacts.CONTENT_URI.buildUpon()
                 .appendPath(contactId.toString())
@@ -103,7 +104,7 @@ class ImageStorageManager(private val context: Context,) {
     /**
      * Delete images for an activation (cleanup when activation is deleted)
      */
-    fun deleteImagesFromActivation(activationId: Long) {
+    override fun deleteImagesFromActivation(activationId: Long) {
         try {
             val dir = getImagesDir()
             val tempFile = File(dir, "temp_image_$activationId.jpg")
