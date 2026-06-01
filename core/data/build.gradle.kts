@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.purnendu.contactly.core.data"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 24

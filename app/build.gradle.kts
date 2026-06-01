@@ -24,13 +24,13 @@ tasks.named("preBuild") {
 android {
     namespace = "com.purnendu.contactly"
     compileSdk {
-        version = release(36)
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "com.purnendu.contactly"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 8
         versionName = "3.5"
 
