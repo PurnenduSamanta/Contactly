@@ -105,6 +105,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
+private const val MIN_NEARBY_RADIUS_METERS = 200
+private const val MAX_NEARBY_RADIUS_METERS = 500
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
@@ -159,6 +162,15 @@ fun HomeScreen(
     var showBackgroundLocationDialog by remember { mutableStateOf(false) }
 
     val errorMessage = homeViewModel.errorMessage.collectAsStateWithLifecycle()
+
+    fun clampNearbyRadius(input: String): String {
+        if (input.isBlank()) return input
+        val parsed = input.toIntOrNull() ?: return nearbyRadius
+        return parsed.coerceIn(
+            MIN_NEARBY_RADIUS_METERS,
+            MAX_NEARBY_RADIUS_METERS
+        ).toString()
+    }
 
     val lifeCycleOwner = LocalLifecycleOwner.current
 
@@ -423,7 +435,11 @@ fun HomeScreen(
                 activationMode = sched.activationMode
                 nearbyLatitude = sched.latitude?.toString() ?: ""
                 nearbyLongitude = sched.longitude?.toString() ?: ""
-                nearbyRadius = sched.radiusMeters?.toInt()?.toString() ?: "200"
+                nearbyRadius = sched.radiusMeters
+                    ?.toInt()
+                    ?.coerceIn(MIN_NEARBY_RADIUS_METERS, MAX_NEARBY_RADIUS_METERS)
+                    ?.toString()
+                    ?: "200"
                 nearbyLocationLabel = sched.locationLabel
                 showEditSheet = true
             }
@@ -728,7 +744,7 @@ fun HomeScreen(
             nearbyLocationLabel = nearbyLocationLabel,
             onNearbyLatitudeChange = { nearbyLatitude = it },
             onNearbyLongitudeChange = { nearbyLongitude = it },
-            onNearbyRadiusChange = { nearbyRadius = it },
+            onNearbyRadiusChange = { nearbyRadius = clampNearbyRadius(it) },
             onSelectLocationClick = {
                 // Open Google Maps to pick a location
                 try {
@@ -838,7 +854,10 @@ fun HomeScreen(
                     if (activationMode == ActivationMode.NEARBY) {
                         val lat = nearbyLatitude.toDoubleOrNull()
                         val lng = nearbyLongitude.toDoubleOrNull()
-                        val rad = nearbyRadius.toFloatOrNull()
+                        val rad = nearbyRadius.toFloatOrNull()?.coerceIn(
+                            MIN_NEARBY_RADIUS_METERS.toFloat(),
+                            MAX_NEARBY_RADIUS_METERS.toFloat()
+                        )
 
                         if (lat == null || lat !in -90.0..90.0) {
                             homeViewModel.showError("Please enter a valid latitude")
@@ -850,11 +869,11 @@ fun HomeScreen(
                             isSaving = false
                             return@launch
                         }
-                        if (rad == null || rad < 50f || rad > 50000f) {
-                            homeViewModel.showError("Please enter a valid radius")
+                        if (rad == null) {
                             isSaving = false
                             return@launch
                         }
+                        nearbyRadius = rad.toInt().toString()
                     }
 
                     // Lambda to perform the actual save operation

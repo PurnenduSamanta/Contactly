@@ -3,11 +3,11 @@ package com.purnendu.contactly
 import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,13 +49,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
 import com.purnendu.contactly.ui.screens.Screen
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -67,12 +64,10 @@ import com.google.firebase.Firebase
 import com.google.firebase.crashlytics.crashlytics
 
 import com.purnendu.contactly.ui.components.BottomNavigationWithCutout
-import com.purnendu.contactly.ui.screens.home.HomeScreen
-import com.purnendu.contactly.ui.screens.setting.SettingsScreen
-import com.purnendu.contactly.ui.screens.webView.FeedbackScreen
-import com.purnendu.contactly.ui.screens.webView.PrivacyPolicyScreen
+import com.purnendu.contactly.ui.navigation.Navigator
+import com.purnendu.contactly.ui.navigation.rememberContactlyEntryProvider
+import com.purnendu.contactly.ui.navigation.rememberNavigationState
 import com.purnendu.contactly.utils.BiometricHelper
-import com.purnendu.contactly.data.utils.isNetworkAvailable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -187,35 +182,45 @@ class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ContactlyApp(mainActivityViewModel: MainActivityViewModel) {
-        val navController = rememberNavController()
-        
-        // Define bottom nav screens (only screens with icons will be shown)
         val bottomNavScreens = listOf(
             Screen.Home,
             Screen.Settings
         )
-        
-        val allScreens = listOf(
-            Screen.Home,
-            Screen.Settings,
-            Screen.Feedback,
-            Screen.PrivacyPolicy,
+
+        val navigationState = rememberNavigationState(
+            startRoute = Screen.Home,
+            topLevelRoutes = bottomNavScreens.toSet(),
         )
-        
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
-        
-        // Determine current screen for top bar title
-        val currentScreen = allScreens.find { screen ->
-            currentDestination?.hierarchy?.any { it.route == screen::class.qualifiedName } == true
-        } ?: Screen.Home
-        
-        // Get current route for nav highlighting
-        val currentRoute = currentDestination?.route
-        
-        // Track whether activations exist (for conditional FAB display)
+        val navigator = remember(navigationState) {
+            Navigator(navigationState)
+        }
+
+        val currentTopLevelScreen = navigationState.topLevelRoute as? Screen ?: Screen.Home
+        val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+        val currentScreen = currentStack?.lastOrNull() as? Screen ?: Screen.Home
+        val currentRoute = currentTopLevelScreen::class.qualifiedName
+
         val hasActivations by mainActivityViewModel.hasActivations.collectAsStateWithLifecycle()
         val sharedLocationText by mainActivityViewModel.sharedLocationText.collectAsStateWithLifecycle()
+
+        val entryProvider = rememberContactlyEntryProvider(
+            versionName = BuildConfig.VERSION_NAME,
+            isDebugMode = BuildConfig.DEBUG,
+            addActivationEvents = mainActivityViewModel.addActivationEvent,
+            sharedLocationText = sharedLocationText,
+            onSharedLocationConsumed = mainActivityViewModel::clearSharedLocation,
+            onHasActivationsChanged = mainActivityViewModel::setHasActivations,
+            navigator = navigator,
+        )
+        val navKeyEntryProvider: (NavKey) -> NavEntry<NavKey> = { key ->
+            @Suppress("UNCHECKED_CAST")
+            entryProvider(key as Screen) as NavEntry<NavKey>
+        }
+        val navEntries = navigationState.toEntries(navKeyEntryProvider)
+
+        BackHandler(enabled = currentScreen != Screen.Home) {
+            navigator.goBack()
+        }
 
         Scaffold(
             topBar = {
@@ -241,7 +246,6 @@ class MainActivity : FragmentActivity() {
                 )
             },
             bottomBar = {
-                // Hide bottom navigation bar on Feedback and PrivacyPolicy screens
                 if (currentScreen != Screen.Feedback && currentScreen != Screen.PrivacyPolicy) {
                     NavigationBar() { }
                     BottomNavigationWithCutout(
@@ -249,13 +253,7 @@ class MainActivity : FragmentActivity() {
                         screens = bottomNavScreens,
                         currentRoute = currentRoute,
                         onItemClick = { screen ->
-                            navController.navigate(screen) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navigator.navigate(screen)
                         },
                         fabContent = {
                             Icon(
@@ -265,17 +263,9 @@ class MainActivity : FragmentActivity() {
                             )
                         },
                         fabOnClick = {
-                            // Navigate to Home if not already there, then trigger add activation
                             if (currentScreen != Screen.Home) {
-                                navController.navigate(Screen.Home) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                navigator.navigate(Screen.Home)
                             }
-                            // Trigger the add activation event
                             mainActivityViewModel.triggerAddActivation()
                         },
                         showFab = hasActivations,
@@ -287,41 +277,15 @@ class MainActivity : FragmentActivity() {
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-            // All padding controlled from here - single source of truth
-            NavHost(
-                navController = navController,
-                startDestination = Screen.Home,
+            androidx.compose.foundation.layout.Box(
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable<Screen.Home> {
-                    HomeScreen(
-                        contentPadding = PaddingValues(), // No extra padding needed
-                        addActivationEvents = mainActivityViewModel.addActivationEvent,
-                        sharedLocationText = sharedLocationText,
-                        onSharedLocationConsumed = mainActivityViewModel::clearSharedLocation,
-                        onHasActivationsChanged = mainActivityViewModel::setHasActivations
-                    ) 
-                }
-                composable<Screen.Settings> { 
-                    SettingsScreen(
-                        versionName = BuildConfig.VERSION_NAME,
-                        isDebugMode = BuildConfig.DEBUG,
-                        onNavigateToFeedback = {
-                            if(isNetworkAvailable(context = this@MainActivity))
-                            navController.navigate(Screen.Feedback)
-                        },
-                        onNavigateToPrivacyPolicy = {
-                            if(isNetworkAvailable(context = this@MainActivity))
-                            navController.navigate(Screen.PrivacyPolicy)
-                        }
-                    ) 
-                }
-                composable<Screen.Feedback> {
-                    FeedbackScreen()
-                }
-                composable<Screen.PrivacyPolicy> {
-                    PrivacyPolicyScreen()
-                }
+                NavDisplay(
+                    entries = navEntries,
+                    onBack = {
+                        navigator.goBack()
+                    },
+                )
             }
         }
     }

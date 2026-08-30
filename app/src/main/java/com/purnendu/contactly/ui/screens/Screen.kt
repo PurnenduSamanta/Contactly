@@ -6,11 +6,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class Screen(val route: String, @Contextual val selectedIcon: ImageVector?, @Contextual val notSelectedIcon: ImageVector?, val title: String?) {
+sealed class Screen(val route: String, @Contextual val selectedIcon: ImageVector?, @Contextual val notSelectedIcon: ImageVector?, val title: String?) : NavKey {
     @Serializable
     data object Home : Screen("home", Icons.Default.Home, Icons.Outlined.Home, "Home")
     @Serializable
